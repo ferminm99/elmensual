@@ -1,10 +1,33 @@
 <template>
     <v-container>
         <!-- Botón para abrir el diálogo de registrar venta -->
-        <v-btn color="primary" @click="openVentaDialog">Registrar Venta</v-btn>
-
+        <v-col cols="3">
+            <v-btn color="primary" @click="openVentaDialog"
+                >Registrar Venta</v-btn
+            >
+        </v-col>
+        <v-col cols="12">
+            <v-text-field
+                align="center"
+                justify="space-between"
+                v-model="search"
+                label="Buscar en las ventas"
+                append-icon="mdi-magnify"
+                single-line
+                hide-details
+            ></v-text-field>
+        </v-col>
+        <span class="total-text font-weight-bold"
+            >Total de Ventas: ${{ totalVentas }}</span
+        >
         <!-- Tabla para visualizar las ventas -->
-        <v-data-table :headers="headers" :items="ventas" class="elevation-1">
+        <v-data-table
+            :headers="headers"
+            :items="ventas"
+            :search="search"
+            :options.sync="options"
+            class="elevation-1"
+        >
             <!-- Formato de la Fecha (DD-MM-YYYY) -->
             <template v-slot:item.fecha="{ item }">
                 <span class="fecha-text">
@@ -98,7 +121,7 @@
                                     item-title="talle"
                                     label="Selecciona un talle"
                                     :disabled="!form.articulo_id"
-                                    @update:modelValue="form.color = null"
+                                    @update:modelValue="onTalleChange"
                                 ></v-select>
                             </v-col>
                             <v-col cols="6">
@@ -113,6 +136,41 @@
                                 ></v-select>
                             </v-col>
                         </v-row>
+
+                        <!-- Agregar Producto -->
+                        <v-btn color="green" @click="agregarProducto">
+                            Agregar Producto
+                        </v-btn>
+
+                        <!-- Lista de productos agregados -->
+                        <v-list dense>
+                            <v-list-item
+                                v-for="(producto, index) in productos"
+                                :key="index"
+                                class="d-flex align-center"
+                            >
+                                <v-list-item-content>
+                                    {{ producto.articulo.nombre }} - Talle
+                                    {{ producto.talle }} - Color
+                                    {{ producto.color }}
+                                </v-list-item-content>
+                                <v-list-item-action>
+                                    <v-btn
+                                        icon
+                                        @click="eliminarProducto(index)"
+                                    >
+                                        <v-icon color="red">mdi-delete</v-icon>
+                                    </v-btn>
+                                </v-list-item-action>
+                            </v-list-item>
+                        </v-list>
+
+                        <!-- Mostrar el precio total -->
+                        <v-text-field
+                            label="Precio Total"
+                            v-model="precioTotal"
+                            readonly
+                        ></v-text-field>
 
                         <!-- Información del cliente -->
                         <v-text-field
@@ -158,6 +216,11 @@
                         </v-radio-group>
 
                         <!-- Selección de fecha -->
+                        <!-- <v-text-field
+                            type="date"
+                            v-model="form.fecha"
+                            placeholder="Seleccione una fecha"
+                        ></v-text-field> -->
                         <datepicker
                             v-model="form.fecha"
                             placeholder="Seleccione una fecha"
@@ -175,22 +238,47 @@
         </v-dialog>
 
         <!-- Diálogo para editar el precio -->
-        <v-dialog v-model="editDialog" max-width="400px">
+        <v-dialog v-model="editDialog" max-width="600px" scrollable>
             <v-card>
-                <v-card-title class="headline"
-                    >Editar Precio de Venta</v-card-title
-                >
+                <v-card-title class="headline">Editar Venta</v-card-title>
                 <v-card-text>
+                    <!-- Campo para el nuevo precio -->
                     <v-text-field
                         v-model="selectedVenta.precio"
                         label="Nuevo Precio"
                         type="number"
                     ></v-text-field>
+
+                    <!-- Campo para la forma de pago -->
+                    <v-radio-group
+                        v-model="selectedVenta.forma_pago"
+                        label="Forma de Pago"
+                        :mandatory="true"
+                    >
+                        <v-radio label="Efectivo" value="efectivo"></v-radio>
+                        <v-radio
+                            label="Transferencia"
+                            value="transferencia"
+                        ></v-radio>
+                    </v-radio-group>
+                    <!-- Campo para la fecha -->
+                    <v-text-field
+                        type="date"
+                        v-model="selectedVenta.fecha"
+                    ></v-text-field>
+                    <!-- <datepicker
+                        v-model="selectedVenta.fecha"
+                        placeholder="Seleccione una fecha"
+                        :value="selectedVenta.fecha"
+                        style="z-index: 1000; position: relative;"
+                    ></datepicker> -->
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
                     <v-btn text @click="editDialog = false">Cancelar</v-btn>
-                    <v-btn text @click="updatePrice">Guardar</v-btn>
+                    <v-btn color="green" text @click="updateVenta"
+                        >Guardar</v-btn
+                    >
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -215,6 +303,17 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <v-snackbar
+            v-model="snackbar"
+            :timeout="3000"
+            :color="snackbarColor"
+            timeout="5000"
+            location="center"
+        >
+            {{ snackbarText }}
+            <v-btn color="red" text @click="snackbar = false">Cerrar</v-btn>
+        </v-snackbar>
     </v-container>
 </template>
 
@@ -228,6 +327,16 @@ export default {
     },
     data() {
         return {
+            search: "", // Variable para el campo de búsqueda
+            options: {
+                sortBy: ["fecha"],
+                sortDesc: [true], // true para orden descendente (de más nueva a más antigua)
+            },
+            selectedVenta: {
+                forma_pago: null,
+                fecha: null,
+                precio: null,
+            },
             dialogVenta: false,
             articulos: [], // Lista de artículos
             tallesDisponibles: [], // Talles para el artículo seleccionado
@@ -235,6 +344,10 @@ export default {
             ventas: [], // Lista de ventas registradas
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
             confirmDeleteDialog: false, // Control para abrir/cerrar el diálogo de confirmación de eliminación
+            productos: [], // Lista de productos agregados en la venta
+            precioTotal: 0, // Precio total calculado
+            snackbar: false,
+            snackbarText: "",
             form: {
                 articulo_id: null,
                 talle: null,
@@ -248,11 +361,15 @@ export default {
                 forma_pago: "efectivo",
             },
             headers: [
-                { title: "Fecha", key: "fecha" },
-                { title: "Artículo", key: "articulo_talle_color" },
-                { title: "Cliente", key: "cliente" },
-                { title: "Precio", key: "precio" },
-                { title: "Forma de Pago", key: "forma_pago" },
+                { title: "Fecha", key: "fecha", sortable: true }, // Solo la fecha es ordenable
+                {
+                    title: "Producto",
+                    key: "articulo_talle_color",
+                    sortable: false,
+                }, // Deshabilitamos orden para esta columna
+                { title: "Cliente", key: "cliente", sortable: false },
+                { title: "Precio", key: "precio", sortable: false },
+                { title: "Forma de Pago", key: "forma_pago", sortable: false },
                 { title: "Acciones", key: "actions", sortable: false },
             ],
         };
@@ -261,6 +378,38 @@ export default {
         this.fetchArticulos();
         this.fetchVentas();
     },
+    watch: {
+        // Este watch actualiza el precio total cada vez que cambien los productos
+        productos: {
+            handler(nuevosProductos) {
+                this.calcularPrecioTotal(); // Calculamos el precio total al cambiar la lista de productos
+            },
+            deep: true, // Observar cambios profundos dentro del array de productos
+        },
+    },
+
+    computed: {
+        snackbarStyle() {
+            return {
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                "max-width": "400px",
+                width: "auto",
+            };
+        },
+        totalVentas() {
+            const total = this.ventas.reduce((total, venta) => {
+                return total + parseFloat(venta.precio || 0); // Suma los precios
+            }, 0);
+            // Formatear el número con separador de miles sin usar toFixed, ya que toLocaleString se encarga de los decimales
+            return total.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        },
+    },
+
     methods: {
         formatFecha(fecha) {
             const [year, month, day] = fecha.split("-");
@@ -272,15 +421,19 @@ export default {
             this.editDialog = true;
         },
         // Actualizar el precio de la venta
-        updatePrice() {
+        updateVenta() {
             axios
                 .put(`/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
+                    fecha: moment(this.selectedVenta.fecha).format(
+                        "YYYY-MM-DD"
+                    ), // Incluimos la fecha
+                    forma_pago: this.selectedVenta.forma_pago, // Incluimos la forma de pago
                 })
                 .then((response) => {
                     console.log(response.data.message);
                     this.fetchVentas(); // Recargar la lista de ventas
-                    this.editDialog = false;
+                    this.editDialog = false; // Cerrar el diálogo
                 })
                 .catch((error) => {
                     console.error(error);
@@ -320,25 +473,21 @@ export default {
                 console.log("Cliente data:", this.ventas);
             });
         },
-        // Cargar talles y colores cuando se selecciona un artículo
-        loadTallesYColores() {
-            this.form.color = null;
-            this.form.talle = null;
-            axios.get(`/articulo/${this.form.articulo_id}`).then((response) => {
-                this.tallesDisponibles = response.data.talles;
+        onTalleChange(talleSeleccionado) {
+            // Lógica para cargar colores basados en el talle seleccionado
+            const talleSeleccionadoObj = this.tallesDisponibles.find(
+                (talle) => parseInt(talle.talle) === parseInt(talleSeleccionado)
+            );
 
-                // Excluir atributos no relacionados con colores y crear una lista de colores disponibles
-                this.coloresDisponibles = Object.keys(response.data.talles[0])
+            if (talleSeleccionadoObj) {
+                this.form.color = null; // Reiniciar el color antes de cargar los nuevos
+                this.coloresDisponibles = Object.keys(talleSeleccionadoObj)
                     .filter(
                         (color) =>
                             !["id", "articulo_id", "talle"].includes(color)
                     )
                     .map((color) => {
-                        const stock = response.data.talles.reduce(
-                            (total, talle) =>
-                                parseInt(total) + parseInt(talle[color]),
-                            0
-                        );
+                        const stock = talleSeleccionadoObj[color];
                         return {
                             title: color,
                             value: color,
@@ -347,6 +496,21 @@ export default {
                             },
                         };
                     });
+                console.log(
+                    "Colores disponibles para el talle seleccionado:",
+                    this.coloresDisponibles
+                );
+            }
+        },
+        // Cargar talles y colores cuando se selecciona un artículo
+        loadTallesYColores() {
+            this.form.color = null;
+            this.form.talle = null;
+
+            axios.get(`/articulo/${this.form.articulo_id}`).then((response) => {
+                this.tallesDisponibles = response.data.talles;
+
+                console.log("Talles disponibles:", this.tallesDisponibles);
             });
         },
         // Obtener el precio del artículo seleccionado
@@ -357,20 +521,86 @@ export default {
             this.form.precio = articulo ? articulo.precio : 0;
             return this.form.precio;
         },
+        agregarProducto() {
+            const articulo = this.articulos.find(
+                (item) => item.id === this.form.articulo_id
+            );
+            if (articulo && this.form.talle && this.form.color) {
+                this.productos.push({
+                    articulo: articulo,
+                    talle: this.form.talle,
+                    color: this.form.color,
+                    precio: articulo.precio,
+                });
+
+                this.forceUpdate++;
+
+                // Limpiar los campos del formulario para agregar más productos
+                this.form.articulo_id = null;
+                this.form.talle = null;
+                this.form.color = null;
+            }
+        },
+        eliminarProducto(index) {
+            this.productos.splice(index, 1);
+        },
         // Registrar venta
         registrarVenta() {
             this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
 
+            // Validar que haya productos
+            if (!this.productos.length) {
+                this.snackbarText = "Por favor ingresa los productos";
+                this.snackbar = true;
+                return;
+            }
+
+            // Validar que el nombre y apellido estén presentes
+            if (!this.form.cliente_nombre || !this.form.cliente_apellido) {
+                this.snackbarText =
+                    "Por favor ingresa el nombre y apellido del cliente.";
+                this.snackbar = true;
+                return;
+            }
+
+            const ventaData = {
+                cliente_nombre: this.form.cliente_nombre,
+                cliente_apellido: this.form.cliente_apellido,
+                cliente_dni: this.form.cliente_dni,
+                cliente_cbu: this.form.cliente_cbu,
+                forma_pago: this.form.forma_pago,
+                productos: this.productos, // Enviamos los productos agregados
+                fecha: this.form.fecha,
+            };
+
+            console.log(ventaData);
+
             axios
-                .post("/ventas", this.form)
+                .post("/ventas", ventaData)
                 .then((response) => {
                     console.log(response.data.message);
                     this.fetchVentas(); // Actualiza la lista de ventas
                     this.dialogVenta = false;
+                    // Limpiar formulario y productos
+                    this.form = {
+                        cliente_nombre: "",
+                        cliente_apellido: "",
+                        cliente_dni: "",
+                        cliente_cbu: "",
+                        fecha: moment().format("YYYY-MM-DD"),
+                        forma_pago: "efectivo",
+                    };
+                    this.productos = [];
                 })
                 .catch((error) => {
                     console.error(error);
                 });
+        },
+        calcularPrecioTotal() {
+            // Recalcula el precio total
+            this.precioTotal = this.productos.reduce((total, producto) => {
+                return total + parseFloat(producto.articulo.precio);
+            }, 0);
         },
     },
 };

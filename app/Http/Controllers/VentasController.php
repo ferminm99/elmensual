@@ -24,21 +24,24 @@ class VentasController extends Controller
                 'cbu' => $request->cliente_cbu
             ]
         );
-
-        // Registrar la venta
-        Venta::create([
-            'articulo_id' => $request->articulo_id,
-            'cliente_id' => $cliente->id,
-            'talle' => $request->talle,
-            'color' => $request->color,
-            'precio' => $request->precio,
-            'fecha' => $request->fecha,
-            'forma_pago' => $request->forma_pago,
-        ]);
     
-        // Actualizar el stock del artículo
-        $articulo = Articulo::find($request->articulo_id);
-        $articulo->talles()->where('talle', $request->talle)->decrement($request->color, 1);
+        // Registrar cada producto en la venta
+        foreach ($request->productos as $producto) {
+            // Crear una venta por cada producto
+            Venta::create([
+                'articulo_id' => $producto['articulo']['id'],
+                'cliente_id' => $cliente->id,
+                'talle' => $producto['talle'],
+                'color' => $producto['color'],
+                'precio' => $producto['precio'],
+                'fecha' => $request->fecha,
+                'forma_pago' => $request->forma_pago,
+            ]);
+    
+            // Actualizar el stock del artículo
+            $articulo = Articulo::find($producto['articulo']['id']);
+            $articulo->talles()->where('talle', $producto['talle'])->decrement($producto['color'], 1);
+        }
     
         return response()->json(['message' => 'Venta registrada exitosamente']);
     }
@@ -52,21 +55,28 @@ class VentasController extends Controller
 
      // Actualizar el precio de una venta
      public function update(Request $request, $id)
-     {
-         // Validar la entrada
-         $request->validate([
-             'precio' => 'required|numeric|min:0',
-         ]);
- 
-         // Buscar la venta por ID
-         $venta = Venta::findOrFail($id);
- 
-         // Actualizar el precio
-         $venta->precio = $request->precio;
-         $venta->save();
- 
-         return response()->json(['message' => 'Precio de venta actualizado exitosamente']);
-     }
+    {
+        // Validar la entrada
+        $request->validate([
+            'precio' => 'required|numeric|min:0',
+            'fecha' => 'required|date', // Validar que la fecha sea una fecha válida
+            'forma_pago' => 'required|in:efectivo,transferencia', // Validar que la forma de pago sea una de las opciones permitidas
+        ]);
+
+        // Buscar la venta por ID
+        $venta = Venta::findOrFail($id);
+
+        // Actualizar los campos
+        $venta->precio = $request->precio;
+        $venta->fecha = $request->fecha;
+        $venta->forma_pago = $request->forma_pago;
+
+        // Guardar los cambios en la base de datos
+        $venta->save();
+
+        return response()->json(['message' => 'Venta actualizada exitosamente']);
+    }
+
  
      // Eliminar una venta
      public function destroy($id)
