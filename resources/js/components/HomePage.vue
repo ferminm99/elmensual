@@ -62,11 +62,15 @@
         <!-- Diálogo para agregar bombachas -->
         <v-dialog v-model="dialog" max-width="600px">
             <v-card>
-                <v-card-title>
+                <v-card-title class="d-flex justify-space-between">
                     <span class="headline"
                         >{{ isAgregar ? "Agregar" : "Eliminar" }} Bombachas al
                         Artículo</span
                     >
+                    <v-spacer></v-spacer>
+                    <v-btn icon @click="dialog = false">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
                 </v-card-title>
 
                 <v-card-text>

@@ -95,8 +95,12 @@
         <!-- Diálogo para registrar ventas -->
         <v-dialog v-model="dialogVenta" max-width="600px">
             <v-card>
-                <v-card-title>
+                <v-card-title class="d-flex justify-space-between">
                     <span class="headline">Registrar Venta</span>
+                    <v-spacer></v-spacer>
+                    <v-btn icon @click="dialogVenta = false">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
