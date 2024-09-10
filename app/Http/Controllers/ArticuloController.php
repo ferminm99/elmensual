@@ -19,12 +19,14 @@ class ArticuloController extends Controller
             'numero' => 'required|integer|unique:articulos',
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
+            'costo_original' => 'required|numeric|min:0',
         ]);
     
         $articulo = Articulo::create([
             'numero' => $request->input('numero'),
             'nombre' => $request->input('nombre'),
             'precio' => $request->input('precio'),
+            'costo_original' => $request->input('costo_original'),
         ]);
 
         return response()->json([
@@ -41,12 +43,14 @@ class ArticuloController extends Controller
             'numero' => 'required|integer|unique:articulos,numero,' . $articulo->id,
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
+            'costo_original' => 'required|numeric|min:0',
         ]);
     
         $articulo->update([
             'numero' => $request->input('numero'),
             'nombre' => $request->input('nombre'),
             'precio' => $request->input('precio'),
+            'costo_original' => $request->input('costo_original'),
         ]);
     
         return response()->json(['message' => 'Artículo actualizado correctamente']);
@@ -77,6 +81,14 @@ class ArticuloController extends Controller
 
         // Devolver el artículo con sus talles en JSON
         return response()->json($articulo);
+    }
+
+    public function listarArticulosConTalles()
+    {
+        $articulos = Articulo::with('talles')->get();
+
+        // Devolver los artículos en formato JSON
+        return response()->json($articulos);
     }
 
     public function listarArticulos()

@@ -1,30 +1,55 @@
 <template>
     <v-container>
         <!-- Botón para abrir el diálogo de registrar venta -->
-        <v-col cols="3">
+        <v-row>
             <v-btn color="primary" @click="openVentaDialog"
                 >Registrar Venta</v-btn
             >
-        </v-col>
-        <v-col cols="12">
-            <v-text-field
-                align="center"
-                justify="space-between"
-                v-model="search"
-                label="Buscar en las ventas"
-                append-icon="mdi-magnify"
-                single-line
-                hide-details
-            ></v-text-field>
-        </v-col>
-        <span class="total-text font-weight-bold"
-            >Total de Ventas: ${{ totalVentas }}</span
+            <div style="padding: 5px"></div>
+            <v-btn color="secondary" @click="openFacturarDialog"
+                >Facturar</v-btn
+            >
+        </v-row>
+
+        <v-row
+            ><v-col cols="2">
+                <v-select
+                    v-model="tipoBusqueda"
+                    :items="['General', 'Producto', 'Otros datos']"
+                    label="Buscar por"
+                ></v-select
+            ></v-col>
+
+            <v-col cols="10">
+                <!-- Campo de búsqueda -->
+                <v-text-field
+                    v-model="search"
+                    label="Buscar"
+                    append-icon="mdi-magnify"
+                    single-line
+                    hide-details
+                ></v-text-field></v-col
+        ></v-row>
+
+        <v-col cols="3" class="total-text font-weight-bold"
+            >Total de Ventas: ${{ totalVentas }}</v-col
         >
+        <v-col cols="3">
+            <h4>Ganancias Netas: ${{ calcularTotalGastado() }}</h4>
+        </v-col>
+
         <!-- Tabla para visualizar las ventas -->
         <v-data-table
             :headers="headers"
             :items="ventas"
             :search="search"
+            :custom-filter="
+                tipoBusqueda === 'Producto'
+                    ? buscarPorProducto
+                    : tipoBusqueda === 'Otros datos'
+                    ? buscarPorOtrosDatos
+                    : buscarPorTodo
+            "
             :options.sync="options"
             class="elevation-1"
         >
@@ -46,8 +71,8 @@
             <template v-slot:item.cliente="{ item }">
                 <span class="cliente-text">
                     {{ item.cliente.nombre }} {{ item.cliente.apellido }}
-                    <template v-if="item.cliente.dni">
-                        - DNI: {{ item.cliente.dni }}</template
+                    <template v-if="item.cliente.cuit">
+                        - cuit: {{ item.cliente.cuit }}</template
                     >
                     <template v-else-if="item.cliente.cbu">
                         - CBU: {{ item.cliente.cbu }}</template
@@ -98,7 +123,7 @@
                 <v-card-title class="d-flex justify-space-between">
                     <span class="headline">Registrar Venta</span>
                     <v-spacer></v-spacer>
-                    <v-btn icon @click="dialogVenta = false">
+                    <v-btn icon @click="closeDialogVenta">
                         <v-icon color="red">mdi-close</v-icon>
                     </v-btn>
                 </v-card-title>
@@ -188,8 +213,8 @@
                             required
                         ></v-text-field>
                         <v-text-field
-                            v-model="form.cliente_dni"
-                            label="DNI (opcional)"
+                            v-model="form.cliente_cuit"
+                            label="CUIT (opcional)"
                             type="number"
                         ></v-text-field>
                         <v-text-field
@@ -229,11 +254,15 @@
                             v-model="form.fecha"
                             placeholder="Seleccione una fecha"
                         ></datepicker>
+                        <!-- <v-date-picker
+                            v-model="form.fecha"
+                            label="Seleccione una fecha"
+                        ></v-date-picker> -->
                     </v-form>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn text @click="dialogVenta = false">Cancelar</v-btn>
+                    <v-btn text @click="closeDialogVenta">Cancelar</v-btn>
                     <v-btn color="green" text @click="registrarVenta"
                         >Guardar</v-btn
                     >
@@ -249,6 +278,12 @@
                     <!-- Campo para el nuevo precio -->
                     <v-text-field
                         v-model="selectedVenta.precio"
+                        label="Nuevo Precio"
+                        type="number"
+                    ></v-text-field>
+                    <!-- Campo para el costo original -->
+                    <v-text-field
+                        v-model="selectedVenta.costo_original"
                         label="Nuevo Precio"
                         type="number"
                     ></v-text-field>
@@ -308,6 +343,33 @@
             </v-card>
         </v-dialog>
 
+        <v-dialog v-model="dialogFacturacion" max-width="500px">
+            <v-card>
+                <v-card-title class="headline"
+                    >Generar Facturación</v-card-title
+                >
+
+                <v-card-text>
+                    <v-form ref="facturacionForm">
+                        <v-date-picker
+                            v-model="fechaDesde"
+                            label="Fecha Desde"
+                        ></v-date-picker>
+                    </v-form>
+                </v-card-text>
+
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="dialogFacturacion = false"
+                        >Cancelar</v-btn
+                    >
+                    <v-btn color="green" text @click="generarFacturacion"
+                        >Generar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <v-snackbar
             v-model="snackbar"
             :timeout="3000"
@@ -332,6 +394,9 @@ export default {
     data() {
         return {
             search: "", // Variable para el campo de búsqueda
+            tipoBusqueda: "General",
+            dialogFacturacion: false,
+            fechaDesde: null, // Variable para la fecha seleccionada de facturacion
             options: {
                 sortBy: ["fecha"],
                 sortDesc: [true], // true para orden descendente (de más nueva a más antigua)
@@ -340,10 +405,13 @@ export default {
                 forma_pago: null,
                 fecha: null,
                 precio: null,
+                costo_original: null,
             },
             dialogVenta: false,
+            articuloActual: null,
             articulos: [], // Lista de artículos
             tallesDisponibles: [], // Talles para el artículo seleccionado
+            tallesDisponibles: [],
             coloresDisponibles: [], // Colores para el artículo seleccionado
             ventas: [], // Lista de ventas registradas
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
@@ -358,9 +426,10 @@ export default {
                 color: null,
                 cliente_nombre: "",
                 cliente_apellido: "",
-                cliente_dni: "",
+                cliente_cuit: "",
                 cliente_cbu: "",
                 precio: 0,
+                costo_original: 0,
                 fecha: moment().format("YYYY-MM-DD"),
                 forma_pago: "efectivo",
             },
@@ -373,6 +442,11 @@ export default {
                 }, // Deshabilitamos orden para esta columna
                 { title: "Cliente", key: "cliente", sortable: false },
                 { title: "Precio", key: "precio", sortable: false },
+                {
+                    title: "Costo Original",
+                    key: "costo_original",
+                    sortable: false,
+                },
                 { title: "Forma de Pago", key: "forma_pago", sortable: false },
                 { title: "Acciones", key: "actions", sortable: false },
             ],
@@ -381,6 +455,9 @@ export default {
     created() {
         this.fetchArticulos();
         this.fetchVentas();
+
+        this.options.sortBy = ["fecha"];
+        this.options.sortDesc = [true];
     },
     watch: {
         // Este watch actualiza el precio total cada vez que cambien los productos
@@ -415,6 +492,217 @@ export default {
     },
 
     methods: {
+        openFacturarDialog() {
+            this.dialogFacturacion = true;
+        },
+
+        descargarArchivo(texto, nombreArchivo) {
+            const blob = new Blob([texto], { type: "text/plain" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = nombreArchivo;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+
+        generarFacturacion() {
+            if (!this.fechaDesde) {
+                this.snackbarText = "Por favor selecciona una fecha desde.";
+                this.snackbar = true;
+                return;
+            }
+
+            const ventasFiltradas = this.filtrarVentasPorFecha();
+
+            if (ventasFiltradas.length === 0) {
+                alert("No se encontraron ventas desde la fecha seleccionada.");
+                return;
+            }
+
+            let textoFacturacion = "Facturación de ventas agrupadas:\n\n";
+
+            // Objeto para agrupar las ventas por cliente
+            let ventasAgrupadas = {};
+
+            // Recorremos las ventas filtradas y las agrupamos
+            ventasFiltradas.forEach((venta) => {
+                const cliente = venta.cliente;
+                const cuitOCbu = cliente.cuit || cliente.cbu || ""; // Puede ser CUIT, CBU o vacío si no hay ninguno
+
+                // Creamos una clave única para identificar al cliente por nombre, apellido y, si existe, CUIT/CBU
+                const clienteKey = `${cliente.nombre} ${cliente.apellido} ${cuitOCbu}`;
+
+                // Si el cliente ya existe en ventasAgrupadas, sumamos sus ventas
+                if (ventasAgrupadas[clienteKey]) {
+                    ventasAgrupadas[clienteKey].total += parseFloat(
+                        venta.precio
+                    );
+                    ventasAgrupadas[clienteKey].articulos.push({
+                        nombre: venta.articulo.nombre,
+                        precio: venta.precio,
+                    });
+                } else {
+                    // Si es la primera vez que encontramos este cliente, lo agregamos
+                    ventasAgrupadas[clienteKey] = {
+                        cliente: cliente,
+                        total: parseFloat(venta.precio),
+                        articulos: [
+                            {
+                                nombre: venta.articulo.nombre,
+                                precio: venta.precio,
+                            },
+                        ],
+                    };
+                }
+            });
+
+            // Generamos el texto de la facturación agrupada
+            for (const [key, clienteInfo] of Object.entries(ventasAgrupadas)) {
+                const { cliente, total, articulos } = clienteInfo;
+                const cuitOCbu = cliente.cuit
+                    ? `CUIT: ${cliente.cuit}`
+                    : cliente.cbu
+                    ? `CBU: ${cliente.cbu}`
+                    : "Sin CUIT/CBU";
+
+                // Detalles del cliente y total de ventas
+                textoFacturacion += `Cliente: ${cliente.nombre} ${cliente.apellido}\n`;
+                textoFacturacion += `${cuitOCbu}\n`;
+
+                // Listamos los artículos comprados
+                textoFacturacion += `Artículos comprados:\n`;
+                articulos.forEach((articulo) => {
+                    textoFacturacion += `- ${articulo.nombre}: $${articulo.precio}\n`;
+                });
+
+                // Total del cliente
+                textoFacturacion += `Total: $${total.toLocaleString("es-AR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}\n\n`;
+            }
+
+            const nombreArchivo = `facturacion_desde_${this.fechaDesde}_hasta_hoy.txt`;
+            this.descargarArchivo(textoFacturacion, nombreArchivo);
+
+            this.dialogFacturacion = false; // Cerrar el diálogo después de generar
+        },
+
+        filtrarVentasPorFecha() {
+            // Convertimos la fecha desde seleccionada a formato YYYY-MM-DD
+            const desde = moment(this.fechaDesde).format("YYYY-MM-DD");
+            const hoy = moment().format("YYYY-MM-DD");
+
+            return this.ventas.filter((venta) => {
+                const fechaVenta = moment(venta.fecha).format("YYYY-MM-DD");
+                return fechaVenta >= desde && fechaVenta <= hoy;
+            });
+        },
+
+        mostrarTextoFacturacion(texto) {
+            alert(texto); // Puedes mostrar el texto en un modal o alert, o proceder a descargarlo.
+        },
+        buscarPorTodo(value, search, item) {
+            const searchText = search.toLowerCase().trim();
+
+            // Acceder al cliente
+            const cliente = item.raw.cliente || {};
+            const clienteNombreCompleto = `${cliente.nombre || ""} ${
+                cliente.apellido || ""
+            }`.toLowerCase();
+            const cbu = (cliente.cbu || "").toLowerCase();
+            const cuit = (cliente.cuit || "").toLowerCase(); // Puede ser el DNI o CUIT
+
+            // Acceder al artículo
+            const articulo = item.raw.articulo || {};
+            const articuloNombre = (articulo.nombre || "").toLowerCase();
+            const talle = (item.raw.talle || "").toString(); // Convertimos a string para comparar
+            const color = (item.raw.color || "").toLowerCase();
+
+            // Comparar por precio y costo original
+            const precio = (item.raw.precio || "").toString(); // Convertimos a string
+            const costoOriginal = (item.raw.costo_original || "").toString(); // Convertimos a string
+
+            // Ver si alguno de estos campos coincide con el texto de búsqueda
+            const matchesCliente = clienteNombreCompleto.includes(searchText);
+            const matchesCBU = cbu.includes(searchText);
+            const matchesCUIT = cuit.includes(searchText);
+            const matchesArticulo = articuloNombre.includes(searchText);
+            const matchesTalle = talle.includes(searchText);
+            const matchesColor = color.includes(searchText);
+            const matchesPrecio = precio.includes(searchText);
+            const matchesCostoOriginal = costoOriginal.includes(searchText);
+
+            // Retornamos true si alguna de estas condiciones se cumple
+            return (
+                matchesCliente ||
+                matchesCBU ||
+                matchesCUIT ||
+                matchesArticulo ||
+                matchesTalle ||
+                matchesColor ||
+                matchesPrecio ||
+                matchesCostoOriginal
+            );
+        },
+        buscarPorProducto(value, search, item) {
+            const searchText = search.toLowerCase().trim();
+
+            // Acceder al artículo
+            const articulo = item.raw.articulo || {};
+            const articuloNombre = (articulo.nombre || "").toLowerCase();
+            const numeroArticulo = (articulo.numero || "").toString(); // Número de artículo
+            const talle = (item.raw.talle || "").toString(); // Convertimos a string
+            const color = (item.raw.color || "").toLowerCase();
+
+            // Ver si alguno de estos campos coincide con el texto de búsqueda
+            const matchesArticulo = articuloNombre.includes(searchText);
+            const matchesNumeroArticulo = numeroArticulo.includes(searchText);
+            const matchesTalle = talle.includes(searchText);
+            const matchesColor = color.includes(searchText);
+
+            // Retornamos true si alguna de estas condiciones se cumple
+            return (
+                matchesArticulo ||
+                matchesNumeroArticulo ||
+                matchesTalle ||
+                matchesColor
+            );
+        },
+
+        // Filtro personalizado para buscar por otros datos
+        buscarPorOtrosDatos(value, search, item) {
+            const searchText = search.toLowerCase().trim();
+
+            // Acceder al cliente
+            const cliente = item.raw.cliente || {};
+            const clienteNombreCompleto = `${cliente.nombre || ""} ${
+                cliente.apellido || ""
+            }`.toLowerCase();
+            const cbu = (cliente.cbu || "").toLowerCase();
+            const cuit = (cliente.cuit || "").toLowerCase(); // Puede ser el DNI o CUIT
+
+            // Comparar por precio y costo original
+            const precio = (item.raw.precio || "").toString(); // Convertimos a string
+            const costoOriginal = (item.raw.costo_original || "").toString(); // Convertimos a string
+
+            // Ver si alguno de estos campos coincide con el texto de búsqueda
+            const matchesCliente = clienteNombreCompleto.includes(searchText);
+            const matchesCBU = cbu.includes(searchText);
+            const matchesCUIT = cuit.includes(searchText);
+            const matchesPrecio = precio.includes(searchText);
+            const matchesCostoOriginal = costoOriginal.includes(searchText);
+
+            // Retornamos true si alguna de estas condiciones se cumple
+            return (
+                matchesCliente ||
+                matchesCBU ||
+                matchesCUIT ||
+                matchesPrecio ||
+                matchesCostoOriginal
+            );
+        },
         formatFecha(fecha) {
             const [year, month, day] = fecha.split("-");
             return `${day}-${month}-${year}`; // Formato DD-MM-YYYY
@@ -429,13 +717,13 @@ export default {
             axios
                 .put(`/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
+                    costo_original: this.selectedVenta.costo_original,
                     fecha: moment(this.selectedVenta.fecha).format(
                         "YYYY-MM-DD"
                     ), // Incluimos la fecha
                     forma_pago: this.selectedVenta.forma_pago, // Incluimos la forma de pago
                 })
                 .then((response) => {
-                    console.log(response.data.message);
                     this.fetchVentas(); // Recargar la lista de ventas
                     this.editDialog = false; // Cerrar el diálogo
                 })
@@ -453,7 +741,6 @@ export default {
             axios
                 .delete(`/ventas/${this.selectedVenta.id}`)
                 .then((response) => {
-                    console.log(response.data.message);
                     this.fetchVentas(); // Recargar la lista de ventas
                     this.confirmDeleteDialog = false;
                 })
@@ -464,58 +751,89 @@ export default {
         openVentaDialog() {
             this.dialogVenta = true;
         },
+        closeDialogVenta() {
+            this.form = {
+                cliente_nombre: "",
+                cliente_apellido: "",
+                cliente_cuit: "",
+                cliente_cbu: "",
+                fecha: moment().format("YYYY-MM-DD"),
+                forma_pago: "efectivo",
+            };
+            this.articuloActual = null;
+            this.tallesDisponibles = [];
+            this.coloresDisponibles = [];
+            this.productos = [];
+            this.dialogVenta = false;
+        },
         // Cargar los artículos desde el backend
         fetchArticulos() {
-            axios.get("/articulos").then((response) => {
+            axios.get("/articulo/listar/talles").then((response) => {
                 this.articulos = response.data;
             });
         },
         // Cargar ventas para mostrar en la tabla
         fetchVentas() {
             axios.get("/ventas/listar").then((response) => {
-                this.ventas = response.data;
-                console.log("Cliente data:", this.ventas);
+                this.ventas = response.data.sort((a, b) => {
+                    return new Date(b.fecha) - new Date(a.fecha);
+                });
             });
         },
         onTalleChange(talleSeleccionado) {
-            // Lógica para cargar colores basados en el talle seleccionado
-            const talleSeleccionadoObj = this.tallesDisponibles.find(
-                (talle) => parseInt(talle.talle) === parseInt(talleSeleccionado)
+            // Usamos tallesDisponibles en lugar de tallesDisponibles
+            const articuloSeleccionado = this.articulos.find(
+                (item) => item.id === this.form.articulo_id
             );
 
-            if (talleSeleccionadoObj) {
-                this.form.color = null; // Reiniciar el color antes de cargar los nuevos
-                this.coloresDisponibles = Object.keys(talleSeleccionadoObj)
-                    .filter(
-                        (color) =>
-                            !["id", "articulo_id", "talle"].includes(color)
-                    )
-                    .map((color) => {
-                        const stock = talleSeleccionadoObj[color];
-                        return {
-                            title: color,
-                            value: color,
-                            props: {
-                                disabled: parseInt(stock) === 0, // Deshabilitar si el stock es 0
-                            },
-                        };
-                    });
-                console.log(
-                    "Colores disponibles para el talle seleccionado:",
-                    this.coloresDisponibles
+            if (articuloSeleccionado) {
+                const talleSeleccionadoObj = this.tallesDisponibles.find(
+                    (talle) =>
+                        parseInt(talle.talle) === parseInt(talleSeleccionado)
                 );
+
+                if (talleSeleccionadoObj) {
+                    this.form.color = null; // Reiniciar el color antes de cargar los nuevos
+
+                    // Cargar los colores originales basados en los talles disponibles activos
+                    this.coloresDisponibles = Object.keys(talleSeleccionadoObj)
+                        .filter(
+                            (color) =>
+                                !["id", "articulo_id", "talle"].includes(color)
+                        )
+                        .map((color) => {
+                            const stock = talleSeleccionadoObj[color];
+                            return {
+                                title: color,
+                                value: color,
+                                props: {
+                                    disabled: parseInt(stock) === 0, // Deshabilitar si el stock es 0
+                                },
+                            };
+                        });
+
+                    // Cargar los colores activos desde coloresDisponibles
+                    this.coloresDisponibles = JSON.parse(
+                        JSON.stringify(this.coloresDisponibles)
+                    );
+                }
             }
         },
-        // Cargar talles y colores cuando se selecciona un artículo
         loadTallesYColores() {
+            // Resetear los campos
             this.form.color = null;
             this.form.talle = null;
 
-            axios.get(`/articulo/${this.form.articulo_id}`).then((response) => {
-                this.tallesDisponibles = response.data.talles;
-
-                console.log("Talles disponibles:", this.tallesDisponibles);
-            });
+            // Encontrar el artículo seleccionado
+            const articuloSeleccionado = this.articulos.find(
+                (item) => item.id === this.form.articulo_id
+            );
+            if (this.articuloActual != articuloSeleccionado) {
+                this.articuloActual = this.articulos.find(
+                    (item) => item.id === this.form.articulo_id
+                );
+                this.tallesDisponibles = this.articuloActual.talles;
+            }
         },
         // Obtener el precio del artículo seleccionado
         getArticuloPrecio() {
@@ -524,6 +842,19 @@ export default {
             );
             this.form.precio = articulo ? articulo.precio : 0;
             return this.form.precio;
+        },
+
+        calcularTotalGastado() {
+            const total = this.ventas.reduce((total, venta) => {
+                const diferencia =
+                    parseFloat(venta.precio) - parseFloat(venta.costo_original);
+                return total + diferencia; // Suma la diferencia entre precio y costo original
+            }, 0);
+
+            return total.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
         },
         agregarProducto() {
             const articulo = this.articulos.find(
@@ -534,10 +865,45 @@ export default {
                     articulo: articulo,
                     talle: this.form.talle,
                     color: this.form.color,
-                    precio: articulo.precio,
+                    precio: parseInt(articulo.precio),
+                    costo_original: parseInt(articulo.costo_original),
                 });
 
-                this.forceUpdate++;
+                // Actualizar el stock localmente restando 1
+                const talleSeleccionado = this.tallesDisponibles.find(
+                    (talle) => talle.talle === this.form.talle
+                );
+
+                if (
+                    talleSeleccionado &&
+                    talleSeleccionado[this.form.color] > 0
+                ) {
+                    // Restar 1 al stock del color seleccionado
+                    talleSeleccionado[this.form.color] -= 1;
+
+                    // Si el stock llega a 0, deshabilitar el color en coloresDisponibles
+                    if (talleSeleccionado[this.form.color] === 0) {
+                        const colorIndex = this.coloresDisponibles.findIndex(
+                            (color) => color.value === this.form.color
+                        );
+                        if (colorIndex !== -1) {
+                            // Actualizar la lista de colores activos
+                            this.coloresDisponibles =
+                                this.coloresDisponibles.map((color, index) => {
+                                    if (index === colorIndex) {
+                                        return {
+                                            ...color,
+                                            props: {
+                                                ...color.props,
+                                                disabled: true,
+                                            },
+                                        };
+                                    }
+                                    return color;
+                                });
+                        }
+                    }
+                }
 
                 // Limpiar los campos del formulario para agregar más productos
                 this.form.articulo_id = null;
@@ -546,12 +912,48 @@ export default {
             }
         },
         eliminarProducto(index) {
+            const producto = this.productos[index];
+
+            // Devolver el stock del talle y color eliminados
+            const talleSeleccionado = this.tallesDisponibles.find(
+                (talle) => talle.talle === producto.talle
+            );
+
+            if (talleSeleccionado) {
+                // Aumentar el stock en 1
+                talleSeleccionado[producto.color] += 1;
+
+                // Habilitar el color en coloresDisponibles si el stock es mayor a 0
+                if (talleSeleccionado[producto.color] > 0) {
+                    const colorIndex = this.coloresDisponibles.findIndex(
+                        (color) => color.value === producto.color
+                    );
+                    if (colorIndex !== -1) {
+                        // Actualizar la lista de colores activos
+                        this.coloresDisponibles = this.coloresDisponibles.map(
+                            (color, index) => {
+                                if (index === colorIndex) {
+                                    return {
+                                        ...color,
+                                        props: {
+                                            ...color.props,
+                                            disabled: false,
+                                        },
+                                    };
+                                }
+                                return color;
+                            }
+                        );
+                    }
+                }
+            }
+
+            // Eliminar el producto del array de productos
             this.productos.splice(index, 1);
         },
         // Registrar venta
         registrarVenta() {
             this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
-
             // Validar que haya productos
             if (!this.productos.length) {
                 this.snackbarText = "Por favor ingresa los productos";
@@ -570,31 +972,31 @@ export default {
             const ventaData = {
                 cliente_nombre: this.form.cliente_nombre,
                 cliente_apellido: this.form.cliente_apellido,
-                cliente_dni: this.form.cliente_dni,
+                cliente_cuit: this.form.cliente_cuit,
                 cliente_cbu: this.form.cliente_cbu,
                 forma_pago: this.form.forma_pago,
                 productos: this.productos, // Enviamos los productos agregados
                 fecha: this.form.fecha,
             };
 
-            console.log(ventaData);
-
             axios
                 .post("/ventas", ventaData)
                 .then((response) => {
-                    console.log(response.data.message);
                     this.fetchVentas(); // Actualiza la lista de ventas
                     this.dialogVenta = false;
                     // Limpiar formulario y productos
                     this.form = {
                         cliente_nombre: "",
                         cliente_apellido: "",
-                        cliente_dni: "",
+                        cliente_cuit: "",
                         cliente_cbu: "",
                         fecha: moment().format("YYYY-MM-DD"),
                         forma_pago: "efectivo",
                     };
                     this.productos = [];
+                    this.articuloActual = null;
+                    this.tallesDisponibles = [];
+                    this.coloresDisponibles = [];
                 })
                 .catch((error) => {
                     console.error(error);

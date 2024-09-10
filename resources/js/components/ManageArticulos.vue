@@ -45,6 +45,12 @@
                             type="number"
                             required
                         ></v-text-field>
+                        <v-text-field
+                            v-model="form.costo_original"
+                            label="Costo original"
+                            type="number"
+                            required
+                        ></v-text-field>
                     </v-form>
                 </v-card-text>
                 <v-card-actions>
@@ -96,6 +102,7 @@ export default {
                 { title: "Número", key: "numero" },
                 { title: "Nombre", key: "nombre" },
                 { title: "Precio", key: "precio" },
+                { title: "Costo original", key: "costo_original" },
                 { title: "Acciones", key: "actions", align: "center" },
             ],
         };
@@ -116,7 +123,13 @@ export default {
         },
         openAddDialog() {
             this.isEdit = false;
-            this.form = { id: null, numero: "", nombre: "", precio: 0 }; // Limpiar el formulario
+            this.form = {
+                id: null,
+                numero: "",
+                nombre: "",
+                precio: 0,
+                costo_original: 0,
+            }; // Limpiar el formulario
             this.dialog = true;
         },
         openEditDialog(item) {
@@ -131,6 +144,7 @@ export default {
                         numero: this.form.numero,
                         nombre: this.form.nombre,
                         precio: this.form.precio,
+                        costo_original: this.form.costo_original,
                     })
                     .then((response) => {
                         console.log(response.data.message);
@@ -146,6 +160,7 @@ export default {
                         numero: this.form.numero,
                         nombre: this.form.nombre,
                         precio: this.form.precio,
+                        costo_original: this.form.costo_original,
                     })
                     .then((response) => {
                         console.log(response.data.message);

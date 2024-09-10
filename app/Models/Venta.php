@@ -14,7 +14,8 @@ class Venta extends Model
         'color',
         'precio',
         'fecha',
-        'forma_pago'
+        'forma_pago',
+        'costo_original'
     ];
 
     public function articulo() {

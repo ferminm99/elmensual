@@ -1,5 +1,7 @@
 <template>
     <v-container>
+        <v-btn color="green" @click="exportarAExcel">Exportar a Excel</v-btn>
+
         <!-- Selector de Artículos -->
         <v-autocomplete
             v-model="selectedArticulo"
@@ -325,6 +327,7 @@
 <script>
 import { toRaw } from "vue";
 import { shallowReactive } from "vue";
+import ExcelJS from "exceljs";
 export default {
     data() {
         return {
@@ -343,6 +346,7 @@ export default {
                 blancobeige: 0,
                 talle: null,
             },
+            articulosCompletos: [],
             //para agregar o borrar
             dialog: false,
             selected: null,
@@ -363,13 +367,6 @@ export default {
                 { talle: 12 },
                 { talle: 14 },
                 { talle: 16 },
-                { talle: 18 },
-                { talle: 20 },
-                { talle: 22 },
-                { talle: 24 },
-                { talle: 26 },
-                { talle: 28 },
-                { talle: 30 },
                 { talle: 32 },
                 { talle: 34 },
                 { talle: 36 },
@@ -444,6 +441,99 @@ export default {
         this.fetchArticulos();
     },
     methods: {
+        exportarAExcel() {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("Bombachas");
+
+            // Definir el ancho de las columnas
+            worksheet.columns = [
+                { header: "Artículo", key: "articulo", width: 50 },
+                { header: "Talle", key: "talle", width: 10 },
+                { header: "Marrón", key: "marron", width: 10 },
+                { header: "Negro", key: "negro", width: 10 },
+                { header: "Verde", key: "verde", width: 10 },
+                { header: "Azul", key: "azul", width: 10 },
+                { header: "Celeste", key: "celeste", width: 10 },
+                { header: "Blanco/Beige", key: "blancobeige", width: 15 },
+                { header: "Total", key: "total", width: 10 },
+            ];
+
+            let articuloAnterior = null;
+
+            this.articulosCompletos.forEach((articulo) => {
+                const tallesFiltrados = articulo.talles.filter(
+                    (talle) =>
+                        talle.marron > 0 ||
+                        talle.negro > 0 ||
+                        talle.verde > 0 ||
+                        talle.azul > 0 ||
+                        talle.celeste > 0 ||
+                        talle.blancobeige > 0
+                );
+
+                if (!tallesFiltrados.length) return;
+
+                if (articuloAnterior && articuloAnterior !== articulo.numero) {
+                    worksheet.addRow(["", "", "", "", "", "", "", "", ""]); // Espacio vacío
+                }
+
+                tallesFiltrados.forEach((talle) => {
+                    const row = worksheet.addRow({
+                        articulo: `${articulo.numero} - ${articulo.nombre}`,
+                        talle: talle.talle,
+                        marron: talle.marron,
+                        negro: talle.negro,
+                        verde: talle.verde,
+                        azul: talle.azul,
+                        celeste: talle.celeste,
+                        blancobeige: talle.blancobeige,
+                        total: this.getTotalBombachas(talle),
+                    });
+
+                    // Aplicar colores a las celdas
+                    if (talle.marron > 0)
+                        row.getCell("marron").font = {
+                            color: { argb: "8B4513" },
+                        };
+                    if (talle.negro > 0)
+                        row.getCell("negro").font = {
+                            color: { argb: "000000" },
+                        };
+                    if (talle.verde > 0)
+                        row.getCell("verde").font = {
+                            color: { argb: "228B22" },
+                        };
+                    if (talle.azul > 0)
+                        row.getCell("azul").font = {
+                            color: { argb: "0000FF" },
+                        };
+                    if (talle.celeste > 0)
+                        row.getCell("celeste").font = {
+                            color: { argb: "87CEEB" },
+                        }; // Asegurar celeste
+                    if (talle.blancobeige > 0)
+                        row.getCell("blancobeige").font = {
+                            color: { argb: "7A7A7A" },
+                        }; // Asegurar blanco/beige
+
+                    row.getCell("articulo").font = { bold: true, size: 14 };
+                });
+
+                articuloAnterior = articulo.numero;
+            });
+
+            workbook.xlsx.writeBuffer().then((buffer) => {
+                const blob = new Blob([buffer], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "listado_bombachas.xlsx";
+                link.click();
+            });
+
+            console.log("Exportación completada con ExcelJS");
+        },
         //dialogs para confirmar agregados y borrados
         openDeleteConfirm(talle) {
             this.talleAEliminar = talle;
@@ -497,6 +587,11 @@ export default {
                 .then((data) => {
                     this.articulos = data;
                     console.log(this.articulos);
+                });
+            fetch("/articulo/listar/talles")
+                .then((response) => response.json())
+                .then((data) => {
+                    this.articulosCompletos = data;
                 });
         },
         onArticuloChange() {

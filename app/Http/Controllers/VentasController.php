@@ -20,13 +20,17 @@ class VentasController extends Controller
                 'apellido' => $request->cliente_apellido
             ],
             [
-                'dni' => $request->cliente_dni,
+                'cuit' => $request->cliente_cuit,
                 'cbu' => $request->cliente_cbu
             ]
         );
-    
+        
+
         // Registrar cada producto en la venta
         foreach ($request->productos as $producto) {
+            // logger()->info('Producto recibido:', ['producto' => $producto]);
+            // $costoOriginal = floatval($producto['costo_original']);
+
             // Crear una venta por cada producto
             Venta::create([
                 'articulo_id' => $producto['articulo']['id'],
@@ -36,6 +40,7 @@ class VentasController extends Controller
                 'precio' => $producto['precio'],
                 'fecha' => $request->fecha,
                 'forma_pago' => $request->forma_pago,
+                'costo_original' => $producto['costo_original'],
             ]);
     
             // Actualizar el stock del artículo
@@ -59,6 +64,7 @@ class VentasController extends Controller
         // Validar la entrada
         $request->validate([
             'precio' => 'required|numeric|min:0',
+            'costo_original' => 'required|numeric|min:0',
             'fecha' => 'required|date', // Validar que la fecha sea una fecha válida
             'forma_pago' => 'required|in:efectivo,transferencia', // Validar que la forma de pago sea una de las opciones permitidas
         ]);
@@ -70,6 +76,7 @@ class VentasController extends Controller
         $venta->precio = $request->precio;
         $venta->fecha = $request->fecha;
         $venta->forma_pago = $request->forma_pago;
+        $venta->costo_original = $request->costo_original;
 
         // Guardar los cambios en la base de datos
         $venta->save();
