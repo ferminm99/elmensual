@@ -9,10 +9,15 @@
             <v-btn color="secondary" @click="openFacturarDialog"
                 >Facturar</v-btn
             >
+            <div style="padding: 5px"></div>
+            <!-- Botón para abrir el diálogo de selección de fechas -->
+            <v-btn color="primary" @click="openFechaDialog"
+                >Filtrar por Fecha</v-btn
+            >
         </v-row>
 
-        <v-row
-            ><v-col cols="2">
+        <v-row>
+            <v-col cols="2">
                 <v-select
                     v-model="tipoBusqueda"
                     :items="['General', 'Producto', 'Otros datos']"
@@ -20,7 +25,7 @@
                 ></v-select
             ></v-col>
 
-            <v-col cols="10">
+            <v-col cols="8">
                 <!-- Campo de búsqueda -->
                 <v-text-field
                     v-model="search"
@@ -32,16 +37,29 @@
         ></v-row>
 
         <v-col cols="3" class="total-text font-weight-bold"
-            >Total de Ventas: ${{ totalVentas }}</v-col
+            >Total de Ventas: ${{ totalVentas }}
+            <h4>Ganancias Netas: ${{ calcularTotalGastado() }}</h4></v-col
         >
-        <v-col cols="3">
-            <h4>Ganancias Netas: ${{ calcularTotalGastado() }}</h4>
-        </v-col>
 
+        <v-row v-if="filtroAplicado">
+            <v-col cols="12" class="d-flex align-center">
+                <span>
+                    Total de Ventas desde
+                    {{ formatFechaMoment(fechaDesde) }} hasta
+                    {{ formatFechaMoment(fechaHasta) }}: ${{
+                        totalVentasFiltradas
+                    }}
+                </span>
+                <!-- Botón de cancelar el filtro -->
+                <v-btn icon @click="cancelarFiltro" class="cancelar-filtro-btn">
+                    <v-icon color="red">mdi-close-circle</v-icon>
+                </v-btn>
+            </v-col>
+        </v-row>
         <!-- Tabla para visualizar las ventas -->
         <v-data-table
             :headers="headers"
-            :items="ventas"
+            :items="ventasFiltradas"
             :search="search"
             :custom-filter="
                 tipoBusqueda === 'Producto'
@@ -113,6 +131,9 @@
                 </v-btn>
                 <v-btn icon @click="openDeleteConfirm(item)">
                     <v-icon color="red">mdi-trash-can</v-icon>
+                </v-btn>
+                <v-btn icon @click="openCambioBombachaDialog(item)">
+                    <v-icon color="blue">mdi-swap-horizontal</v-icon>
                 </v-btn>
             </template>
         </v-data-table>
@@ -222,13 +243,7 @@
                             label="CBU (opcional)"
                         ></v-text-field>
 
-                        <!-- Precio y forma de pago -->
-                        <v-text-field
-                            v-model="form.precio"
-                            label="Precio"
-                            :value="form.precio || getArticuloPrecio()"
-                            readonly
-                        ></v-text-field>
+                        <!-- Forma de pago -->
                         <v-radio-group
                             v-model="form.forma_pago"
                             label="Forma de Pago"
@@ -250,10 +265,10 @@
                             v-model="form.fecha"
                             placeholder="Seleccione una fecha"
                         ></v-text-field> -->
-                        <datepicker
+                        <Datepicker
                             v-model="form.fecha"
                             placeholder="Seleccione una fecha"
-                        ></datepicker>
+                        ></Datepicker>
                         <!-- <v-date-picker
                             v-model="form.fecha"
                             label="Seleccione una fecha"
@@ -301,10 +316,11 @@
                         ></v-radio>
                     </v-radio-group>
                     <!-- Campo para la fecha -->
-                    <v-text-field
-                        type="date"
+
+                    <Datepicker
                         v-model="selectedVenta.fecha"
-                    ></v-text-field>
+                        placeholder="Seleccione una fecha"
+                    ></Datepicker>
                     <!-- <datepicker
                         v-model="selectedVenta.fecha"
                         placeholder="Seleccione una fecha"
@@ -350,12 +366,14 @@
                 >
 
                 <v-card-text>
-                    <v-form ref="facturacionForm">
-                        <v-date-picker
-                            v-model="fechaDesde"
-                            label="Fecha Desde"
-                        ></v-date-picker>
-                    </v-form>
+                    <Datepicker
+                        v-model="fechaDesdeFacturar"
+                        label="Fecha Desde"
+                    ></Datepicker>
+                    <Datepicker
+                        v-model="fechaHastaFacturar"
+                        label="Fecha Hasta"
+                    ></Datepicker>
                 </v-card-text>
 
                 <v-card-actions>
@@ -365,6 +383,85 @@
                     >
                     <v-btn color="green" text @click="generarFacturacion"
                         >Generar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogoFechas" max-width="600px">
+            <v-card>
+                <v-card-title class="headline"
+                    >Seleccionar Fecha Desde y Hasta</v-card-title
+                >
+                <v-card-text>
+                    <Datepicker v-model="fechaDesde"></Datepicker>
+
+                    <Datepicker v-model="fechaHasta"></Datepicker>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="dialogoFechas = false">Cancelar</v-btn>
+                    <v-btn color="primary" text @click="aplicarFiltro"
+                        >Aplicar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogCambioBombacha" max-width="600px">
+            <v-card>
+                <v-card-title class="d-flex justify-space-between">
+                    <span class="headline">Cambiar Bombacha</span>
+                    <v-spacer></v-spacer>
+                    <v-btn icon @click="dialogCambioBombacha = false">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-form ref="cambioBombacha">
+                        <!-- Selección de artículo -->
+                        <v-select
+                            v-model="cambioBombacha.articulo_id"
+                            :items="articulos"
+                            :item-title="
+                                (item) => `${item.numero} - ${item.nombre}`
+                            "
+                            item-value="id"
+                            label="Selecciona un artículo"
+                            @update:modelValue="loadTallesYColores"
+                        ></v-select>
+
+                        <!-- Selección de talle y color -->
+                        <v-row>
+                            <v-col cols="6">
+                                <v-select
+                                    v-model="cambioBombacha.talle"
+                                    :items="tallesDisponibles"
+                                    item-title="talle"
+                                    label="Selecciona un talle"
+                                    :disabled="!cambioBombacha.articulo_id"
+                                    @update:modelValue="onTalleChange"
+                                ></v-select>
+                            </v-col>
+                            <v-col cols="6">
+                                <v-select
+                                    v-model="cambioBombacha.color"
+                                    :items="coloresDisponibles"
+                                    item-title="title"
+                                    item-value="value"
+                                    label="Selecciona un color"
+                                    clearable
+                                ></v-select>
+                            </v-col>
+                        </v-row>
+                    </v-form>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="dialogCambioBombacha = false"
+                        >Cancelar</v-btn
+                    >
+                    <v-btn color="green" text @click="confirmarCambioBombacha"
+                        >Confirmar</v-btn
                     >
                 </v-card-actions>
             </v-card>
@@ -384,19 +481,33 @@
 </template>
 
 <script>
-import datepicker from "./components/datepicker.vue";
+import Datepicker from "./components/datepicker.vue";
 import moment from "moment";
 
 export default {
     components: {
-        Datepicker: datepicker,
+        Datepicker,
     },
     data() {
         return {
+            dialogCambioBombacha: false,
+            cambioBombacha: {
+                articulo_id: null,
+                talle: null,
+                color: null,
+            },
             search: "", // Variable para el campo de búsqueda
             tipoBusqueda: "General",
+            dialogoFechas: false, // Control del diálogo de fechas
+            filtroAplicado: false, // Para mostrar el total solo si se aplicó el filtro
             dialogFacturacion: false,
-            fechaDesde: null, // Variable para la fecha seleccionada de facturacion
+            fechaDesdeFacturar: moment().startOf("month").toDate(), // Fecha desde seleccionada
+            fechaHastaFacturar: moment().toDate(), // Fecha desde seleccionada
+            fechaHasta: moment().toDate(), // Fecha hasta seleccionada
+            fechaDesde: moment().startOf("month").toDate(), // Variable para la fecha seleccionada de facturacion
+            dialogFechas: false,
+            ventasFiltradas: [],
+            overlay: false,
             options: {
                 sortBy: ["fecha"],
                 sortDesc: [true], // true para orden descendente (de más nueva a más antigua)
@@ -411,7 +522,6 @@ export default {
             articuloActual: null,
             articulos: [], // Lista de artículos
             tallesDisponibles: [], // Talles para el artículo seleccionado
-            tallesDisponibles: [],
             coloresDisponibles: [], // Colores para el artículo seleccionado
             ventas: [], // Lista de ventas registradas
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
@@ -430,7 +540,7 @@ export default {
                 cliente_cbu: "",
                 precio: 0,
                 costo_original: 0,
-                fecha: moment().format("YYYY-MM-DD"),
+                fecha: moment().toDate(),
                 forma_pago: "efectivo",
             },
             headers: [
@@ -489,9 +599,117 @@ export default {
                 maximumFractionDigits: 2,
             });
         },
+        totalVentasFiltradas() {
+            const total = this.ventasFiltradas.reduce((total, venta) => {
+                return total + parseFloat(venta.precio || 0);
+            }, 0);
+            return total.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        },
+        // Calcular las ganancias netas dentro del rango de fechas
+        gananciasNetasFiltradas() {
+            const total = this.ventasFiltradas.reduce((total, venta) => {
+                const diferencia =
+                    parseFloat(venta.precio) - parseFloat(venta.costo_original);
+                return total + diferencia;
+            }, 0);
+            return total.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        },
     },
 
     methods: {
+        openCambioBombachaDialog(venta) {
+            this.selectedVenta = venta;
+            this.cambioBombacha = {
+                articulo_id: null,
+                talle: null,
+                color: null,
+            };
+            this.dialogCambioBombacha = true;
+        },
+        confirmarCambioBombacha() {
+            if (
+                !this.cambioBombacha.articulo_id ||
+                !this.cambioBombacha.talle ||
+                !this.cambioBombacha.color
+            ) {
+                this.snackbarText = "Por favor selecciona la nueva bombacha.";
+                this.snackbar = true;
+                return;
+            }
+
+            // Lógica para reponer la bombacha vendida
+            const original = {
+                articulo_id: this.selectedVenta.articulo.id,
+                talle: this.selectedVenta.talle,
+                color: this.selectedVenta.color,
+            };
+
+            axios
+                .post("/ventas/cambiar-bombachas", {
+                    venta_id: this.selectedVenta.id,
+                    original: {
+                        articulo_id: this.selectedVenta.articulo.id,
+                        talle: this.selectedVenta.talle,
+                        color: this.selectedVenta.color,
+                    },
+                    nueva: this.cambioBombacha,
+                    // Enviar también los campos que no cambian (opcional)
+                    precio: this.selectedVenta.precio,
+                    costo_original: this.selectedVenta.costo_original,
+                    fecha: this.selectedVenta.fecha,
+                    forma_pago: this.selectedVenta.forma_pago,
+                })
+                .then(() => {
+                    this.fetchVentas(); // Actualizar las ventas
+                    this.fetchArticulos(); // Actualizar los articulos
+                    this.articuloActual = null;
+                    this.tallesDisponibles = [];
+                    this.coloresDisponibles = [];
+                    this.dialogCambioBombacha = false; // Cerrar el diálogo
+                    this.snackbarText =
+                        "Cambio de bombacha realizado con éxito.";
+                    this.snackbar = true;
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this.snackbarText = "Error al cambiar la bombacha.";
+                    this.snackbar = true;
+                });
+        },
+        cancelarFiltro() {
+            this.ventasFiltradas = this.ventas; // Restablecer la lista original
+            this.filtroAplicado = false; // Desactivar el indicador del filtro
+            this.fechaDesde = moment().startOf("month").toDate(); // Reiniciar la fecha desde
+            this.fechaHasta = moment().toDate(); // Reiniciar la fecha hasta
+        },
+        aplicarFiltro() {
+            if (!this.fechaDesde || !this.fechaHasta) {
+                alert("Por favor selecciona ambas fechas.");
+                return;
+            }
+
+            const desde = moment(this.fechaDesde).startOf("day"); // Asegurarnos de comparar desde el inicio del día
+            const hasta = moment(this.fechaHasta).endOf("day"); // Comparar hasta el final del día
+
+            // Filtrar las ventas dentro del rango de fechas
+            this.ventasFiltradas = this.ventas.filter((venta) => {
+                const fechaVenta = moment(venta.fecha);
+                // Comparar si la fecha de la venta está entre las fechas seleccionadas
+                return fechaVenta.isBetween(desde, hasta, null, "[]");
+            });
+
+            this.filtroAplicado = true; // Activar indicador para mostrar total
+            this.dialogoFechas = false; // Cerrar diálogo
+        },
+        openFechaDialog() {
+            this.dialogoFechas = true;
+        },
         openFacturarDialog() {
             this.dialogFacturacion = true;
         },
@@ -507,7 +725,7 @@ export default {
         },
 
         generarFacturacion() {
-            if (!this.fechaDesde) {
+            if (!this.fechaDesdeFacturar) {
                 this.snackbarText = "Por favor selecciona una fecha desde.";
                 this.snackbar = true;
                 return;
@@ -583,7 +801,7 @@ export default {
                 })}\n\n`;
             }
 
-            const nombreArchivo = `facturacion_desde_${this.fechaDesde}_hasta_hoy.txt`;
+            const nombreArchivo = `facturacion_desde_${this.fechaDesdeFacturar}_hasta_hoy.txt`;
             this.descargarArchivo(textoFacturacion, nombreArchivo);
 
             this.dialogFacturacion = false; // Cerrar el diálogo después de generar
@@ -591,8 +809,8 @@ export default {
 
         filtrarVentasPorFecha() {
             // Convertimos la fecha desde seleccionada a formato YYYY-MM-DD
-            const desde = moment(this.fechaDesde).format("YYYY-MM-DD");
-            const hoy = moment().format("YYYY-MM-DD");
+            const desde = moment(this.fechaDesdeFacturar).format("YYYY-MM-DD");
+            const hoy = moment(this.fechaHastaFacturar).format("YYYY-MM-DD");
 
             return this.ventas.filter((venta) => {
                 const fechaVenta = moment(venta.fecha).format("YYYY-MM-DD");
@@ -707,6 +925,10 @@ export default {
             const [year, month, day] = fecha.split("-");
             return `${day}-${month}-${year}`; // Formato DD-MM-YYYY
         },
+        formatFechaMoment(fecha) {
+            // Usar moment para formatear la fecha en el formato que desees
+            return moment(fecha).format("DD-MM-YYYY");
+        },
         // Abrir el diálogo de edición con la venta seleccionada
         openEditDialog(item) {
             this.selectedVenta = { ...item };
@@ -742,6 +964,7 @@ export default {
                 .delete(`/ventas/${this.selectedVenta.id}`)
                 .then((response) => {
                     this.fetchVentas(); // Recargar la lista de ventas
+                    this.fetchArticulos();
                     this.confirmDeleteDialog = false;
                 })
                 .catch((error) => {
@@ -778,13 +1001,24 @@ export default {
                 this.ventas = response.data.sort((a, b) => {
                     return new Date(b.fecha) - new Date(a.fecha);
                 });
+                this.ventasFiltradas = this.ventas;
             });
         },
         onTalleChange(talleSeleccionado) {
-            // Usamos tallesDisponibles en lugar de tallesDisponibles
-            const articuloSeleccionado = this.articulos.find(
-                (item) => item.id === this.form.articulo_id
-            );
+            let articuloSeleccionado = null;
+
+            // Determinar si estamos trabajando con una venta o un cambio de bombacha
+            if (this.form.articulo_id) {
+                // Buscar el artículo seleccionado para la venta
+                articuloSeleccionado = this.articulos.find(
+                    (item) => item.id === this.form.articulo_id
+                );
+            } else if (this.cambioBombacha.articulo_id) {
+                // Buscar el artículo seleccionado para el cambio de bombacha
+                articuloSeleccionado = this.articulos.find(
+                    (item) => item.id === this.cambioBombacha.articulo_id
+                );
+            }
 
             if (articuloSeleccionado) {
                 const talleSeleccionadoObj = this.tallesDisponibles.find(
@@ -819,22 +1053,40 @@ export default {
                 }
             }
         },
+
         loadTallesYColores() {
             // Resetear los campos
             this.form.color = null;
             this.form.talle = null;
 
-            // Encontrar el artículo seleccionado
-            const articuloSeleccionado = this.articulos.find(
-                (item) => item.id === this.form.articulo_id
-            );
-            if (this.articuloActual != articuloSeleccionado) {
-                this.articuloActual = this.articulos.find(
+            let articuloSeleccionado = null; // Cambiado a 'let' para permitir la reasignación
+
+            // Determinar si la selección proviene de la venta o del cambio de bombacha
+            if (this.form.articulo_id) {
+                // Encontrar el artículo seleccionado para el registro de venta
+                articuloSeleccionado = this.articulos.find(
                     (item) => item.id === this.form.articulo_id
                 );
+            } else if (this.cambioBombacha.articulo_id) {
+                // Encontrar el artículo seleccionado para el cambio de bombacha
+                articuloSeleccionado = this.articulos.find(
+                    (item) => item.id === this.cambioBombacha.articulo_id
+                );
+            }
+
+            if (
+                articuloSeleccionado &&
+                this.articuloActual !== articuloSeleccionado
+            ) {
+                // Solo actualizar si el artículo seleccionado es diferente al actual
+                this.articuloActual = articuloSeleccionado;
                 this.tallesDisponibles = this.articuloActual.talles;
+            } else {
+                // Limpiar si no se selecciona un artículo válido
+                this.tallesDisponibles = [];
             }
         },
+
         // Obtener el precio del artículo seleccionado
         getArticuloPrecio() {
             const articulo = this.articulos.find(
@@ -983,6 +1235,7 @@ export default {
                 .post("/ventas", ventaData)
                 .then((response) => {
                     this.fetchVentas(); // Actualiza la lista de ventas
+                    this.fetchArticulos(); // Actualizar los articulos
                     this.dialogVenta = false;
                     // Limpiar formulario y productos
                     this.form = {
@@ -1073,5 +1326,27 @@ export default {
 .v-data-table-header th,
 .v-data-table-row td {
     padding: 10px;
+}
+
+.v-dialog {
+    max-height: 1000px; /* Aumenta la altura máxima del diálogo */
+}
+
+.v-card {
+    height: auto;
+    max-height: 900px; /* Aumenta la altura máxima del contenido de la tarjeta */
+    overflow-y: visible; /* Asegura que el contenido esté completamente visible */
+}
+
+.datepicker {
+    display: flex;
+    flex-grow: 1;
+}
+
+.cancelar-filtro-btn {
+    padding: 0;
+    margin-left: 10px;
+    border-radius: 50%;
+    box-shadow: none;
 }
 </style>

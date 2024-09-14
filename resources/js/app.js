@@ -11,7 +11,7 @@ import * as directives from "vuetify/directives";
 import { aliases, mdi } from "vuetify/iconsets/mdi"; // Para los iconos (opcional)
 import "@mdi/font/css/materialdesignicons.css";
 import axios from "axios";
-
+import { es } from "vuetify/locale";
 // Esto establece el token CSRF de Laravel de forma global en Axios
 axios.defaults.headers.common["X-CSRF-TOKEN"] = document.querySelector(
     'meta[name="csrf-token"]'
@@ -25,6 +25,10 @@ const vuetify = createVuetify({
         defaultSet: "mdi", // Usa los iconos de Material Design
         aliases,
         sets: { mdi },
+    },
+    locale: {
+        locale: "es", // Establece español como idioma predeterminado
+        messages: { es }, // Define los mensajes en español
     },
 });
 

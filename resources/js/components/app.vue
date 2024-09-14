@@ -8,21 +8,33 @@
             ></v-list-item>
             <v-divider></v-divider>
             <v-list>
+                <!-- Home -->
                 <v-list-item
                     link
-                    title="Home"
-                    @click="$router.push('/')"
-                ></v-list-item>
+                    exact
+                    exact-active-class="active-list-item"
+                    to="/"
+                >
+                    <v-list-item-title>Home</v-list-item-title>
+                </v-list-item>
+
+                <!-- Articulos -->
                 <v-list-item
                     link
-                    title="Articulos"
-                    @click="$router.push('/managearticulos')"
-                ></v-list-item>
+                    exact-active-class="active-list-item"
+                    to="/managearticulos"
+                >
+                    <v-list-item-title>Articulos</v-list-item-title>
+                </v-list-item>
+
+                <!-- Ventas -->
                 <v-list-item
                     link
-                    title="Ventas"
-                    @click="$router.push('/ventas')"
-                ></v-list-item>
+                    exact-active-class="active-list-item"
+                    to="/ventas"
+                >
+                    <v-list-item-title>Ventas</v-list-item-title>
+                </v-list-item>
             </v-list>
         </v-navigation-drawer>
 
@@ -41,8 +53,15 @@ export default {
 };
 </script>
 
+<!-- Estilos CSS para el ítem activo -->
 <style scoped>
-.v-application {
-    overflow: hidden;
+.active-list-item {
+    background-color: #e0e0e0; /* Color de fondo cuando el ítem está seleccionado */
+    font-weight: bold; /* Poner en negrita el texto */
+}
+
+.v-list-item--active {
+    background-color: #e0e0e0 !important; /* Color de fondo del ítem activo */
+    font-weight: bold !important; /* Negrita en el ítem activo */
 }
 </style>

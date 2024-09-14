@@ -94,6 +94,10 @@ class VentasController extends Controller
         // Obtener el cliente asociado a la venta
         $cliente = $venta->cliente;
 
+        //Como elimine la venta recupero el articulo vendido!
+        $articulo = Articulo::find($venta['articulo']['id']);
+        $articulo->talles()->where('talle', $venta['talle'])->increment($venta['color'], 1);
+        
         // Eliminar la venta
         $venta->delete();
 
@@ -103,7 +107,42 @@ class VentasController extends Controller
             $cliente->delete();
         }
 
+            
         return response()->json(['message' => 'Venta eliminada exitosamente']);
+    }
+
+    public function cambiarBombacha(Request $request)
+    {
+        
+        // Obtener la venta
+        $venta = Venta::findOrFail($request->venta_id);
+
+        if (!$venta) {
+            return response()->json(['error' => 'Venta no encontrada.'], 404);
+        }
+
+        // Reponer la bombacha original
+        $articuloOriginal = Articulo::find($request->original['articulo_id']);
+        $talleOriginal = $articuloOriginal->talles()->where('talle', $request->original['talle'])->first();
+        $talleOriginal->increment($request->original['color'], 1);
+
+        // Restar la nueva bombacha seleccionada
+        $articuloNuevo = Articulo::find($request->nueva['articulo_id']);
+        $talleNuevo = $articuloNuevo->talles()->where('talle', $request->nueva['talle'])->first();
+        $talleNuevo->decrement($request->nueva['color'], 1);
+
+        // Mantener los valores existentes si no se proporcionan en la solicitud
+        $venta->update([
+            'articulo_id' => $request->nueva['articulo_id'] ?? $venta->articulo_id,
+            'talle' => $request->nueva['talle'] ?? $venta->talle,
+            'color' => $request->nueva['color'] ?? $venta->color,
+            'precio' => $venta->precio, // Mantén el precio si no cambias
+            'costo_original' => $venta->costo_original, // Mantén el costo original si no cambias
+            'fecha' => $venta->fecha, // Mantén la fecha si no cambias
+            'forma_pago' => $venta->forma_pago, // Mantén la forma de pago si no cambias
+        ]);
+
+        return response()->json(['message' => 'Cambio de bombacha realizado con éxito.']);
     }
 
 }

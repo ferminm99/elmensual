@@ -37,6 +37,7 @@ Route::post('/articulo/{id}/eliminar-talle-completo', [ArticuloController::class
 Route::post('/ventas', [VentasController::class, 'registrarVenta']);
 Route::get('/ventas/listar', [VentasController::class, 'obtenerVentas']);
 Route::put('/ventas/{id}', [VentasController::class, 'update']);
+Route::post('/ventas/cambiar-bombachas', [VentasController::class, 'cambiarBombacha']);
 Route::delete('/ventas/{id}', [VentasController::class, 'destroy']);
 
 Route::get('/{pathMatch}', function () {
