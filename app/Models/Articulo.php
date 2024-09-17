@@ -16,4 +16,11 @@ class Articulo extends Model
     {
         return $this->hasMany(Talle::class, 'articulo_id');
     }
+
+    // Relación con CompraCalendario
+    public function comprasCalendario()
+    {
+        return $this->hasMany(CompraCalendario::class, 'articulo_id');
+    }
+    
 }

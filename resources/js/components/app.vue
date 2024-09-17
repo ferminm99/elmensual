@@ -18,6 +18,15 @@
                     <v-list-item-title>Home</v-list-item-title>
                 </v-list-item>
 
+                <!-- Calendario -->
+                <v-list-item
+                    link
+                    exact-active-class="active-list-item"
+                    to="/comprascalendario"
+                >
+                    <v-list-item-title>Calendario</v-list-item-title>
+                </v-list-item>
+
                 <!-- Articulos -->
                 <v-list-item
                     link

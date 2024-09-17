@@ -3,6 +3,7 @@ import home from "../components/HomePage.vue";
 import managearticulos from "../components/ManageArticulos.vue";
 import ventas from "../components/Ventas.vue";
 import notFound from "../components/NotFoundPage.vue";
+import calendario from "../components/Calendario.vue";
 
 const routes = [
     {
@@ -16,6 +17,10 @@ const routes = [
     {
         path: "/ventas",
         component: ventas,
+    },
+    {
+        path: "/comprascalendario",
+        component: calendario,
     },
     {
         path: "/:pathMatch(.*)*",

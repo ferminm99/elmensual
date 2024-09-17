@@ -4,6 +4,16 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Articulo;
 use App\Http\Controllers\ArticuloController;
 use App\Http\Controllers\VentasController;
+use App\Http\Controllers\CalendarioController;
+use App\Http\Controllers\GoogleDriveController;
+use App\Http\Middleware\CorsMiddleware;
+
+// Rutas para cargar a google drive el excel
+Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');
+Route::get('/auth/google', [GoogleDriveController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/google/callback', [GoogleDriveController::class, 'handleGoogleCallback']);
+Route::get('/upload-to-drive', [GoogleDriveController::class, 'uploadToDrive'])->name('drive.upload');
+
 
 // Ruta para la vista Home
 Route::get('/', function () {
@@ -20,6 +30,15 @@ Route::get('/ventas', function () {
     return view('welcome'); // Vue se encargará de manejar la lógica interna
 });
 
+Route::get('/comprascalendario', function () {
+    return view('welcome'); // Vue se encargará de manejar la lógica interna
+});
+
+Route::group(['middleware' => 'cors'], function () {
+    // Define tus rutas aquí
+});
+
+//Articulos
 Route::get('/articulos', [ArticuloController::class, 'index']);
 Route::post('/articulo', [ArticuloController::class, 'store']);
 Route::put('/articulo/{id}', [ArticuloController::class, 'update']);
@@ -39,6 +58,12 @@ Route::get('/ventas/listar', [VentasController::class, 'obtenerVentas']);
 Route::put('/ventas/{id}', [VentasController::class, 'update']);
 Route::post('/ventas/cambiar-bombachas', [VentasController::class, 'cambiarBombacha']);
 Route::delete('/ventas/{id}', [VentasController::class, 'destroy']);
+
+//Calendario
+Route::get('/comprascalendario/listar', [CalendarioController::class, 'index']);
+Route::post('/comprascalendario', [CalendarioController::class, 'store']);
+Route::put('/comprascalendario/{id}', [CalendarioController::class, 'update']);
+Route::delete('/comprascalendario/{id}', [CalendarioController::class, 'destroy']);
 
 Route::get('/{pathMatch}', function () {
     return view('welcome');

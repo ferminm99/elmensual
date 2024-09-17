@@ -1,7 +1,9 @@
 <template>
     <v-container>
         <v-btn color="green" @click="exportarAExcel">Exportar a Excel</v-btn>
-
+        <v-btn color="primary" @click="exportAndUploadToDrive">
+            Exportar y Subir a Drive
+        </v-btn>
         <!-- Selector de Artículos -->
         <v-autocomplete
             v-model="selectedArticulo"
@@ -739,6 +741,29 @@ export default {
                     console.log(this.tallesDisponiblesSeleccionados); // Imprime antes del filtrado
                 }
             }
+        },
+        exportAndUploadToDrive() {
+            // if (someCondition) {
+            //     // Alguna lógica aquí
+            // }
+
+            axios
+                .get("/google/callback")
+                .then((response) => {
+                    if (response.data.isAuthenticated) {
+                        // Si está autenticado, procede a subir el archivo
+                        return axios.get("/upload-to-drive");
+                    } else {
+                        // Si no está autenticado, redirige a Google
+                        window.location.href = "/auth/google";
+                    }
+                })
+                .then((response) => {
+                    console.log(response.data.message);
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
         },
     },
 };

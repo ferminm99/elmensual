@@ -29,23 +29,22 @@
         </v-dialog>
     </v-col>
 </template>
-
 <script>
 import moment from "moment";
 
 export default {
     props: {
         modelValue: {
-            type: Date,
-            default: null,
+            type: String,
+            default: null, // Es importante que el formato de fecha esté correcto
         },
     },
     data() {
         return {
             openDatePicker: false,
             selectedDate: this.modelValue
-                ? new Date(this.modelValue)
-                : new Date(),
+                ? moment(this.modelValue).toDate() // Convertimos la fecha a local
+                : moment().toDate(), // Si no hay fecha, tomamos la fecha actual
         };
     },
     computed: {
@@ -56,24 +55,22 @@ export default {
         },
     },
     watch: {
-        // Escuchar cambios en el modelValue
         modelValue(newValue) {
-            console.log("Nuevo valor de modelValue:", newValue);
             if (newValue) {
-                this.selectedDate = new Date(newValue);
+                this.selectedDate = moment(newValue).toDate(); // Convertimos la fecha al formato local
             }
         },
     },
     methods: {
         handleDateChange(date) {
             this.openDatePicker = false;
-            this.$emit("update:modelValue", date); // Emitir el cambio
+            // Emitimos la fecha en formato "YYYY-MM-DD" para que el backend la entienda correctamente
+            this.$emit("update:modelValue", moment(date).format("YYYY-MM-DD"));
         },
     },
     mounted() {
-        console.log("Valor inicial en mounted:", this.modelValue);
         if (this.modelValue) {
-            this.selectedDate = new Date(this.modelValue);
+            this.selectedDate = moment(this.modelValue).toDate(); // Convertimos la fecha al formato correcto
         }
     },
 };
