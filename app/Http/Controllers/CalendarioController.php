@@ -16,15 +16,12 @@ class CalendarioController extends Controller
     
     public function store(Request $request)
     {
-        // Crear la compra en la base de datos sin validar los datos entrantes
         $compra = new CompraCalendario();
         $compra->nombre_persona = $request->nombre_persona;
-        $compra->articulo_id = $request->articulo_id;
-        $compra->talle = $request->talle;
-        $compra->color = $request->color;
         $compra->fecha = $request->fecha;
         $compra->hora_inicio = $request->hora_inicio;
         $compra->hora_fin = $request->hora_fin;
+        $compra->descripcion = $request->descripcion; // Guardamos la descripción
         $compra->save();
 
         return response()->json(['message' => 'Compra agendada correctamente.']);
@@ -32,28 +29,17 @@ class CalendarioController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Buscar la compra en la base de datos
-        $compra = CompraCalendario::find($id);
-
-        // Verificar si se encontró la compra
-        if (!$compra) {
-            return response()->json(['message' => 'Compra no encontrada.'], 404);
-        }
-
-        // Actualizar los datos de la compra
+        $compra = CompraCalendario::findOrFail($id);
         $compra->nombre_persona = $request->nombre_persona;
-        $compra->articulo_id = $request->articulo_id;
-        $compra->talle = $request->talle;
-        $compra->color = $request->color;
         $compra->fecha = $request->fecha;
         $compra->hora_inicio = $request->hora_inicio;
         $compra->hora_fin = $request->hora_fin;
-
-        // Guardar los cambios en la base de datos
+        $compra->descripcion = $request->descripcion; // Actualizamos la descripción
         $compra->save();
 
         return response()->json(['message' => 'Compra actualizada correctamente.']);
     }
+
 
     public function destroy($id)
     {

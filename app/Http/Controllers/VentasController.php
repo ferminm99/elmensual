@@ -13,18 +13,57 @@ use Illuminate\Http\Request;
 class VentasController extends Controller
 {
     public function registrarVenta(Request $request) {
-        // Registrar al cliente si no existe, buscando por nombre y apellido
-        $cliente = Cliente::firstOrCreate(
-            [
-                'nombre' => $request->cliente_nombre,
-                'apellido' => $request->cliente_apellido
-            ],
-            [
-                'cuit' => $request->cliente_cuit,
-                'cbu' => $request->cliente_cbu
-            ]
-        );
+
+        // Normalizamos el nombre y apellido: primera letra en mayúscula, el resto en minúsculas
+        $nombre = $request->cliente_nombre;
+        $apellido = $request->cliente_apellido;
+
+        // Intentar primero buscar por nombre y apellido
+        $cliente = Cliente::where('nombre', $nombre)
+            ->where('apellido', $apellido)
+            ->first();
+
+        // Si no se encontró, intentamos buscar por CUIT o CBU
+        if (!$cliente) {
+            $cliente = Cliente::where(function ($query) use ($request) {
+                $query->where('cuit', $request->cliente_cuit)
+                    ->orWhere('cbu', $request->cliente_cbu);
+            })->first();
         
+            // Si lo encontramos por CUIT o CBU, actualizamos el nombre, apellido y los campos que falten
+            if ($cliente) {
+                $updateData = [
+                    'nombre' => $nombre,
+                    'apellido' => $apellido
+                ];
+        
+                // Si el cliente no tiene CUIT y se ingresó uno, lo actualizamos
+                if (empty($cliente->cuit) && !empty($request->cliente_cuit)) {
+                    $updateData['cuit'] = $request->cliente_cuit;
+                }
+        
+                // Si el cliente no tiene CBU y se ingresó uno, lo actualizamos
+                if (empty($cliente->cbu) && !empty($request->cliente_cbu)) {
+                    $updateData['cbu'] = $request->cliente_cbu;
+                }
+        
+                // Actualizar los datos del cliente con los nuevos valores
+                $cliente->update($updateData);
+            }
+        }
+        
+
+        // Si no encontramos ningún cliente, lo creamos
+        if (!$cliente) {
+            $cliente = Cliente::create([
+                'nombre' => $nombre,
+                'apellido' => $apellido,
+                'cuit' => $request->cliente_cuit,
+                'cbu' => $request->cliente_cbu,
+            ]);
+        }
+
+                
 
         // Registrar cada producto en la venta
         foreach ($request->productos as $producto) {
@@ -144,5 +183,7 @@ class VentasController extends Controller
 
         return response()->json(['message' => 'Cambio de bombacha realizado con éxito.']);
     }
+
+    
 
 }

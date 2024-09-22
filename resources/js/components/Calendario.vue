@@ -1,7 +1,11 @@
 <template>
     <div>
         <!-- Calendario -->
-        <FullCalendar :options="calendarOptions" />
+        <v-card>
+            <v-card-text>
+                <FullCalendar :options="calendarOptions" />
+            </v-card-text>
+        </v-card>
 
         <!-- Diálogo para crear/editar una compra -->
         <v-dialog v-model="dialog" max-width="600px">
@@ -11,38 +15,13 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="formCompra">
-                        <!-- Selección de artículo -->
-                        <v-select
-                            v-model="form.articulo_id"
-                            :items="articulos"
-                            :item-title="(item) => `${item.nombre}`"
-                            item-value="id"
-                            label="Selecciona un artículo"
-                            @update:modelValue="loadTallesYColores"
-                            required
-                        ></v-select>
-
-                        <!-- Selección de talle -->
-                        <v-select
-                            v-model="form.talleSeleccionado"
-                            :items="tallesDisponibles"
-                            item-title="talle"
-                            item-value="talle"
-                            label="Selecciona un talle"
-                            @update:modelValue="onTalleChange"
-                            required
-                        ></v-select>
-
-                        <!-- Selección de color -->
-                        <v-select
-                            v-model="form.colorSeleccionado"
-                            :items="coloresDisponibles"
-                            item-title="title"
-                            item-value="value"
-                            label="Selecciona un color"
-                            clearable
-                            required
-                        ></v-select>
+                        <!-- Descripción -->
+                        <v-textarea
+                            v-model="form.descripcion"
+                            label="Descripción"
+                            placeholder="Escribe que productos compra"
+                            rows="3"
+                        ></v-textarea>
 
                         <!-- Nombre de la persona -->
                         <v-text-field
@@ -121,9 +100,7 @@ export default {
             form: {
                 id: null, // Se añade un ID para poder actualizar
                 nombre_persona: "",
-                articulo_id: null,
-                talleSeleccionado: null,
-                colorSeleccionado: null,
+                descripcion: "",
                 fecha: "",
                 hora_inicio: "",
                 hora_fin: "",
@@ -148,9 +125,7 @@ export default {
             this.form = {
                 id: null,
                 nombre_persona: "",
-                articulo_id: null,
-                talleSeleccionado: null,
-                colorSeleccionado: null,
+                descripcion: "",
                 fecha: "",
                 hora_inicio: "",
                 hora_fin: "",
@@ -160,9 +135,7 @@ export default {
             try {
                 await axios.put(`/comprascalendario/${this.form.id}`, {
                     nombre_persona: this.form.nombre_persona,
-                    articulo_id: this.form.articulo_id,
-                    talle: this.form.talleSeleccionado,
-                    color: this.form.colorSeleccionado,
+                    descripcion: this.form.descripcion,
                     fecha: moment(this.form.fecha).format("YYYY-MM-DD"),
                     hora_inicio: this.form.hora_inicio,
                     hora_fin: this.form.hora_fin,
@@ -179,11 +152,7 @@ export default {
         handleDateClick(arg) {
             // Resetear el formulario para nueva compra
             this.resetForm();
-            console.log("FECHAS!");
-            console.log(arg);
-            console.log(moment(arg.date).local().format("YYYY-MM-DD"));
             this.form.fecha = moment(arg.date).local().format("YYYY-MM-DD");
-            console.log(this.form.fecha);
             this.dialog = true;
             this.isEditMode = false; // Modo creación
         },
@@ -193,24 +162,12 @@ export default {
                 (event) => parseInt(event.id) === parseInt(compraId)
             );
 
-            const titleParts = info.event.title.split(" - ");
-            const nombrePersona = titleParts[0];
-            const articuloNombre = titleParts[1];
-            const talle = titleParts[2].split(" ")[1]; // Ej: "Talle 38" -> 38
-            const color = titleParts[3];
-
-            const articulo = this.articulos.find(
-                (item) => item.nombre === articuloNombre
-            );
-
-            if (articulo) {
-                this.form.id = info.event.id;
-                this.form.nombre_persona = nombrePersona;
-                this.form.articulo_id = articulo.id;
-                this.form.talleSeleccionado = talle;
-                this.form.colorSeleccionado = color;
+            if (compra) {
+                this.form.id = compra.id;
+                this.form.nombre_persona = info.event.title.split(" - ")[0]; // El nombre de la persona es la primera parte
+                this.form.descripcion = info.event.extendedProps.descripcion; // Cargamos la descripción desde extendedProps
                 this.form.fecha = moment(info.event.start).format("YYYY-MM-DD");
-                console.log(info);
+
                 // Aquí extraemos las horas desde extendedProps
                 this.form.hora_inicio =
                     info.event.extendedProps.hora_inicio ||
@@ -226,25 +183,17 @@ export default {
         async agendarCompra() {
             const response = await axios.post("/comprascalendario", {
                 nombre_persona: this.form.nombre_persona,
-                articulo_id: this.form.articulo_id,
-                talle: this.form.talleSeleccionado,
-                color: this.form.colorSeleccionado,
+                descripcion: this.form.descripcion, // Solo la descripción
                 fecha: moment(this.form.fecha).format("YYYY-MM-DD"),
                 hora_inicio: this.form.hora_inicio,
                 hora_fin: this.form.hora_fin,
             });
 
             // Actualiza el calendario con el nuevo evento
-            const articulo = this.articulos.find(
-                (item) => parseInt(item.id) === parseInt(this.form.articulo_id)
-            );
-
             const nuevoEvento = {
                 id: response.data.id,
                 title: `${this.form.nombre_persona} - ${
-                    articulo.nombre
-                } - Talle ${this.form.talleSeleccionado} - ${
-                    this.form.colorSeleccionado
+                    this.form.descripcion
                 } - de ${moment(this.form.hora_inicio, "HH:mm:ss").format(
                     "HH:mm"
                 )} a ${moment(this.form.hora_fin, "HH:mm:ss").format("HH:mm")}`,
@@ -257,9 +206,7 @@ export default {
                     : "#007BFF", // Verde si la fecha ha pasado, azul si no
                 borderColor: "black",
                 extendedProps: {
-                    articulo_id: this.form.articulo_id,
-                    talle: this.form.talleSeleccionado,
-                    color: this.form.colorSeleccionado,
+                    descripcion: this.form.descripcion, // Guardamos la descripción como extendedProps
                     hora_inicio: this.form.hora_inicio,
                     hora_fin: this.form.hora_fin,
                 },
@@ -267,69 +214,62 @@ export default {
             this.calendarOptions.events.push(nuevoEvento);
             this.dialog = false;
         },
-        // Método para cargar los talles y colores disponibles
-        loadTallesYColores() {
-            this.form.talleSeleccionado = null;
-            this.form.colorSeleccionado = null;
+        // // Método para cargar los talles y colores disponibles
+        // loadTallesYColores() {
+        //     this.form.talleSeleccionado = null;
+        //     this.form.colorSeleccionado = null;
 
-            const articuloSeleccionado = this.articulos.find(
-                (item) => item.id === this.form.articulo_id
-            );
+        //     const articuloSeleccionado = this.articulos.find(
+        //         (item) => item.id === this.form.articulo_id
+        //     );
 
-            this.tallesDisponibles = articuloSeleccionado.talles;
-            console.log(this.tallesDisponibles);
-        },
+        //     this.tallesDisponibles = articuloSeleccionado.talles;
+        //     console.log(this.tallesDisponibles);
+        // },
 
-        // Método para cargar los colores según el talle seleccionado
-        onTalleChange(talleSeleccionado) {
-            const articuloSeleccionado = this.articulos.find(
-                (item) => item.id === this.form.articulo_id
-            );
+        // // Método para cargar los colores según el talle seleccionado
+        // onTalleChange(talleSeleccionado) {
+        //     const articuloSeleccionado = this.articulos.find(
+        //         (item) => item.id === this.form.articulo_id
+        //     );
 
-            if (articuloSeleccionado) {
-                const talleObj = this.tallesDisponibles.find(
-                    (talle) =>
-                        parseInt(talle.talle) === parseInt(talleSeleccionado)
-                );
+        //     if (articuloSeleccionado) {
+        //         const talleObj = this.tallesDisponibles.find(
+        //             (talle) =>
+        //                 parseInt(talle.talle) === parseInt(talleSeleccionado)
+        //         );
 
-                if (talleObj) {
-                    this.form.colorSeleccionado = null; // Reiniciar el color antes de cargar los nuevos
+        //         if (talleObj) {
+        //             this.form.colorSeleccionado = null; // Reiniciar el color antes de cargar los nuevos
 
-                    // Cargar los colores disponibles basados en el stock del talle
-                    this.coloresDisponibles = Object.keys(talleObj)
-                        .filter(
-                            (color) =>
-                                !["id", "articulo_id", "talle"].includes(color)
-                        )
-                        .map((color) => {
-                            const stock = talleObj[color];
-                            return {
-                                title: color,
-                                value: color,
-                                props: {
-                                    disabled: parseInt(stock) === 0, // Deshabilitar si el stock es 0
-                                },
-                            };
-                        });
-                }
-            }
-        },
+        //             // Cargar los colores disponibles basados en el stock del talle
+        //             this.coloresDisponibles = Object.keys(talleObj)
+        //                 .filter(
+        //                     (color) =>
+        //                         !["id", "articulo_id", "talle"].includes(color)
+        //                 )
+        //                 .map((color) => {
+        //                     const stock = talleObj[color];
+        //                     return {
+        //                         title: color,
+        //                         value: color,
+        //                         props: {
+        //                             disabled: parseInt(stock) === 0, // Deshabilitar si el stock es 0
+        //                         },
+        //                     };
+        //                 });
+        //         }
+        //     }
+        // },
         async fetchCompras() {
             try {
                 const response = await axios.get("/comprascalendario/listar");
 
                 this.calendarOptions.events = response.data.map((compra) => {
-                    const articulo = this.articulos.find(
-                        (item) =>
-                            parseInt(item.id) === parseInt(compra.articulo_id)
-                    );
-
                     return {
                         id: compra.id,
                         title: `${compra.nombre_persona} - ${
-                            articulo.nombre
-                        } - Talle ${compra.talle} - ${
-                            compra.color
+                            compra.descripcion
                         } - de ${moment(compra.hora_inicio, "HH:mm:ss").format(
                             "HH:mm"
                         )} a ${moment(compra.hora_fin, "HH:mm:ss").format(
@@ -344,9 +284,7 @@ export default {
                             : "#007BFF", // Verde si la fecha ha pasado, azul si no
                         borderColor: "black",
                         extendedProps: {
-                            articulo_id: compra.articulo_id,
-                            talle: compra.talle,
-                            color: compra.color,
+                            descripcion: compra.descripcion,
                             hora_inicio: compra.hora_inicio,
                             hora_fin: compra.hora_fin,
                             compraId: compra.id, // Aseguramos que compraId esté presente
@@ -368,12 +306,8 @@ export default {
                         // Abres el diálogo de edición con los datos
                         this.form.id = compra.id;
                         this.form.nombre_persona = compra.title.split(" - ")[0];
-                        this.form.articulo_id =
-                            compra.extendedProps.articulo_id;
-                        this.form.talleSeleccionado =
-                            compra.extendedProps.talle;
-                        this.form.colorSeleccionado =
-                            compra.extendedProps.color;
+                        this.form.descripcion =
+                            compra.extendedProps.descripcion;
                         this.form.fecha = moment(compra.start).format(
                             "YYYY-MM-DD"
                         );

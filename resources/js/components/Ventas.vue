@@ -1,45 +1,72 @@
 <template>
-    <v-container>
-        <!-- Botón para abrir el diálogo de registrar venta -->
+    <div>
+        <!-- v-card para agrupar toda la interfaz de ventas -->
         <v-row>
-            <v-btn color="primary" @click="openVentaDialog"
-                >Registrar Venta</v-btn
+            <v-col>
+                <h1 class="title font-weight-bold">Gestión de Ventas</h1>
+            </v-col>
+        </v-row>
+
+        <!-- Botones en una sola línea -->
+        <v-row justify="start" class="d-flex align-center mb-2">
+            <v-btn color="black" class="ml-3 mr-4" @click="openVentaDialog">
+                <v-icon left color="white">mdi-cash</v-icon> Registrar Venta
+            </v-btn>
+
+            <v-btn
+                color="white"
+                outlined
+                class="mr-4"
+                @click="openFacturarDialog"
             >
-            <div style="padding: 5px"></div>
-            <v-btn color="secondary" @click="openFacturarDialog"
-                >Facturar</v-btn
-            >
-            <div style="padding: 5px"></div>
-            <!-- Botón para abrir el diálogo de selección de fechas -->
-            <v-btn color="primary" @click="openFechaDialog"
-                >Filtrar por Fecha</v-btn
-            >
+                <v-icon left>mdi-file-document</v-icon> Facturar
+            </v-btn>
+
+            <v-btn color="white" outlined class="mr-4" @click="openFechaDialog">
+                <v-icon left>mdi-calendar</v-icon> Filtrar por Fecha
+            </v-btn>
         </v-row>
 
         <v-row>
-            <v-col cols="2">
-                <v-select
-                    v-model="tipoBusqueda"
-                    :items="['General', 'Producto', 'Otros datos']"
-                    label="Buscar por"
-                ></v-select
-            ></v-col>
+            <v-col cols="12">
+                <v-row no-gutters>
+                    <v-col cols="12" md="3">
+                        <v-select
+                            class="mr-2"
+                            v-model="tipoBusqueda"
+                            :items="['General', 'Otros datos']"
+                            label="Buscar por"
+                            dense
+                            variant="solo"
+                        ></v-select>
+                    </v-col>
+                    <v-col cols="12" md="9">
+                        <v-text-field
+                            v-model="search"
+                            label="Buscar"
+                            append-inner-icon="mdi-magnify"
+                            dense
+                            variant="solo"
+                        ></v-text-field>
+                    </v-col>
+                </v-row>
+            </v-col>
+        </v-row>
 
-            <v-col cols="8">
-                <!-- Campo de búsqueda -->
-                <v-text-field
-                    v-model="search"
-                    label="Buscar"
-                    append-icon="mdi-magnify"
-                    single-line
-                    hide-details
-                ></v-text-field></v-col
-        ></v-row>
-
-        <v-col cols="3" class="total-text font-weight-bold"
-            >Total de Ventas: ${{ totalVentas }}
-            <h4>Ganancias Netas: ${{ calcularTotalGastado() }}</h4></v-col
-        >
+        <v-row class="mt-0">
+            <v-col cols="12" class="total-text">
+                <h4>
+                    Total de Ventas:
+                    <span class="black--text">${{ totalVentas }}</span>
+                </h4>
+                <h4>
+                    Ganancias Netas:
+                    <span class="green--text"
+                        >${{ calcularTotalGastado() }}</span
+                    >
+                </h4>
+            </v-col>
+        </v-row>
 
         <v-row v-if="filtroAplicado">
             <v-col cols="12" class="d-flex align-center">
@@ -57,6 +84,10 @@
             </v-col>
         </v-row>
         <!-- Tabla para visualizar las ventas -->
+        <!-- <v-card class="pa-5"> -->
+        <!-- <v-card-title class="text-left mb-4"> -->
+        <!-- </v-card-title> -->
+        <!-- </v-card> -->
         <v-data-table
             :headers="headers"
             :items="ventasFiltradas"
@@ -69,16 +100,14 @@
                     : buscarPorTodo
             "
             :options.sync="options"
-            class="elevation-1"
+            class="elevation-1 mt-4"
         >
-            <!-- Formato de la Fecha (DD-MM-YYYY) -->
+            <!-- Formato de la Fecha -->
             <template v-slot:item.fecha="{ item }">
-                <span class="fecha-text">
-                    {{ formatFecha(item.fecha) }}
-                </span>
+                <span class="fecha-text">{{ formatFecha(item.fecha) }}</span>
             </template>
 
-            <!-- Formato del Producto (Artículo + Talle + Color) -->
+            <!-- Producto (Artículo + Talle + Color) -->
             <template v-slot:item.articulo_talle_color="{ item }">
                 <span class="producto-text">
                     {{ item.articulo.nombre }} - Talle {{ item.talle }}
@@ -86,65 +115,67 @@
                 </span>
             </template>
 
+            <!-- Cliente -->
             <template v-slot:item.cliente="{ item }">
-                <span class="cliente-text">
-                    {{ item.cliente.nombre }} {{ item.cliente.apellido }}
-                    <template v-if="item.cliente.cuit">
-                        - cuit: {{ item.cliente.cuit }}</template
-                    >
-                    <template v-else-if="item.cliente.cbu">
-                        - CBU: {{ item.cliente.cbu }}</template
-                    >
-                </span>
+                <div>{{ item.cliente.nombre }} {{ item.cliente.apellido }}</div>
+                <div class="cliente-text">
+                    <span v-if="item.cliente.cuit">
+                        CUIT: {{ item.cliente.cuit }}
+                    </span>
+                    <span v-else-if="item.cliente.cbu">
+                        CBU: {{ item.cliente.cbu }}
+                    </span>
+                </div>
             </template>
 
+            <!-- Precio -->
             <template v-slot:item.precio="{ item }">
-                <span class="precio-text"
-                    >${{
-                        typeof item.precio === "number"
-                            ? item.precio.toFixed(2)
-                            : item.precio
-                    }}</span
+                <span class="precio-text">${{ formatPrice(item.precio) }}</span>
+            </template>
+
+            <!-- Costo Original -->
+            <template v-slot:item.costo_original="{ item }">
+                <span class="costo-text"
+                    >${{ formatPrice(item.costo_original) }}</span
                 >
             </template>
 
+            <!-- Forma de Pago -->
             <template v-slot:item.forma_pago="{ item }">
                 <span
                     :class="
-                        item.forma_pago == 'efectivo'
+                        item.forma_pago === 'efectivo'
                             ? 'efectivo-text'
                             : 'transferencia-text'
                     "
                 >
                     {{
-                        item.forma_pago == "efectivo"
+                        item.forma_pago === "efectivo"
                             ? "💵 Efectivo"
                             : "💳 Transferencia"
                     }}
                 </span>
             </template>
 
-            <!-- Botones de Acciones -->
+            <!-- Botones de acciones -->
             <template v-slot:item.actions="{ item }">
-                <v-btn icon @click="openEditDialog(item)">
-                    <v-icon color="green">mdi-pencil</v-icon>
+                <v-btn flat icon @click="openEditDialog(item)">
+                    <v-icon color="black">mdi-pencil-outline</v-icon>
                 </v-btn>
-                <v-btn icon @click="openDeleteConfirm(item)">
-                    <v-icon color="red">mdi-trash-can</v-icon>
+                <v-btn flat icon @click="openDeleteConfirm(item)">
+                    <v-icon color="black">mdi-trash-can-outline</v-icon>
                 </v-btn>
-                <v-btn icon @click="openCambioBombachaDialog(item)">
-                    <v-icon color="blue">mdi-swap-horizontal</v-icon>
+                <v-btn flat icon @click="openCambioBombachaDialog(item)">
+                    <v-icon color="black">mdi-swap-horizontal</v-icon>
                 </v-btn>
             </template>
         </v-data-table>
-
         <!-- Diálogo para registrar ventas -->
         <v-dialog v-model="dialogVenta" max-width="600px">
             <v-card>
-                <v-card-title class="d-flex justify-space-between">
+                <v-card-title class="d-flex justify-space-between align-center">
                     <span class="headline">Registrar Venta</span>
-                    <v-spacer></v-spacer>
-                    <v-btn icon @click="closeDialogVenta">
+                    <v-btn flat icon @click="closeDialogVenta">
                         <v-icon color="red">mdi-close</v-icon>
                     </v-btn>
                 </v-card-title>
@@ -288,7 +319,11 @@
         <!-- Diálogo para editar el precio -->
         <v-dialog v-model="editDialog" max-width="600px" scrollable>
             <v-card>
-                <v-card-title class="headline">Editar Venta</v-card-title>
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Editar Venta<v-btn flat icon @click="editDialog = false">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
+                >
                 <v-card-text>
                     <!-- Campo para el nuevo precio -->
                     <v-text-field
@@ -341,12 +376,23 @@
         <!-- Diálogo de confirmación para eliminar -->
         <v-dialog v-model="confirmDeleteDialog" max-width="400px">
             <v-card>
-                <v-card-title class="headline"
-                    >Confirmar eliminación</v-card-title
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Confirmar eliminación<v-btn
+                        flat
+                        icon
+                        @click="confirmDeleteDialog = false"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
                 >
                 <v-card-text>
                     ¿Estás seguro de que deseas eliminar la venta de
-                    {{ selectedVenta.articulo.nombre }}?
+                    {{ selectedVenta.articulo.nombre }}
+                    para el cliente
+                    <strong
+                        >{{ selectedVenta.cliente.nombre }}
+                        {{ selectedVenta.cliente.apellido }}</strong
+                    >?
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="confirmDeleteDialog = false"
@@ -361,8 +407,14 @@
 
         <v-dialog v-model="dialogFacturacion" max-width="500px">
             <v-card>
-                <v-card-title class="headline"
-                    >Generar Facturación</v-card-title
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Generar Facturación<v-btn
+                        flat
+                        icon
+                        @click="dialogFacturacion = false"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
                 >
 
                 <v-card-text>
@@ -390,8 +442,14 @@
 
         <v-dialog v-model="dialogoFechas" max-width="600px">
             <v-card>
-                <v-card-title class="headline"
-                    >Seleccionar Fecha Desde y Hasta</v-card-title
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Seleccionar Fecha Desde y Hasta<v-btn
+                        flat
+                        icon
+                        @click="dialogoFechas = false"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
                 >
                 <v-card-text>
                     <Datepicker v-model="fechaDesde"></Datepicker>
@@ -477,7 +535,7 @@
             {{ snackbarText }}
             <v-btn color="red" text @click="snackbar = false">Cerrar</v-btn>
         </v-snackbar>
-    </v-container>
+    </div>
 </template>
 
 <script>
@@ -623,6 +681,10 @@ export default {
     },
 
     methods: {
+        formatPrice(value) {
+            const number = parseFloat(value); // Convertir el valor a número
+            return isNaN(number) ? value : number.toFixed(2); // Verificar si es un número y aplicar toFixed
+        },
         openCambioBombachaDialog(venta) {
             this.selectedVenta = venta;
             this.cambioBombacha = {
@@ -731,14 +793,23 @@ export default {
                 return;
             }
 
-            const ventasFiltradas = this.filtrarVentasPorFecha();
+            // Filtrar ventas por la fecha seleccionada
+            const ventasPorFecha = this.filtrarVentasPorFecha();
+
+            // Filtrar ventas para excluir las que son en efectivo
+            const ventasFiltradas = ventasPorFecha.filter(
+                (venta) => venta.forma_pago !== "efectivo"
+            );
 
             if (ventasFiltradas.length === 0) {
-                alert("No se encontraron ventas desde la fecha seleccionada.");
+                alert(
+                    "No se encontraron ventas con transferencia en el rango seleccionado."
+                );
                 return;
             }
 
-            let textoFacturacion = "Facturación de ventas agrupadas:\n\n";
+            let textoFacturacion =
+                "Facturación de ventas agrupadas (solo transferencia):\n\n";
 
             // Objeto para agrupar las ventas por cliente
             let ventasAgrupadas = {};
@@ -1206,6 +1277,12 @@ export default {
         // Registrar venta
         registrarVenta() {
             this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
+            this.form.cliente_nombre = this.capitalizarPalabras(
+                this.form.cliente_nombre
+            );
+            this.form.cliente_apellido = this.capitalizarPalabras(
+                this.form.cliente_apellido
+            );
             // Validar que haya productos
             if (!this.productos.length) {
                 this.snackbarText = "Por favor ingresa los productos";
@@ -1261,60 +1338,66 @@ export default {
                 return total + parseFloat(producto.articulo.precio);
             }, 0);
         },
+        capitalizarPalabras(texto) {
+            return texto
+                .toLowerCase()
+                .split(" ")
+                .map(
+                    (palabra) =>
+                        palabra.charAt(0).toUpperCase() + palabra.slice(1)
+                )
+                .join(" ");
+        },
     },
 };
 </script>
 
 <style scoped>
-.precio-text {
-    color: #4caf50; /* Verde */
-    font-weight: bold;
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+* {
+    font-family: "Nunito", sans-serif;
 }
-.efectivo-text {
-    color: #009688; /* Verde/Teal */
-    font-weight: bold;
-}
-.transferencia-text {
-    color: #3f51b5; /* Azul */
-    font-weight: bold;
-}
-/* Estilos para los artículos, talles y nombres */
-.articulo-text {
-    font-size: 1.1em;
-    font-weight: bold;
-}
-.producto-text {
-    font-weight: 500;
-    font-size: 14px;
-    color: #333;
-}
-
-.cliente-text {
-    font-style: italic;
-    font-weight: 500;
-    color: #555;
-}
-
-.fecha-text {
-    color: #666;
-    font-size: 14px;
+/* Ajuste del estilo para eliminar los espacios innecesarios */
+.v-card-title {
+    font-size: 24px;
 }
 
 .v-btn {
     background-color: transparent;
+    color: black;
 }
 
-.v-btn .v-icon {
-    color: #333;
+.v-btn:hover {
+    background-color: #f5f5f5;
 }
 
-.v-btn:hover .v-icon {
-    color: #1976d2;
+.v-btn.outlined {
+    border: 1px solid #ccc;
+    background-color: white;
 }
 
+.v-btn.outlined:hover {
+    background-color: #f5f5f5;
+}
+
+/* Color para el texto del precio */
+.precio-text {
+    color: black;
+    font-weight: bold;
+}
+
+/* Color para efectivo y transferencia */
+.efectivo-text {
+    color: green;
+}
+
+.transferencia-text {
+    color: #555;
+}
+
+/* Tabla de ventas con bordes limpios y espaciado reducido */
 .v-data-table {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
+    border: 1px solid #e0e0e0;
     border-radius: 4px;
 }
 
@@ -1325,28 +1408,36 @@ export default {
 
 .v-data-table-header th,
 .v-data-table-row td {
-    padding: 10px;
+    padding: 8px;
 }
 
-.v-dialog {
-    max-height: 1000px; /* Aumenta la altura máxima del diálogo */
+.v-data-table-row td {
+    font-size: 14px;
 }
 
-.v-card {
-    height: auto;
-    max-height: 900px; /* Aumenta la altura máxima del contenido de la tarjeta */
-    overflow-y: visible; /* Asegura que el contenido esté completamente visible */
+.v-icon {
+    color: #555;
 }
 
-.datepicker {
-    display: flex;
-    flex-grow: 1;
+.v-icon:hover {
+    color: black;
 }
 
-.cancelar-filtro-btn {
-    padding: 0;
-    margin-left: 10px;
-    border-radius: 50%;
-    box-shadow: none;
+.total-text {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 10px;
+}
+
+.black--text {
+    color: black;
+}
+
+.green--text {
+    color: green;
+}
+
+.gray--text {
+    color: #999;
 }
 </style>

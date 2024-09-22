@@ -14,10 +14,8 @@ class CompraCalendario extends Model
 
     protected $fillable = [
         'nombre_persona',
-        'articulo_id',
-        'talle',
-        'color',
         'fecha',
+        'descripcion',
         'hora_inicio',
         'hora_fin',
     ];

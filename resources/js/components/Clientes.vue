@@ -3,20 +3,36 @@
         <!-- Título -->
         <v-row>
             <v-col>
-                <h1 class="title font-weight-bold">Gestión de Artículos</h1>
+                <h1 class="title font-weight-bold">Gestión de Clientes</h1>
             </v-col>
         </v-row>
-        <!-- Botón para agregar artículos -->
+
+        <!-- Buscador -->
+        <v-row class="mb-4">
+            <v-col>
+                <v-text-field
+                    v-model="search"
+                    label="Buscar Cliente"
+                    append-icon="mdi-magnify"
+                    single-line
+                    hide-details
+                    variant="solo"
+                ></v-text-field>
+            </v-col>
+        </v-row>
+
+        <!-- Botón para agregar clientes -->
         <v-row class="d-flex align-center mb-4">
             <v-btn color="black" class="ml-3" @click="openAddDialog">
-                <v-icon left>mdi-plus-box</v-icon> Agregar Artículo
+                <v-icon left>mdi-plus-box</v-icon> Agregar Cliente
             </v-btn>
         </v-row>
 
-        <!-- Tabla para listar artículos -->
+        <!-- Tabla para listar clientes -->
         <v-data-table
             :headers="headers"
-            :items="articulos"
+            :items="clientes"
+            :search="search"
             class="elevation-1 mt-2"
             dense
         >
@@ -30,44 +46,42 @@
             </template>
         </v-data-table>
 
-        <!-- Diálogo para agregar/editar artículos -->
+        <!-- Diálogo para agregar/editar clientes -->
         <v-dialog v-model="dialog" max-width="600px">
             <v-card>
                 <v-card-title class="d-flex justify-space-between align-center">
-                    {{ isEdit ? "Editar" : "Agregar" }} Artículo
+                    {{ isEdit ? "Editar" : "Agregar" }} Cliente
                     <v-btn flat icon @click="dialog = false">
                         <v-icon color="red">mdi-close</v-icon>
                     </v-btn>
                 </v-card-title>
                 <v-card-text>
-                    <v-form>
-                        <v-text-field
-                            v-model="form.numero"
-                            label="Número de Artículo"
-                            required
-                        ></v-text-field>
+                    <v-form ref="formCliente" v-model="valid" lazy-validation>
                         <v-text-field
                             v-model="form.nombre"
-                            label="Nombre de Artículo"
+                            label="Nombre"
                             required
+                            :rules="[(v) => !!v || 'Nombre es requerido']"
                         ></v-text-field>
                         <v-text-field
-                            v-model="form.precio"
-                            label="Precio"
-                            type="number"
+                            v-model="form.apellido"
+                            label="Apellido"
                             required
+                            :rules="[(v) => !!v || 'Apellido es requerido']"
                         ></v-text-field>
                         <v-text-field
-                            v-model="form.costo_original"
-                            label="Costo Original"
-                            type="number"
-                            required
+                            v-model="form.cuit"
+                            label="CUIT"
+                        ></v-text-field>
+                        <v-text-field
+                            v-model="form.cbu"
+                            label="CBU"
                         ></v-text-field>
                     </v-form>
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="dialog = false">Cancelar</v-btn>
-                    <v-btn color="black" text @click="saveArticulo">{{
+                    <v-btn color="black" text @click="saveCliente">{{
                         isEdit ? "Guardar" : "Agregar"
                     }}</v-btn>
                 </v-card-actions>
@@ -77,24 +91,22 @@
         <!-- Diálogo de confirmación para eliminar -->
         <v-dialog v-model="confirmDeleteDialog" max-width="400px">
             <v-card>
-                <v-card-title class="d-flex justify-space-between align-center"
-                    >Confirmar eliminación<v-btn
-                        flat
-                        icon
-                        @click="confirmDeleteDialog = false"
-                    >
+                <v-card-title class="d-flex justify-space-between align-center">
+                    Confirmar eliminación
+                    <v-btn flat icon @click="confirmDeleteDialog = false">
                         <v-icon color="red">mdi-close</v-icon>
-                    </v-btn></v-card-title
-                >
+                    </v-btn>
+                </v-card-title>
                 <v-card-text>
-                    ¿Estás seguro de que deseas eliminar el artículo
-                    {{ articuloAEliminar.nombre }}?
+                    ¿Estás seguro de que deseas eliminar al cliente
+                    {{ clienteAEliminar.nombre }}
+                    {{ clienteAEliminar.apellido }}?
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="confirmDeleteDialog = false"
                         >Cancelar</v-btn
                     >
-                    <v-btn color="red" text @click="deleteArticulo"
+                    <v-btn color="red" text @click="deleteCliente"
                         >Eliminar</v-btn
                     >
                 </v-card-actions>
@@ -110,20 +122,22 @@ export default {
             dialog: false,
             confirmDeleteDialog: false,
             isEdit: false,
-            articuloAEliminar: null,
+            clienteAEliminar: null,
+            search: "", // Campo para el buscador
+            valid: true,
             form: {
                 id: null,
-                numero: "",
                 nombre: "",
-                precio: 0,
-                costo_original: 0,
+                apellido: "",
+                cuit: "",
+                cbu: "",
             },
-            articulos: [], // Lista de artículos
+            clientes: [], // Lista de clientes
             headers: [
-                { title: "Número", key: "numero" },
                 { title: "Nombre", key: "nombre" },
-                { title: "Precio", key: "precio" },
-                { title: "Costo Original", key: "costo_original" },
+                { title: "Apellido", key: "apellido" },
+                { title: "CUIT", key: "cuit" },
+                { title: "CBU", key: "cbu" },
                 {
                     title: "Acciones",
                     key: "actions",
@@ -134,86 +148,84 @@ export default {
         };
     },
     created() {
-        this.fetchArticulos();
+        this.fetchClientes();
     },
     methods: {
-        fetchArticulos() {
+        fetchClientes() {
             // Simulación de la solicitud HTTP
-            axios.get("/articulos").then((response) => {
-                this.articulos = response.data;
+            axios.get("/clientes/listar").then((response) => {
+                this.clientes = response.data;
             });
         },
         openAddDialog() {
             this.isEdit = false;
             this.form = {
                 id: null,
-                numero: "",
                 nombre: "",
-                precio: 0,
-                costo_original: 0,
+                apellido: "",
+                cuit: "",
+                cbu: "",
             }; // Limpiar el formulario
             this.dialog = true;
         },
         openEditDialog(item) {
             this.isEdit = true;
-            this.form = { ...item }; // Cargar los datos del artículo a editar
+            this.form = { ...item }; // Cargar los datos del cliente a editar
             this.dialog = true;
         },
-        saveArticulo() {
-            if (!this.validateForm()) {
-                console.log("ASD");
-                this.snackbarText =
-                    "Por favor completa todos los campos obligatorios.";
-                this.snackbar = true;
+        saveCliente() {
+            // Validar que nombre y apellido no estén vacíos
+            if (!this.form.nombre || !this.form.apellido) {
+                alert("Por favor ingresa nombre y apellido.");
                 return;
             }
 
-            this.form.precio = parseInt(this.form.precio);
-            this.form.costo_original = parseInt(this.form.costo_original);
+            // Capitalizamos el nombre y apellido
+            this.form.nombre = this.capitalizarPalabras(this.form.nombre);
+            this.form.apellido = this.capitalizarPalabras(this.form.apellido);
 
+            // Si estamos editando
             if (this.isEdit) {
-                axios.put(`/articulo/${this.form.id}`, this.form).then(() => {
-                    this.fetchArticulos();
+                axios.put(`/cliente/${this.form.id}`, this.form).then(() => {
+                    this.fetchClientes();
                     this.dialog = false;
                 });
             } else {
-                axios.post("/articulo", this.form).then(() => {
-                    this.fetchArticulos();
+                // Si estamos creando un cliente nuevo
+                axios.post("/cliente", this.form).then(() => {
+                    this.fetchClientes();
                     this.dialog = false;
                 });
             }
         },
         openDeleteConfirm(item) {
-            this.articuloAEliminar = item;
+            this.clienteAEliminar = item;
             this.confirmDeleteDialog = true;
         },
-        deleteArticulo() {
-            axios.delete(`/articulo/${this.articuloAEliminar.id}`).then(() => {
-                this.fetchArticulos();
+        deleteCliente() {
+            axios.delete(`/cliente/${this.clienteAEliminar.id}`).then(() => {
+                this.fetchClientes();
                 this.confirmDeleteDialog = false;
             });
         },
         // Método de validación
         validateForm() {
-            // Verificamos que los campos no estén vacíos o nulos
-            if (!this.form.nombre || this.form.nombre.trim() === "") {
-                return false;
-            }
-            if (!this.form.talle || isNaN(this.form.talle)) {
-                return false;
-            }
-            if (!this.form.color || this.form.color.trim() === "") {
-                return false;
-            }
-            if (!this.form.precio || isNaN(this.form.precio)) {
-                return false;
-            }
-            if (!this.form.costo_original || isNaN(this.form.costo_original)) {
-                return false;
-            }
-            // Puedes agregar más validaciones si es necesario (CUIT, CBU, etc.)
-
-            return true; // Todo está correcto
+            return (
+                this.form.nombre &&
+                this.form.apellido &&
+                this.form.cuit &&
+                this.form.cbu
+            );
+        },
+        capitalizarPalabras(texto) {
+            return texto
+                .toLowerCase()
+                .split(" ")
+                .map(
+                    (palabra) =>
+                        palabra.charAt(0).toUpperCase() + palabra.slice(1)
+                )
+                .join(" ");
         },
     },
 };

@@ -1,33 +1,71 @@
 <template>
-    <v-container>
-        <v-btn color="green" @click="exportarAExcel">Exportar a Excel</v-btn>
-        <v-btn color="primary" @click="exportAndUploadToDrive">
-            Exportar y Subir a Drive
-        </v-btn>
-        <!-- Selector de Artículos -->
-        <v-autocomplete
-            v-model="selectedArticulo"
-            :items="articulos"
-            :item-title="(item) => `${item.numero} - ${item.nombre}`"
-            item-value="id"
-            label="Selecciona un artículo"
-            @update:modelValue="onArticuloChange"
-            clearable
-            filterable
-        />
-        <!-- Botón para dialogs -->
-        <v-btn color="primary" @click="openDialog('agregar')"
-            >Agregar Bombachas</v-btn
-        >
-        <v-btn color="error" @click="openDialog('eliminar')"
-            >Eliminar Bombachas</v-btn
-        >
+    <div>
+        <!-- Card para todo el contenido -->
+        <!-- <v-card class="pa-4" elevation="2"> -->
+        <!-- Título de la página -->
+        <v-row>
+            <v-col>
+                <h2 class="text-h4">Inventario de Bombachas</h2>
+            </v-col>
+        </v-row>
+
+        <!-- Selector de artículos y botones -->
+        <v-row>
+            <v-col cols="12" md="8">
+                <v-autocomplete
+                    v-model="selectedArticulo"
+                    :items="articulos"
+                    :item-title="(item) => `${item.numero} - ${item.nombre}`"
+                    item-value="id"
+                    label="Selecciona un artículo"
+                    @update:modelValue="onArticuloChange"
+                    clearable
+                    filterable
+                    variant="solo"
+                />
+            </v-col>
+            <v-col cols="12" md="4" class="d-flex justify-end">
+                <v-btn color="#6E7E8E" @click="exportarAExcel" outlined>
+                    <v-icon left>mdi-file-excel</v-icon>
+                    Exportar a Excel
+                </v-btn>
+                <v-btn
+                    color="#4A4A4A"
+                    @click="exportAndUploadToDrive"
+                    class="ml-2"
+                    outlined
+                >
+                    <v-icon left>mdi-google-drive</v-icon>
+                    Exportar y Subir a Drive
+                </v-btn>
+            </v-col>
+        </v-row>
+
+        <!-- Botón para agregar y eliminar bombachas -->
+        <v-row class="mt-4">
+            <v-col cols="12">
+                <v-btn color="#4A4A4A" @click="openDialog('agregar')" outlined>
+                    <v-icon left>mdi-plus</v-icon>
+                    Agregar Bombachas
+                </v-btn>
+                <v-btn
+                    color="#E57373"
+                    @click="openDialog('eliminar')"
+                    class="ml-2"
+                    outlined
+                >
+                    <v-icon left>mdi-delete</v-icon>
+                    Eliminar Bombachas
+                </v-btn>
+            </v-col>
+        </v-row>
+
         <!-- Tabla de talles y colores -->
         <v-data-table
             :key="selectedArticulo"
             :headers="headers"
             :items="talles"
-            class="elevation-1"
+            class="elevation-1 mt-4"
         >
             <!-- Personalización de las celdas -->
             <template v-slot:item.marron="{ item }">
@@ -51,28 +89,27 @@
             <template v-slot:item.total_bombachas="{ item }">
                 {{ getTotalBombachas(item) }}
             </template>
-            <!-- Botón de eliminar y editar -->
+            <!-- Botones de acciones con íconos más estilizados -->
             <template v-slot:item.actions="{ item }">
-                <v-btn icon @click="openEditDialog(item)">
-                    <v-icon color="blue">mdi-pencil</v-icon>
-                    <!-- Icono de editar -->
+                <v-btn flat icon @click="openEditDialog(item)">
+                    <v-icon color="#4A4A4A">mdi-pencil-outline</v-icon>
                 </v-btn>
-                <v-btn icon @click="openDeleteFullConfirm(item.talle)">
-                    <v-icon color="red">mdi-trash-can</v-icon>
+                <v-btn flat icon @click="openDeleteFullConfirm(item.talle)">
+                    <v-icon color="#E57373">mdi-trash-can-outline</v-icon>
                 </v-btn>
             </template>
         </v-data-table>
+        <!-- </v-card> -->
 
         <!-- Diálogo para agregar bombachas -->
         <v-dialog v-model="dialog" max-width="600px">
             <v-card>
-                <v-card-title class="d-flex justify-space-between">
+                <v-card-title class="d-flex justify-space-between align-center">
                     <span class="headline"
                         >{{ isAgregar ? "Agregar" : "Eliminar" }} Bombachas al
                         Artículo</span
                     >
-                    <v-spacer></v-spacer>
-                    <v-btn icon @click="dialog = false">
+                    <v-btn flat icon @click="dialog = false">
                         <v-icon color="red">mdi-close</v-icon>
                     </v-btn>
                 </v-card-title>
@@ -168,9 +205,7 @@
                 </v-card-text>
 
                 <v-card-actions>
-                    <v-btn color="blue darken-1" text @click="dialog = false"
-                        >Cancelar</v-btn
-                    >
+                    <v-btn text @click="dialog = false">Cancelar</v-btn>
                     <v-btn
                         color="blue darken-1"
                         text
@@ -187,10 +222,12 @@
         <!-- Diálogo para editar bombachas -->
         <v-dialog v-model="editDialog" max-width="500px">
             <v-card>
-                <v-card-title class="headline"
-                    >Editar Cantidades del Talle
-                    {{ currentTalle.talle }}</v-card-title
-                >
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Editar Cantidades del Talle {{ currentTalle.talle
+                    }}<v-btn flat icon @click="editDialog = false">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
                 <v-card-text>
                     <!-- Formulario para editar las cantidades -->
                     <v-row>
@@ -241,13 +278,10 @@
 
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn
-                        color="blue darken-1"
-                        text
-                        @click="editDialog = false"
+                    <v-btn color="grey" text @click="editDialog = false"
                         >Cancelar</v-btn
                     >
-                    <v-btn color="blue darken-1" text @click="saveChanges"
+                    <v-btn color="black" text @click="saveChanges"
                         >Guardar</v-btn
                     >
                 </v-card-actions>
@@ -257,8 +291,14 @@
         <!-- Diálogo de confirmación para eliminar -->
         <v-dialog v-model="confirmDeleteDialog" max-width="400px">
             <v-card>
-                <v-card-title class="headline"
-                    >Confirmar eliminación</v-card-title
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Confirmar eliminación<v-btn
+                        flat
+                        icon
+                        @click="confirmDeleteDialog = false"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
                 >
                 <v-card-text
                     >¿Estás seguro de que deseas eliminar esas bombachas?
@@ -282,8 +322,14 @@
         <!-- Diálogo de confirmación para eliminar -->
         <v-dialog v-model="confirmFullDeleteDialog" max-width="400px">
             <v-card>
-                <v-card-title class="headline"
-                    >Confirmar eliminación</v-card-title
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Confirmar eliminación<v-btn
+                        flat
+                        icon
+                        @click="confirmFullDeleteDialog = false"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
                 >
                 <v-card-text
                     >¿Estás seguro de que deseas eliminar todas las bombachas de
@@ -294,7 +340,7 @@
                     <v-btn
                         color="grey"
                         text
-                        @click="confirmDeleteDialog = false"
+                        @click="confirmFullDeleteDialog = false"
                         >Cancelar</v-btn
                     >
                     <v-btn color="red" text @click="deleteCompleteTalle"
@@ -307,7 +353,15 @@
         <!-- Diálogo de confirmación para agregar bombachas -->
         <v-dialog v-model="confirmAddDialog" max-width="400px">
             <v-card>
-                <v-card-title class="headline">Confirmar adición</v-card-title>
+                <v-card-title class="d-flex justify-space-between align-center"
+                    >Confirmar adición<v-btn
+                        flat
+                        icon
+                        @click="confirmAddDialog = false"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn></v-card-title
+                >
                 <v-card-text
                     >¿Estás seguro de que deseas agregar estas
                     bombachas?</v-card-text
@@ -323,7 +377,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-    </v-container>
+    </div>
 </template>
 
 <script>
@@ -770,6 +824,8 @@ export default {
 </script>
 
 <style scoped>
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
+
 .marron-text {
     color: #8b4513; /* Marrón */
     font-weight: bold;
@@ -793,5 +849,25 @@ export default {
 .blanco-text {
     color: #7a7a7a; /* Blanco/Beige */
     font-weight: bold;
+}
+
+/* Aplica la fuente moderna a todo */
+* {
+    font-family: "Nunito", sans-serif;
+}
+
+.v-btn {
+    font-weight: 600;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.v-btn:hover {
+    background-color: #ececec;
+}
+
+.v-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 </style>

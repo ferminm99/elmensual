@@ -15,13 +15,7 @@ class ArticuloController extends Controller
 
     // Método para crear un nuevo artículo
     public function store(Request $request) {
-        $request->validate([
-            'numero' => 'required|integer|unique:articulos',
-            'nombre' => 'required|string|max:255',
-            'precio' => 'required|numeric|min:0',
-            'costo_original' => 'required|numeric|min:0',
-        ]);
-    
+
         $articulo = Articulo::create([
             'numero' => $request->input('numero'),
             'nombre' => $request->input('nombre'),

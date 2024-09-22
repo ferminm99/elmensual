@@ -7,6 +7,7 @@ use App\Http\Controllers\VentasController;
 use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\GoogleDriveController;
 use App\Http\Middleware\CorsMiddleware;
+use App\Http\Controllers\ClienteController;
 
 // Rutas para cargar a google drive el excel
 Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');
@@ -27,6 +28,10 @@ Route::get('/managearticulos', function () {
 
 // Ruta para la vista de Ventas
 Route::get('/ventas', function () {
+    return view('welcome'); // Vue se encargará de manejar la lógica interna
+});
+
+Route::get('/clientes', function () {
     return view('welcome'); // Vue se encargará de manejar la lógica interna
 });
 
@@ -64,6 +69,14 @@ Route::get('/comprascalendario/listar', [CalendarioController::class, 'index']);
 Route::post('/comprascalendario', [CalendarioController::class, 'store']);
 Route::put('/comprascalendario/{id}', [CalendarioController::class, 'update']);
 Route::delete('/comprascalendario/{id}', [CalendarioController::class, 'destroy']);
+
+//Clientes
+Route::get('/clientes/listar', [ClienteController::class, 'index']); // Obtener todos los clientes
+Route::post('/cliente', [ClienteController::class, 'store']); // Crear un cliente
+Route::put('/cliente/{id}', [ClienteController::class, 'update']); // Actualizar un cliente
+Route::delete('/cliente/{id}', [ClienteController::class, 'destroy']); // Eliminar un cliente
+
+
 
 Route::get('/{pathMatch}', function () {
     return view('welcome');

@@ -2,10 +2,7 @@
     <v-app>
         <!-- Navegación lateral -->
         <v-navigation-drawer app>
-            <v-list-item
-                title="My Application"
-                subtitle="Vuetify"
-            ></v-list-item>
+            <v-list-item title="El Mensual"></v-list-item>
             <v-divider></v-divider>
             <v-list>
                 <!-- Home -->
@@ -16,6 +13,16 @@
                     to="/"
                 >
                     <v-list-item-title>Home</v-list-item-title>
+                </v-list-item>
+
+                <!-- Home -->
+                <v-list-item
+                    link
+                    exact
+                    exact-active-class="active-list-item"
+                    to="/clientes"
+                >
+                    <v-list-item-title>Clientes</v-list-item-title>
                 </v-list-item>
 
                 <!-- Calendario -->
@@ -48,8 +55,8 @@
         </v-navigation-drawer>
 
         <!-- Contenido principal -->
-        <v-main>
-            <v-container>
+        <v-main style="background-color: #eeeeee">
+            <v-container fluid>
                 <router-view />
             </v-container>
         </v-main>
