@@ -328,13 +328,13 @@
                     <!-- Campo para el nuevo precio -->
                     <v-text-field
                         v-model="selectedVenta.precio"
-                        label="Nuevo Precio"
+                        label="Precio"
                         type="number"
                     ></v-text-field>
                     <!-- Campo para el costo original -->
                     <v-text-field
                         v-model="selectedVenta.costo_original"
-                        label="Nuevo Precio"
+                        label="Precio por mayor"
                         type="number"
                     ></v-text-field>
 

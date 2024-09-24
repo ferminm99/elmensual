@@ -17,42 +17,46 @@ class VentasController extends Controller
         // Normalizamos el nombre y apellido: primera letra en mayúscula, el resto en minúsculas
         $nombre = $request->cliente_nombre;
         $apellido = $request->cliente_apellido;
-
+    
         // Intentar primero buscar por nombre y apellido
         $cliente = Cliente::where('nombre', $nombre)
             ->where('apellido', $apellido)
             ->first();
-
-        // Si no se encontró, intentamos buscar por CUIT o CBU
-        if (!$cliente) {
+    
+        // Si no se encontró por nombre y apellido, intentamos buscar por CUIT o CBU solo si no están vacíos
+        if (!$cliente && (!empty($request->cliente_cuit) || !empty($request->cliente_cbu))) {
             $cliente = Cliente::where(function ($query) use ($request) {
-                $query->where('cuit', $request->cliente_cuit)
-                    ->orWhere('cbu', $request->cliente_cbu);
+                if (!empty($request->cliente_cuit)) {
+                    $query->where('cuit', $request->cliente_cuit);
+                }
+    
+                if (!empty($request->cliente_cbu)) {
+                    $query->orWhere('cbu', $request->cliente_cbu);
+                }
             })->first();
-        
-            // Si lo encontramos por CUIT o CBU, actualizamos el nombre, apellido y los campos que falten
+    
+            // Si lo encontramos por CUIT o CBU, actualizamos el nombre y apellido
             if ($cliente) {
                 $updateData = [
                     'nombre' => $nombre,
-                    'apellido' => $apellido
+                    'apellido' => $apellido,
                 ];
-        
-                // Si el cliente no tiene CUIT y se ingresó uno, lo actualizamos
+    
+                // Solo actualizamos el CUIT si no está asignado previamente
                 if (empty($cliente->cuit) && !empty($request->cliente_cuit)) {
                     $updateData['cuit'] = $request->cliente_cuit;
                 }
-        
-                // Si el cliente no tiene CBU y se ingresó uno, lo actualizamos
+    
+                // Solo actualizamos el CBU si no está asignado previamente
                 if (empty($cliente->cbu) && !empty($request->cliente_cbu)) {
                     $updateData['cbu'] = $request->cliente_cbu;
                 }
-        
-                // Actualizar los datos del cliente con los nuevos valores
+    
+                // Actualizar los datos del cliente
                 $cliente->update($updateData);
             }
         }
-        
-
+    
         // Si no encontramos ningún cliente, lo creamos
         if (!$cliente) {
             $cliente = Cliente::create([
@@ -62,14 +66,9 @@ class VentasController extends Controller
                 'cbu' => $request->cliente_cbu,
             ]);
         }
-
-                
-
+    
         // Registrar cada producto en la venta
         foreach ($request->productos as $producto) {
-            // logger()->info('Producto recibido:', ['producto' => $producto]);
-            // $costoOriginal = floatval($producto['costo_original']);
-
             // Crear una venta por cada producto
             Venta::create([
                 'articulo_id' => $producto['articulo']['id'],

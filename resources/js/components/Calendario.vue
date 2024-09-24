@@ -3,7 +3,7 @@
         <!-- Calendario -->
         <v-card>
             <v-card-text>
-                <FullCalendar :options="calendarOptions" />
+                <FullCalendar ref="fullCalendar" :options="calendarOptions" />
             </v-card-text>
         </v-card>
 
@@ -181,38 +181,45 @@ export default {
             }
         },
         async agendarCompra() {
-            const response = await axios.post("/comprascalendario", {
-                nombre_persona: this.form.nombre_persona,
-                descripcion: this.form.descripcion, // Solo la descripción
-                fecha: moment(this.form.fecha).format("YYYY-MM-DD"),
-                hora_inicio: this.form.hora_inicio,
-                hora_fin: this.form.hora_fin,
-            });
-
-            // Actualiza el calendario con el nuevo evento
-            const nuevoEvento = {
-                id: response.data.id,
-                title: `${this.form.nombre_persona} - ${
-                    this.form.descripcion
-                } - de ${moment(this.form.hora_inicio, "HH:mm:ss").format(
-                    "HH:mm"
-                )} a ${moment(this.form.hora_fin, "HH:mm:ss").format("HH:mm")}`,
-                start: this.form.fecha,
-                backgroundColor: moment(this.form.fecha).isBefore(
-                    moment(),
-                    "day"
-                )
-                    ? "#5CB85C"
-                    : "#007BFF", // Verde si la fecha ha pasado, azul si no
-                borderColor: "black",
-                extendedProps: {
-                    descripcion: this.form.descripcion, // Guardamos la descripción como extendedProps
+            try {
+                const response = await axios.post("/comprascalendario", {
+                    nombre_persona: this.form.nombre_persona,
+                    descripcion: this.form.descripcion, // Solo la descripción
+                    fecha: moment(this.form.fecha).format("YYYY-MM-DD"),
                     hora_inicio: this.form.hora_inicio,
                     hora_fin: this.form.hora_fin,
-                },
-            };
-            this.calendarOptions.events.push(nuevoEvento);
-            this.dialog = false;
+                });
+
+                // Actualiza el calendario con el nuevo evento
+                const nuevoEvento = {
+                    id: response.data.id,
+                    title: `${this.form.nombre_persona} - ${
+                        this.form.descripcion
+                    } - de ${moment(this.form.hora_inicio, "HH:mm:ss").format(
+                        "HH:mm"
+                    )} a ${moment(this.form.hora_fin, "HH:mm:ss").format(
+                        "HH:mm"
+                    )}`,
+                    start: this.form.fecha,
+                    backgroundColor: moment(this.form.fecha).isBefore(
+                        moment(),
+                        "day"
+                    )
+                        ? "#5CB85C"
+                        : "#007BFF", // Verde si la fecha ha pasado, azul si no
+                    borderColor: "black",
+                    extendedProps: {
+                        descripcion: this.form.descripcion,
+                        hora_inicio: this.form.hora_inicio,
+                        hora_fin: this.form.hora_fin,
+                    },
+                };
+                this.fetchCompras(); // Recargar las compras
+
+                this.dialog = false;
+            } catch (error) {
+                console.error("Error al agendar compra:", error);
+            }
         },
         // // Método para cargar los talles y colores disponibles
         // loadTallesYColores() {
