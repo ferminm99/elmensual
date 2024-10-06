@@ -9,3 +9,6 @@ vendor
 docker/php/local.ini
 docker/nginx/conf.d
 docker-entrypoint-initdb.d/elmensual.sql
+tests/                   
+.vscode/                
+.env.example    

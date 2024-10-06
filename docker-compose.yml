@@ -15,7 +15,7 @@ services:
         image: nginx:alpine
         container_name: nginx_web
         volumes:
-            - .:/var/www
+            - ./public:/var/www/public
             - ./docker/nginx/conf.d:/etc/nginx/conf.d
         ports:
             - "8080:80"

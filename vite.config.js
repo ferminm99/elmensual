@@ -3,6 +3,7 @@ import laravel from "laravel-vite-plugin";
 import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
+    base: "/build/",
     plugins: [
         laravel({
             input: ["resources/css/app.css", "resources/js/app.js"],
@@ -14,11 +15,11 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    vue: ["vue", "vue-router"], // Separar Vue y Vue Router en su propio chunk
-                    vuetify: ["vuetify"], // Separar Vuetify en su propio chunk
+                    vue: ["vue", "vue-router"],
+                    vuetify: ["vuetify"],
                 },
             },
         },
-        chunkSizeWarningLimit: 1000,
+        chunkSizeWarningLimit: 1600,
     },
 });
