@@ -12,7 +12,7 @@
                     exact-active-class="active-list-item"
                     to="/"
                 >
-                    <v-list-item-title>Home</v-list-item-title>
+                    <v-list-item-title>Inventario</v-list-item-title>
                 </v-list-item>
 
                 <!-- Home -->

@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+yarn-error.log
+.DS_Store
+.git
+.idea
+.env
+vendor
+docker/php/local.ini
+docker/nginx/conf.d
+docker-entrypoint-initdb.d/elmensual.sql

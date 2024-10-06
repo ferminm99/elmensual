@@ -86,7 +86,7 @@ export default {
     top: 10px;
     right: 10px;
 }
-::v-deep .v-date-picker__title {
+:deep(.v-date-picker__title) {
     display: none !important;
 }
 </style>

@@ -22,6 +22,7 @@
                     clearable
                     filterable
                     variant="solo"
+                    :class="{ 'rojo-text': esAlpargatas }"
                 />
             </v-col>
             <v-col cols="12" md="4" class="d-flex justify-end">
@@ -81,8 +82,15 @@
                 <span class="azul-text">{{ item.azul }}</span>
             </template>
             <template v-slot:item.celeste="{ item }">
-                <span class="celeste-text">{{ item.celeste }}</span>
+                <span
+                    :class="{
+                        'celeste-text': !esAlpargatas,
+                        'rojo-text': esAlpargatas,
+                    }"
+                    >{{ item.celeste }}</span
+                >
             </template>
+
             <template v-slot:item.blancobeige="{ item }">
                 <span class="blanco-text">{{ item.blancobeige }}</span>
             </template>
@@ -184,7 +192,7 @@
                             <v-col cols="4">
                                 <v-text-field
                                     v-model="newQuantities.celeste"
-                                    label="Celeste"
+                                    label="Celeste (rojo en alpargata)"
                                     type="number"
                                     class="celeste-text"
                                     min="0"
@@ -444,7 +452,14 @@ export default {
                 celeste: 0,
                 blancobeige: 0,
             },
-            headers: [
+        };
+    },
+    created() {
+        this.fetchArticulos();
+    },
+    computed: {
+        headers() {
+            return [
                 { title: "Talle", key: "talle", align: "center" },
                 {
                     title: "Marrón",
@@ -475,11 +490,11 @@ export default {
                     class: "azul-text",
                 },
                 {
-                    title: "Celeste",
+                    title: this.esAlpargatas ? "Rojo" : "Celeste", // Aquí se cambia dinámicamente el título
                     key: "celeste",
                     sortable: false,
                     align: "center",
-                    class: "celeste-text",
+                    class: this.esAlpargatas ? "rojo-text" : "celeste-text",
                 },
                 {
                     title: "Blanco/Beige",
@@ -490,11 +505,19 @@ export default {
                 },
                 { title: "Total", key: "total_bombachas", align: "center" },
                 { title: "Acciones", key: "actions", align: "center" },
-            ],
-        };
-    },
-    created() {
-        this.fetchArticulos();
+            ];
+        },
+
+        esAlpargatas() {
+            const articuloSeleccionado = this.articulos.find(
+                (articulo) => articulo.id === this.selectedArticulo
+            );
+            return articuloSeleccionado
+                ? articuloSeleccionado.nombre
+                      .toUpperCase()
+                      .includes("ALPARGATA")
+                : false;
+        },
     },
     methods: {
         exportarAExcel() {
@@ -770,7 +793,6 @@ export default {
         tallesCorrectos() {
             this.selectedTalles = [];
             this.tallesDisponiblesSeleccionados = this.tallesDisponibles;
-            // Llama a la función cuando se selecciona un artículo
             const articuloSeleccionado = this.articulos.find(
                 (articulo) => articulo.id === this.selectedArticuloDialog
             );
@@ -780,20 +802,32 @@ export default {
                     articuloSeleccionado.nombre
                 );
 
-                console.log(articuloSeleccionado.nombre);
-                console.log(minTalle);
-                console.log(maxTalle);
-
-                // Filtra los talles disponibles en base al rango extraído del nombre
                 if (minTalle != null && maxTalle != null) {
-                    this.tallesDisponiblesSeleccionados =
-                        this.tallesDisponibles.filter(
-                            (talleObj) =>
-                                talleObj.talle >= minTalle &&
-                                talleObj.talle <= maxTalle
-                        );
-                    console.log(this.tallesDisponiblesSeleccionados); // Imprime antes del filtrado
+                    // Si el artículo incluye "ALPARGATAS", generamos la lista completa de talles consecutivos
+                    if (
+                        articuloSeleccionado.nombre
+                            .toUpperCase()
+                            .includes("ALPARGATA")
+                    ) {
+                        this.tallesDisponiblesSeleccionados = [];
+                        for (let i = minTalle; i <= maxTalle; i++) {
+                            this.tallesDisponiblesSeleccionados.push({
+                                talle: i,
+                            });
+                        }
+                    } else {
+                        // Si no es "ALPARGATAS", sigue seleccionando los talles de dos en dos
+                        this.tallesDisponiblesSeleccionados =
+                            this.tallesDisponibles.filter(
+                                (talleObj) =>
+                                    talleObj.talle >= minTalle &&
+                                    talleObj.talle <= maxTalle &&
+                                    talleObj.talle % 2 === 0
+                            );
+                    }
                 }
+
+                console.log(this.tallesDisponiblesSeleccionados); // Imprime para depuración
             }
         },
         exportAndUploadToDrive() {
@@ -848,6 +882,11 @@ export default {
 }
 .blanco-text {
     color: #7a7a7a; /* Blanco/Beige */
+    font-weight: bold;
+}
+
+.rojo-text {
+    color: #ff0000; /* Rojo */
     font-weight: bold;
 }
 

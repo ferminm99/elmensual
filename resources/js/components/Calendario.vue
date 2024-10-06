@@ -388,7 +388,7 @@ export default {
 .v-dialog {
     max-height: 800px;
 }
-::v-deep .fc-daygrid-event {
+:deep(.fc-daygrid-event) {
     display: block;
     padding: 5px;
     white-space: normal;
@@ -400,7 +400,7 @@ export default {
     align-items: center; /* Asegura que el contenido se centre verticalmente */
 }
 
-::v-deep .fc-daygrid-event .fc-event-title {
+:deep(.fc-daygrid-event .fc-event-title) {
     white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -409,7 +409,7 @@ export default {
     line-height: 1.2; /* Ajustar el espaciado entre líneas */
 }
 
-::v-deep .fc-daygrid {
+:deep(.fc-daygrid) {
     min-height: auto !important; /* Asegura que las celdas no se expandan innecesariamente */
 }
 </style>

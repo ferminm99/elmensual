@@ -195,23 +195,22 @@ export default {
         },
         // Método de validación
         validateForm() {
-            // Verificamos que los campos no estén vacíos o nulos
+            if (!this.form.numero || String(this.form.numero).trim() === "") {
+                alert("Por favor ingresa el número de artículo.");
+                return false;
+            }
             if (!this.form.nombre || this.form.nombre.trim() === "") {
-                return false;
-            }
-            if (!this.form.talle || isNaN(this.form.talle)) {
-                return false;
-            }
-            if (!this.form.color || this.form.color.trim() === "") {
+                alert("Por favor ingresa el nombre del artículo.");
                 return false;
             }
             if (!this.form.precio || isNaN(this.form.precio)) {
+                alert("Por favor ingresa un precio válido.");
                 return false;
             }
             if (!this.form.costo_original || isNaN(this.form.costo_original)) {
+                alert("Por favor ingresa un costo original válido.");
                 return false;
             }
-            // Puedes agregar más validaciones si es necesario (CUIT, CBU, etc.)
 
             return true; // Todo está correcto
         },

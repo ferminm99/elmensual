@@ -10,4 +10,15 @@ export default defineConfig({
         }),
         vue(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vue: ["vue", "vue-router"], // Separar Vue y Vue Router en su propio chunk
+                    vuetify: ["vuetify"], // Separar Vuetify en su propio chunk
+                },
+            },
+        },
+        chunkSizeWarningLimit: 1000,
+    },
 });

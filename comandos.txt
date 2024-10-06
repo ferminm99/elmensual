@@ -1,0 +1,7 @@
+COMANDOS:
+Copiar base de datos como backup.sql es docker exec mysql_db mysqldump -u root -ppassword elmensual > backup.sql
+Actualizar laravel en container: docker-compose restart laravel_app
+Actualizar Vue en container: docker-compose exec laravel_app npm run build
+Rebuild del código sin eliminar la base de datos: docker-compose up --build laravel_app nginx_web
+Actualizar la base de datos (migraciones): docker-compose exec laravel_app php artisan migrate
+einiciar servicios específicos: docker-compose restart nginx_web laravel_app

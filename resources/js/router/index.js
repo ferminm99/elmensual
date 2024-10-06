@@ -9,27 +9,27 @@ import calendario from "../components/Calendario.vue";
 const routes = [
     {
         path: "/",
-        component: home,
+        component: () => import("../components/HomePage.vue"),
     },
     {
         path: "/clientes",
-        component: clientes,
+        component: () => import("../components/Clientes.vue"),
     },
     {
         path: "/managearticulos",
-        component: managearticulos,
+        component: () => import("../components/ManageArticulos.vue"),
     },
     {
         path: "/ventas",
-        component: ventas,
+        component: () => import("../components/Ventas.vue"),
     },
     {
         path: "/comprascalendario",
-        component: calendario,
+        component: () => import("../components/Calendario.vue"),
     },
     {
         path: "/:pathMatch(.*)*",
-        component: notFound,
+        component: () => import("../components/NotFoundPage.vue"),
     },
 ];
 
