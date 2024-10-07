@@ -12,6 +12,7 @@ export default defineConfig({
         vue(),
     ],
     build: {
+        outDir: "dist",
         rollupOptions: {
             output: {
                 manualChunks: {
