@@ -8,7 +8,14 @@ Actualizar la base de datos (migraciones): docker-compose exec laravel_app php a
 Reiniciar servicios específicos: docker-compose restart nginx_web laravel_app
 docker exec -i mysql_db mysql -uroot -ppassword elmensual < C:\GitRepositorios\elmensualv2\laravel11-vue\elmensual.sql
 
-por ahora para que ande lo que modifique hago
-npm run build
-docker cp ./public laravel_app:/var/www/public
+docker exec -i laravel11-vue-db-1 mysql -uroot -ppassword elmensual < C:/GitRepositorios/elmensualv2/laravel11-vue/elmensual.sql
 
+reiniciar app:
+docker-compose restart app
+
+correr docker:
+docker-compose up --build
+
+
+borrar docker images:
+docker-compose down --volumes

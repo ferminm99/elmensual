@@ -623,7 +623,7 @@ export default {
     created() {
         this.fetchArticulos();
         this.fetchVentas();
-
+        console.log("PRUEBA 2");
         this.options.sortBy = ["fecha"];
         this.options.sortDesc = [true];
     },
