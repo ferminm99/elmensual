@@ -36,6 +36,14 @@
             class="elevation-1 mt-2"
             dense
         >
+            <template v-slot:item.totalVentas="{ item }">
+                <span>{{ item.totalVentas || 0 }}</span>
+            </template>
+
+            <template v-slot:item.totalPago="{ item }">
+                <span>${{ formatCurrency(item.totalPago || 0) }}</span>
+            </template>
+
             <template v-slot:item.actions="{ item }">
                 <v-btn flat icon @click="openEditDialog(item)">
                     <v-icon color="black">mdi-pencil-outline</v-icon>
@@ -132,12 +140,19 @@ export default {
                 cuit: "",
                 cbu: "",
             },
-            clientes: [], // Lista de clientes
+            ventas: [],
+            clientes: [],
+            datosCargados: {
+                clientes: false,
+                ventas: false,
+            },
             headers: [
-                { title: "Nombre", key: "nombre" },
-                { title: "Apellido", key: "apellido" },
-                { title: "CUIT", key: "cuit" },
+                { title: "Nombre", key: "nombre", sortable: true },
+                { title: "Apellido", key: "apellido", sortable: true },
+                { title: "CUIT", key: "cuit", sortable: true },
                 { title: "CBU", key: "cbu" },
+                { title: "Total Ventas", key: "totalVentas", sortable: true },
+                { title: "Total Pagado", key: "totalPago", sortable: true },
                 {
                     title: "Acciones",
                     key: "actions",
@@ -149,12 +164,50 @@ export default {
     },
     created() {
         this.fetchClientes();
+        this.fetchVentas();
     },
     methods: {
         fetchClientes() {
-            // Simulación de la solicitud HTTP
-            axios.get("/clientes/listar").then((response) => {
-                this.clientes = response.data;
+            return axios.get("/clientes/listar").then((response) => {
+                this.clientes = response.data || [];
+                this.datosCargados.clientes = true; // Marcar clientes como cargados
+                this.verificarYCalcularTotales();
+            });
+        },
+        fetchVentas() {
+            return axios.get("/ventas/listar").then((response) => {
+                this.ventas = response.data || [];
+                this.datosCargados.ventas = true; // Marcar ventas como cargadas
+                this.verificarYCalcularTotales();
+            });
+        },
+        verificarYCalcularTotales() {
+            if (this.datosCargados.clientes && this.datosCargados.ventas) {
+                this.calculateTotals();
+            }
+        },
+        calculateTotals() {
+            // Reinicia los totales en cada cliente
+            this.clientes.forEach((cliente) => {
+                cliente.totalVentas = 0;
+                cliente.totalPago = 0;
+            });
+
+            // Suma las ventas y el total pagado para cada cliente
+            this.ventas.forEach((venta) => {
+                const cliente = this.clientes.find(
+                    (c) => c.id === venta.cliente_id
+                );
+                if (cliente) {
+                    cliente.totalVentas += 1;
+                    cliente.totalPago += parseFloat(venta.precio);
+                }
+            });
+        },
+        formatCurrency(value) {
+            return value.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
             });
         },
         openAddDialog() {

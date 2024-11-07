@@ -63,6 +63,10 @@ Route::get('/ventas/listar', [VentasController::class, 'obtenerVentas']);
 Route::put('/ventas/{id}', [VentasController::class, 'update']);
 Route::post('/ventas/cambiar-bombachas', [VentasController::class, 'cambiarBombacha']);
 Route::delete('/ventas/{id}', [VentasController::class, 'destroy']);
+// Facturaciones
+Route::post('/facturaciones/guardar', [VentasController::class, 'guardarFacturaciones']);
+Route::get('/facturaciones/ultima', [VentasController::class, 'obtenerUltimaFacturacion']);
+
 
 //Calendario
 Route::get('/comprascalendario/listar', [CalendarioController::class, 'index']);

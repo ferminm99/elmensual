@@ -7,6 +7,8 @@ use App\Models\Venta;
 use App\Models\Cliente;
 use App\Models\Talle;
 use Carbon\Carbon;
+use App\Models\Facturacion; // Importamos el modelo Facturacion
+
 
 use Illuminate\Http\Request; 
 
@@ -88,7 +90,31 @@ class VentasController extends Controller
     
         return response()->json(['message' => 'Venta registrada exitosamente']);
     }
-    
+
+    //Obtiene la ultima facturacion
+    public function obtenerUltimaFacturacion()
+    {
+        $ultimaFacturacion = Facturacion::latest('fecha_facturacion')->first();
+        return response()->json($ultimaFacturacion);
+    }
+
+    public function guardarFacturaciones(Request $request)
+    {
+        $ventas = $request->ventas;
+        $ultimaVentaId = null;
+
+        foreach ($ventas as $venta) {
+            // Crear una nueva entrada en la tabla facturaciones
+            $facturacion = Facturacion::create([
+                'venta_id' => $venta['id'],
+                'fecha_facturacion' => now(),
+            ]);
+
+            $ultimaVentaId = $facturacion->venta_id;
+        }
+
+        return response()->json(['message' => 'Facturaciones guardadas con éxito', 'ultima_venta_id' => $ultimaVentaId]);
+    }
     // Obtener las ventas para visualizarlas
     public function obtenerVentas()
     {

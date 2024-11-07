@@ -25,6 +25,21 @@
             <v-btn color="white" outlined class="mr-4" @click="openFechaDialog">
                 <v-icon left>mdi-calendar</v-icon> Filtrar por Fecha
             </v-btn>
+
+            <!-- Mostrar la última facturación -->
+            <div class="ml-4">
+                Última Facturación:
+                <strong v-if="ultimaFacturacion">
+                    {{
+                        formatFechaMoment(ultimaFacturacion.fecha) +
+                        " de " +
+                        ultimaFacturacion.cliente.nombre
+                    }}
+                </strong>
+                <span v-else class="gray--text"
+                    >Sin facturación registrada</span
+                >
+            </div>
         </v-row>
 
         <v-row>
@@ -34,7 +49,7 @@
                         <v-select
                             class="mr-2"
                             v-model="tipoBusqueda"
-                            :items="['General', 'Otros datos']"
+                            :items="['General', 'Producto', 'Otros datos']"
                             label="Buscar por"
                             dense
                             variant="solo"
@@ -100,6 +115,7 @@
                     : buscarPorTodo
             "
             :options.sync="options"
+            :item-class="getItemClass"
             class="elevation-1 mt-4"
         >
             <!-- Formato de la Fecha -->
@@ -119,12 +135,12 @@
             <template v-slot:item.cliente="{ item }">
                 <div>{{ item.cliente.nombre }} {{ item.cliente.apellido }}</div>
                 <div class="cliente-text">
-                    <span v-if="item.cliente.cuit">
-                        CUIT: {{ item.cliente.cuit }}
-                    </span>
-                    <span v-else-if="item.cliente.cbu">
-                        CBU: {{ item.cliente.cbu }}
-                    </span>
+                    <span v-if="item.cliente.cuit"
+                        >CUIT: {{ item.cliente.cuit }}</span
+                    >
+                    <span v-else-if="item.cliente.cbu"
+                        >CBU: {{ item.cliente.cbu }}</span
+                    >
                 </div>
             </template>
 
@@ -170,6 +186,7 @@
                 </v-btn>
             </template>
         </v-data-table>
+
         <!-- Diálogo para registrar ventas -->
         <v-dialog v-model="dialogVenta" max-width="600px">
             <v-card>
@@ -319,11 +336,33 @@
         <!-- Diálogo para editar el precio -->
         <v-dialog v-model="editDialog" max-width="600px" scrollable>
             <v-card>
-                <v-card-title class="d-flex justify-space-between align-center"
-                    >Editar Venta<v-btn flat icon @click="editDialog = false">
-                        <v-icon color="red">mdi-close</v-icon>
-                    </v-btn></v-card-title
+                <v-card-title
+                    class="multi-line-title d-flex justify-space-between"
                 >
+                    <!-- Título con nombre del cliente y producto -->
+                    <div>
+                        Editar Venta de
+                        <strong
+                            >{{ selectedVenta.cliente_nombre }}&nbsp;</strong
+                        >
+                        <strong>{{ selectedVenta.cliente_apellido }}</strong> de
+                        <div>
+                            {{ selectedVenta.articulo.nombre }} - Talle
+                            {{ selectedVenta.talle }} - Color
+                            {{ selectedVenta.color }}
+                        </div>
+                    </div>
+                    <!-- Botón de cierre en la parte superior derecha -->
+                    <v-btn
+                        flat
+                        icon
+                        @click="editDialog = false"
+                        class="close-btn"
+                    >
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
+
                 <v-card-text>
                     <!-- Campo para el nuevo precio -->
                     <v-text-field
@@ -350,18 +389,12 @@
                             value="transferencia"
                         ></v-radio>
                     </v-radio-group>
-                    <!-- Campo para la fecha -->
 
+                    <!-- Campo para la fecha -->
                     <Datepicker
                         v-model="selectedVenta.fecha"
                         placeholder="Seleccione una fecha"
                     ></Datepicker>
-                    <!-- <datepicker
-                        v-model="selectedVenta.fecha"
-                        placeholder="Seleccione una fecha"
-                        :value="selectedVenta.fecha"
-                        style="z-index: 1000; position: relative;"
-                    ></datepicker> -->
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
@@ -548,6 +581,8 @@ export default {
     },
     data() {
         return {
+            ultimaFacturacion: null, // Para almacenar el último registro de facturación
+            ventaUltimaFacturada: null, // Para almacenar el ID de la venta última facturada
             dialogCambioBombacha: false,
             cambioBombacha: {
                 articulo_id: null,
@@ -623,6 +658,7 @@ export default {
     created() {
         this.fetchArticulos();
         this.fetchVentas();
+        this.fetchUltimaFacturacion();
         console.log("PRUEBA 2");
         this.options.sortBy = ["fecha"];
         this.options.sortDesc = [true];
@@ -681,6 +717,46 @@ export default {
     },
 
     methods: {
+        getItemClass(item) {
+            if (item.id === this.ventaUltimaFacturada) {
+                return "ultima-facturada"; // Clase para la última facturada
+            } else if (this.ventasFacturadas.includes(item.id)) {
+                return "facturada-general"; // Clase para otras facturadas
+            }
+            return "";
+        },
+        fetchUltimaFacturacion() {
+            // Hacer una solicitud al backend para obtener la última facturación
+            axios
+                .get("/facturaciones/ultima")
+                .then((response) => {
+                    const ultimaFacturacion = response.data;
+
+                    if (ultimaFacturacion && ultimaFacturacion.venta_id) {
+                        // Buscar en la lista de ventas el ítem que coincide con el id de venta de la última facturación
+                        const ventaCorrespondiente = this.ventas.find(
+                            (venta) => venta.id === ultimaFacturacion.venta_id
+                        );
+
+                        if (ventaCorrespondiente) {
+                            // Asignar la fecha de facturación correspondiente
+                            this.ultimaFacturacion = {
+                                ...ventaCorrespondiente,
+                                fecha_facturacion:
+                                    ultimaFacturacion.fecha_facturacion,
+                            };
+                        } else {
+                            // Si no se encuentra la venta
+                            this.ultimaFacturacion = null;
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error fetching última facturación", error);
+                    this.ultimaFacturacion = null;
+                });
+        },
+
         formatPrice(value) {
             const number = parseFloat(value); // Convertir el valor a número
             return isNaN(number) ? value : number.toFixed(2); // Verificar si es un número y aplicar toFixed
@@ -697,7 +773,7 @@ export default {
         confirmarCambioBombacha() {
             if (
                 !this.cambioBombacha.articulo_id ||
-                !this.cambioBombacha.talle ||
+                this.cambioBombacha.talle === null ||
                 !this.cambioBombacha.color
             ) {
                 this.snackbarText = "Por favor selecciona la nueva bombacha.";
@@ -875,6 +951,25 @@ export default {
             const nombreArchivo = `facturacion_desde_${this.fechaDesdeFacturar}_hasta_hoy.txt`;
             this.descargarArchivo(textoFacturacion, nombreArchivo);
 
+            // Ahora hacemos la llamada para guardar las facturaciones en la base de datos
+            axios
+                .post("/facturaciones/guardar", {
+                    ventas: ventasFiltradas,
+                    fecha: new Date(), // Fecha actual
+                })
+                .then((response) => {
+                    // Actualizamos el id de la última facturación
+                    this.ventaUltimaFacturada = response.data.ultima_venta_id;
+                    this.snackbarText =
+                        "Facturación generada y guardada con éxito.";
+                    this.snackbar = true;
+                })
+                .catch((error) => {
+                    console.error("Error al guardar las facturaciones", error);
+                    this.snackbarText = "Error al guardar la facturación.";
+                    this.snackbar = true;
+                });
+
             this.dialogFacturacion = false; // Cerrar el diálogo después de generar
         },
 
@@ -936,7 +1031,7 @@ export default {
             );
         },
         buscarPorProducto(value, search, item) {
-            const searchText = search.toLowerCase().trim();
+            const searchText = search.toLowerCase().trim().split(" ");
 
             // Acceder al artículo
             const articulo = item.raw.articulo || {};
@@ -945,21 +1040,17 @@ export default {
             const talle = (item.raw.talle || "").toString(); // Convertimos a string
             const color = (item.raw.color || "").toLowerCase();
 
-            // Ver si alguno de estos campos coincide con el texto de búsqueda
-            const matchesArticulo = articuloNombre.includes(searchText);
-            const matchesNumeroArticulo = numeroArticulo.includes(searchText);
-            const matchesTalle = talle.includes(searchText);
-            const matchesColor = color.includes(searchText);
+            // Concatenar todos los campos en un solo string de búsqueda
+            const textoCompleto =
+                `${articuloNombre} ${numeroArticulo} talle ${talle} ${color}`.toLowerCase();
 
-            // Retornamos true si alguna de estas condiciones se cumple
-            return (
-                matchesArticulo ||
-                matchesNumeroArticulo ||
-                matchesTalle ||
-                matchesColor
+            // Ver si todas las palabras del texto de búsqueda están en el texto completo (sin importar el orden)
+            const allWordsMatch = searchText.every((word) =>
+                textoCompleto.includes(word)
             );
-        },
 
+            return allWordsMatch;
+        },
         // Filtro personalizado para buscar por otros datos
         buscarPorOtrosDatos(value, search, item) {
             const searchText = search.toLowerCase().trim();
@@ -1003,6 +1094,8 @@ export default {
         // Abrir el diálogo de edición con la venta seleccionada
         openEditDialog(item) {
             this.selectedVenta = { ...item };
+            this.selectedVenta.cliente_nombre = item.cliente.nombre;
+            this.selectedVenta.cliente_apellido = item.cliente.apellido;
             this.editDialog = true;
         },
         // Actualizar el precio de la venta
@@ -1045,7 +1138,35 @@ export default {
         openVentaDialog() {
             this.dialogVenta = true;
         },
+        resetStockLocal() {
+            // Recorre cada producto que fue agregado y restaura el stock localmente
+            this.productos.forEach((producto) => {
+                const talle = this.tallesDisponibles.find(
+                    (t) => t.talle === producto.talle
+                );
+
+                if (talle && talle[producto.color] !== undefined) {
+                    // Aumentar el stock en 1 para el color correspondiente
+                    talle[producto.color] += 1;
+
+                    // Habilitar el color en coloresDisponibles si estaba deshabilitado
+                    const colorIndex = this.coloresDisponibles.findIndex(
+                        (color) => color.value === producto.color
+                    );
+                    if (colorIndex !== -1) {
+                        this.coloresDisponibles[
+                            colorIndex
+                        ].props.disabled = false;
+                    }
+                }
+            });
+
+            // Limpiar la lista de productos después de restablecer el stock
+            this.productos = [];
+        },
         closeDialogVenta() {
+            this.resetStockLocal();
+
             this.form = {
                 cliente_nombre: "",
                 cliente_apellido: "",
@@ -1093,8 +1214,7 @@ export default {
 
             if (articuloSeleccionado) {
                 const talleSeleccionadoObj = this.tallesDisponibles.find(
-                    (talle) =>
-                        parseInt(talle.talle) === parseInt(talleSeleccionado)
+                    (talle) => talle.talle === talleSeleccionado
                 );
 
                 if (talleSeleccionadoObj) {
@@ -1145,10 +1265,7 @@ export default {
                 );
             }
 
-            if (
-                articuloSeleccionado &&
-                this.articuloActual !== articuloSeleccionado
-            ) {
+            if (articuloSeleccionado) {
                 // Solo actualizar si el artículo seleccionado es diferente al actual
                 this.articuloActual = articuloSeleccionado;
                 this.tallesDisponibles = this.articuloActual.talles;
@@ -1183,7 +1300,7 @@ export default {
             const articulo = this.articulos.find(
                 (item) => item.id === this.form.articulo_id
             );
-            if (articulo && this.form.talle && this.form.color) {
+            if (articulo && this.form.talle !== null && this.form.color) {
                 this.productos.push({
                     articulo: articulo,
                     talle: this.form.talle,
@@ -1439,5 +1556,32 @@ export default {
 
 .gray--text {
     color: #999;
+}
+
+.multi-line-title {
+    white-space: normal; /* Permitir que el texto se ajuste en múltiples líneas */
+    word-wrap: break-word; /* Asegurar que palabras largas se corten adecuadamente */
+    font-size: 16px; /* Ajusta el tamaño según sea necesario */
+    display: flex;
+    flex-direction: column;
+    margin-right: auto; /* Mantener el texto a la izquierda */
+}
+
+.close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+}
+
+.ultima-facturada {
+    background-color: #1dbe45; /* Color de fondo para la última facturada */
+}
+
+.facturada {
+    background-color: #dff0d8; /* Color de fondo para la última facturada */
+}
+
+.facturada-general {
+    background-color: #f0e68c; /* Color para las demás ventas facturadas */
 }
 </style>
