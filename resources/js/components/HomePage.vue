@@ -443,6 +443,14 @@ export default {
                 { talle: 50 },
                 { talle: 52 },
                 { talle: 54 },
+                { talle: 56 },
+                { talle: 58 },
+                { talle: 60 },
+                { talle: 62 },
+                { talle: 64 },
+                { talle: 66 },
+                { talle: 68 },
+                { talle: 70 },
             ], // Los talles disponibles para seleccionar
             newQuantities: {
                 verde: 0,

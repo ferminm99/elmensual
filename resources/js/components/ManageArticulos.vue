@@ -6,17 +6,48 @@
                 <h1 class="title font-weight-bold">Gestión de Artículos</h1>
             </v-col>
         </v-row>
-        <!-- Botón para agregar artículos -->
-        <v-row class="d-flex align-center mb-4">
-            <v-btn color="black" class="ml-3" @click="openAddDialog">
-                <v-icon left>mdi-plus-box</v-icon> Agregar Artículo
-            </v-btn>
+
+        <!-- Buscador arriba a la izquierda -->
+        <v-row class="d-flex mb-2">
+            <v-col cols="12" sm="6" md="4">
+                <v-text-field
+                    v-model="search"
+                    label="Buscar por nombre"
+                    dense
+                    solo
+                    clearable
+                ></v-text-field>
+            </v-col>
         </v-row>
 
-        <!-- Tabla para listar artículos -->
+        <!-- Botones más juntos en una sola fila -->
+        <v-row class="d-flex align-center mb-4">
+            <v-col cols="auto">
+                <v-btn color="black" @click="openAddDialog">
+                    <v-icon left>mdi-plus-box</v-icon> Agregar Artículo
+                </v-btn>
+            </v-col>
+            <v-col cols="auto">
+                <v-btn color="primary" @click="recalcularPrecios">
+                    <v-icon left>mdi-currency-usd</v-icon> Recalcular Precios
+                </v-btn>
+            </v-col>
+            <v-col cols="auto">
+                <v-btn color="green" @click="abrirDialogoAumento">
+                    <v-icon left>mdi-percent</v-icon> Aumentar Costos
+                </v-btn>
+            </v-col>
+            <v-col cols="auto">
+                <v-btn color="orange" class="ml-2" @click="exportarExcel">
+                    <v-icon left>mdi-download</v-icon> Exportar Excel
+                </v-btn>
+            </v-col>
+        </v-row>
+
+        <!-- Tabla -->
         <v-data-table
             :headers="headers"
-            :items="articulos"
+            :items="articulosFiltrados"
             class="elevation-1 mt-2"
             dense
         >
@@ -29,6 +60,30 @@
                 </v-btn>
             </template>
         </v-data-table>
+
+        <!-- Dialogos existentes (agregar/editar/eliminar) -->
+        <!-- ... (los dejás como ya están) ... -->
+
+        <!-- Diálogo de aumento por porcentaje -->
+        <v-dialog v-model="dialogoAumento" max-width="400px">
+            <v-card>
+                <v-card-title> Aumentar Costos Originales </v-card-title>
+                <v-card-text>
+                    <v-text-field
+                        v-model="porcentajeAumento"
+                        label="Porcentaje de aumento (%)"
+                        type="number"
+                        required
+                    ></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="dialogoAumento = false">Cancelar</v-btn>
+                    <v-btn color="green" text @click="aumentarCostos">
+                        Aplicar
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
 
         <!-- Diálogo para agregar/editar artículos -->
         <v-dialog v-model="dialog" max-width="600px">
@@ -67,36 +122,9 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="dialog = false">Cancelar</v-btn>
-                    <v-btn color="black" text @click="saveArticulo">{{
-                        isEdit ? "Guardar" : "Agregar"
-                    }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Diálogo de confirmación para eliminar -->
-        <v-dialog v-model="confirmDeleteDialog" max-width="400px">
-            <v-card>
-                <v-card-title class="d-flex justify-space-between align-center"
-                    >Confirmar eliminación<v-btn
-                        flat
-                        icon
-                        @click="confirmDeleteDialog = false"
-                    >
-                        <v-icon color="red">mdi-close</v-icon>
-                    </v-btn></v-card-title
-                >
-                <v-card-text>
-                    ¿Estás seguro de que deseas eliminar el artículo
-                    {{ articuloAEliminar.nombre }}?
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn text @click="confirmDeleteDialog = false"
-                        >Cancelar</v-btn
-                    >
-                    <v-btn color="red" text @click="deleteArticulo"
-                        >Eliminar</v-btn
-                    >
+                    <v-btn color="black" text @click="saveArticulo">
+                        {{ isEdit ? "Guardar" : "Agregar" }}
+                    </v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -104,13 +132,17 @@
 </template>
 
 <script>
+import ExcelJS from "exceljs";
 export default {
     data() {
         return {
             dialog: false,
+            dialogoAumento: false,
             confirmDeleteDialog: false,
             isEdit: false,
             articuloAEliminar: null,
+            porcentajeAumento: 0,
+            search: "",
             form: {
                 id: null,
                 numero: "",
@@ -118,12 +150,14 @@ export default {
                 precio: 0,
                 costo_original: 0,
             },
-            articulos: [], // Lista de artículos
+            articulos: [],
             headers: [
                 { title: "Número", key: "numero" },
                 { title: "Nombre", key: "nombre" },
                 { title: "Precio", key: "precio" },
                 { title: "Costo Original", key: "costo_original" },
+                { title: "Efectivo", key: "precio_efectivo" },
+                { title: "Transferencia", key: "precio_transferencia" },
                 {
                     title: "Acciones",
                     key: "actions",
@@ -133,14 +167,61 @@ export default {
             ],
         };
     },
+    computed: {
+        articulosFiltrados() {
+            const palabras = this.search
+                .toLowerCase()
+                .split(" ")
+                .filter((p) => p.trim() !== "");
+
+            return this.articulos.filter((art) => {
+                const nombre = art.nombre.toLowerCase();
+                return palabras.every((palabra) => nombre.includes(palabra));
+            });
+        },
+    },
     created() {
         this.fetchArticulos();
     },
     methods: {
+        async exportarExcel() {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("Artículos");
+
+            // Encabezados
+            worksheet.columns = [
+                { header: "Número", key: "numero", width: 15 },
+                { header: "Nombre", key: "nombre", width: 40 },
+                { header: "Precio", key: "precio", width: 15 },
+                { header: "Costo Original", key: "costo_original", width: 20 },
+                { header: "Efectivo", key: "efectivo", width: 15 },
+                { header: "Transferencia", key: "transferencia", width: 20 },
+            ];
+
+            // Agregar datos
+            this.articulosFiltrados.forEach((item) => {
+                worksheet.addRow({
+                    numero: item.numero,
+                    nombre: item.nombre,
+                    precio: item.precio,
+                    costo_original: item.costo_original,
+                    efectivo: item.precio_efectivo,
+                    transferencia: item.precio_transferencia,
+                });
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "articulos.xlsx";
+            link.click();
+        },
         fetchArticulos() {
-            // Simulación de la solicitud HTTP
-            axios.get("/articulos").then((response) => {
-                this.articulos = response.data;
+            axios.get("/articulos").then((res) => {
+                this.articulos = res.data;
             });
         },
         openAddDialog() {
@@ -151,37 +232,27 @@ export default {
                 nombre: "",
                 precio: 0,
                 costo_original: 0,
-            }; // Limpiar el formulario
+            };
             this.dialog = true;
         },
         openEditDialog(item) {
             this.isEdit = true;
-            this.form = { ...item }; // Cargar los datos del artículo a editar
+            this.form = { ...item };
             this.dialog = true;
         },
         saveArticulo() {
-            if (!this.validateForm()) {
-                console.log("ASD");
-                this.snackbarText =
-                    "Por favor completa todos los campos obligatorios.";
-                this.snackbar = true;
-                return;
-            }
-
+            if (!this.validateForm()) return;
             this.form.precio = parseInt(this.form.precio);
             this.form.costo_original = parseInt(this.form.costo_original);
 
-            if (this.isEdit) {
-                axios.put(`/articulo/${this.form.id}`, this.form).then(() => {
-                    this.fetchArticulos();
-                    this.dialog = false;
-                });
-            } else {
-                axios.post("/articulo", this.form).then(() => {
-                    this.fetchArticulos();
-                    this.dialog = false;
-                });
-            }
+            const request = this.isEdit
+                ? axios.put(`/articulo/${this.form.id}`, this.form)
+                : axios.post("/articulo", this.form);
+
+            request.then(() => {
+                this.fetchArticulos();
+                this.dialog = false;
+            });
         },
         openDeleteConfirm(item) {
             this.articuloAEliminar = item;
@@ -193,82 +264,38 @@ export default {
                 this.confirmDeleteDialog = false;
             });
         },
-        // Método de validación
+        recalcularPrecios() {
+            axios.put("/articulos/recalcular-precios").then(() => {
+                this.fetchArticulos();
+                alert("Precios recalculados correctamente.");
+            });
+        },
+        abrirDialogoAumento() {
+            this.porcentajeAumento = 0;
+            this.dialogoAumento = true;
+        },
+        aumentarCostos() {
+            //usar 0.01 % si reste y quiero sumar algo, por ej 1% seria 1.01% y asi sale bien calculado nose porque
+            axios
+                .put("/articulos/aumentar-costos", {
+                    porcentaje: this.porcentajeAumento,
+                })
+                .then(() => {
+                    this.fetchArticulos();
+                    this.dialogoAumento = false;
+                    alert("Costos actualizados correctamente.");
+                });
+        },
         validateForm() {
-            if (!this.form.numero || String(this.form.numero).trim() === "") {
-                alert("Por favor ingresa el número de artículo.");
+            if (!this.form.numero || String(this.form.numero).trim() === "")
                 return false;
-            }
-            if (!this.form.nombre || this.form.nombre.trim() === "") {
-                alert("Por favor ingresa el nombre del artículo.");
+            if (!this.form.nombre || this.form.nombre.trim() === "")
                 return false;
-            }
-            if (!this.form.precio || isNaN(this.form.precio)) {
-                alert("Por favor ingresa un precio válido.");
+            if (!this.form.precio || isNaN(this.form.precio)) return false;
+            if (!this.form.costo_original || isNaN(this.form.costo_original))
                 return false;
-            }
-            if (!this.form.costo_original || isNaN(this.form.costo_original)) {
-                alert("Por favor ingresa un costo original válido.");
-                return false;
-            }
-
-            return true; // Todo está correcto
+            return true;
         },
     },
 };
 </script>
-
-<style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap");
-* {
-    font-family: "Nunito", sans-serif;
-}
-.v-btn {
-    background-color: transparent;
-    color: black;
-}
-
-.v-btn:hover {
-    background-color: #f5f5f5;
-}
-
-.v-btn.outlined {
-    border: 1px solid #ccc;
-    background-color: white;
-}
-
-.v-btn.outlined:hover {
-    background-color: #f5f5f5;
-}
-
-.v-icon {
-    color: #555;
-}
-
-.v-icon:hover {
-    color: black;
-}
-
-.v-data-table {
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-}
-
-.v-data-table-header th {
-    font-weight: bold;
-    color: #555;
-}
-
-.v-data-table-header th,
-.v-data-table-row td {
-    padding: 8px;
-}
-
-.v-data-table-row td {
-    font-size: 14px;
-}
-
-.v-card-title {
-    font-size: 24px;
-}
-</style>

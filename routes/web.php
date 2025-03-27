@@ -56,6 +56,9 @@ Route::post('/articulo/{id}/agregar-bombachas', [ArticuloController::class, 'agr
 Route::post('/articulo/{id}/eliminar-bombachas', [ArticuloController::class, 'eliminarBombachas']);
 Route::post('/articulo/{id}/editar-bombachas', [ArticuloController::class, 'editarBombachas']);
 Route::post('/articulo/{id}/eliminar-talle-completo', [ArticuloController::class, 'eliminarTalleCompleto']);
+Route::put('/articulos/recalcular-precios', [ArticuloController::class, 'recalcularPreciosMasivamente']);
+Route::put('/articulos/aumentar-costos', [ArticuloController::class, 'aumentarCostoOriginal']);
+
 
 //Ventas
 Route::post('/ventas', [VentasController::class, 'registrarVenta']);

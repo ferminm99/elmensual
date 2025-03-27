@@ -10,7 +10,7 @@ class Articulo extends Model
     use HasFactory;
     public $timestamps = false; // Desactiva las marcas de tiempo
 
-    protected $fillable = ['numero', 'nombre', 'precio','costo_original'];
+    protected $fillable = ['numero', 'nombre', 'precio','costo_original','precio_efectivo','precio_transferencia'];
 
     public function talles()
     {

@@ -16,12 +16,17 @@ class ArticuloController extends Controller
     // Método para crear un nuevo artículo
     public function store(Request $request) {
 
+        $precios = $this->calcularPrecios($request->input('costo_original'));
+
         $articulo = Articulo::create([
             'numero' => $request->input('numero'),
             'nombre' => $request->input('nombre'),
             'precio' => $request->input('precio'),
             'costo_original' => $request->input('costo_original'),
+            'precio_efectivo' => $precios['precio_efectivo'],
+            'precio_transferencia' => $precios['precio_transferencia'],
         ]);
+
 
         return response()->json([
             'message' => 'Artículo creado correctamente',
@@ -32,6 +37,8 @@ class ArticuloController extends Controller
     // Método para actualizar un artículo existente
     public function update(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
+
+        $precios = $this->calcularPrecios($request->input('costo_original'));
 
         $request->validate([
             'numero' => 'required|integer|unique:articulos,numero,' . $articulo->id,
@@ -45,6 +52,8 @@ class ArticuloController extends Controller
             'nombre' => $request->input('nombre'),
             'precio' => $request->input('precio'),
             'costo_original' => $request->input('costo_original'),
+            'precio_efectivo' => $precios['precio_efectivo'],
+            'precio_transferencia' => $precios['precio_transferencia'],
         ]);
     
         return response()->json(['message' => 'Artículo actualizado correctamente']);
@@ -195,5 +204,86 @@ class ArticuloController extends Controller
     
         return response()->json(['message' => 'Talle no encontrado'], 404);
     }
+
+    private function redondearPrecio($valor, $costo)
+    {
+        // if ($costo >= 16500 && $costo <= 17500) {
+        //     // Redondear al múltiplo de 500 más cercano
+        //     return round($valor / 500) * 500;
+        // } else {
+        //     // Redondear al múltiplo de 1000 más cercano
+        //     return round($valor / 1000) * 1000;
+        // }
+        return round($valor / 500) * 500;
+    }
+
+    private function calcularPrecios($costo)
+    {
+        // Calcular precio efectivo según regla
+        if ($costo >= 25000) {
+            $precio_efectivo = $costo * 1.75;
+        } elseif ($costo < 15750) {
+            $precio_efectivo = $costo * 1.8;
+        } else {
+            $precio_efectivo = $costo * 1.75;
+        }
+
+        // Transferencia = efectivo * 1.1
+        $precio_transferencia = $precio_efectivo * 1.1;
+
+        // Redondear con regla especial
+        $precio_efectivo = $this->redondearPrecio($precio_efectivo, $costo);
+        $precio_transferencia = $this->redondearPrecio($precio_transferencia, $costo);
+
+        return [
+            'precio_efectivo' => $precio_efectivo,
+            'precio_transferencia' => $precio_transferencia
+        ];
+    }
+
+    
+    // Recalcular precios en base al costo original actual
+    public function recalcularPreciosMasivamente()
+    {
+        $articulos = Articulo::all();
+
+        foreach ($articulos as $articulo) {
+            $precios = $this->calcularPrecios($articulo->costo_original);
+
+            $articulo->update([
+                'precio_efectivo' => $precios['precio_efectivo'],
+                'precio_transferencia' => $precios['precio_transferencia'],
+            ]);
+        }
+
+        return response()->json(['message' => 'Precios recalculados correctamente.']);
+    }
+
+    // Aumentar todos los costos originales por porcentaje
+    public function aumentarCostoOriginal(Request $request)
+    {
+        $porcentaje = $request->input('porcentaje');
+
+        if (!$porcentaje || !is_numeric($porcentaje)) {
+            return response()->json(['message' => 'Porcentaje inválido.'], 400);
+        }
+
+        $articulos = Articulo::all();
+
+        foreach ($articulos as $articulo) {
+            $nuevoCosto = $articulo->costo_original * (1 + $porcentaje / 100);
+            $precios = $this->calcularPrecios($nuevoCosto);
+
+            $articulo->update([
+                'costo_original' => $nuevoCosto,
+                'precio_efectivo' => $precios['precio_efectivo'],
+                'precio_transferencia' => $precios['precio_transferencia'],
+            ]);
+        }
+
+        return response()->json(['message' => "Costos y precios actualizados con un incremento del $porcentaje%."]);
+    }
+
+
     
 }
