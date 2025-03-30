@@ -8,6 +8,8 @@ use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\GoogleDriveController;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\LocalidadController;
+
 
 // Rutas para cargar a google drive el excel
 Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');
