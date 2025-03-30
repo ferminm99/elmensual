@@ -28,6 +28,10 @@ const routes = [
         component: () => import("../components/Calendario.vue"),
     },
     {
+        path: "/localidades",
+        component: () => import("../components/ManageLocalidades.vue"),
+    },
+    {
         path: "/:pathMatch(.*)*",
         component: () => import("../components/NotFoundPage.vue"),
     },

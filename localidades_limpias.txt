@@ -1,0 +1,9 @@
+25 DE MAYO|false
+30 DE AGOSTO|false
+9 DE ABRIL|true
+9 DE JULIO|true
+ALBERTI|true
+AMERICA|false
+ARRECIFES|true
+ARRIBEÑOS|false
+ARROYO GRANDE|true

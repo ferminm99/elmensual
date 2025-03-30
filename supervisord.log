@@ -71,3 +71,15 @@
 2024-10-07 18:59:50,846 INFO spawned: 'vite' with pid 8
 2024-10-07 18:59:52,383 INFO success: laravel entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 2024-10-07 18:59:52,383 INFO success: vite entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-03-28 00:05:29,544 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-03-28 00:05:29,552 INFO supervisord started with pid 1
+2025-03-28 00:05:30,555 INFO spawned: 'laravel' with pid 7
+2025-03-28 00:05:30,559 INFO spawned: 'vite' with pid 8
+2025-03-28 00:05:31,708 INFO success: laravel entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-03-28 00:05:31,708 INFO success: vite entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-03-30 18:07:19,304 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2025-03-30 18:07:19,311 INFO supervisord started with pid 1
+2025-03-30 18:07:20,314 INFO spawned: 'laravel' with pid 7
+2025-03-30 18:07:20,331 INFO spawned: 'vite' with pid 8
+2025-03-30 18:07:21,963 INFO success: laravel entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2025-03-30 18:07:21,963 INFO success: vite entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)

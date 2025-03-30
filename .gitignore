@@ -21,3 +21,6 @@ yarn-error.log
 elmensual.sql
 backup.sql
 supervisord.log
+insert_localidades.sql
+limpiar_localidades.py
+localidades.txt

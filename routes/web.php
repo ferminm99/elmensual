@@ -43,6 +43,14 @@ Route::group(['middleware' => 'cors'], function () {
     // Define tus rutas aquí
 });
 
+//Localidades
+Route::get('/localidades', [LocalidadController::class, 'index']);
+Route::post('/localidad', [LocalidadController::class, 'store']);
+Route::put('/localidad/{id}', [LocalidadController::class, 'update']);
+Route::delete('/localidad/{id}', [LocalidadController::class, 'destroy']);
+
+
+
 //Articulos
 Route::get('/articulos', [ArticuloController::class, 'index']);
 Route::post('/articulo', [ArticuloController::class, 'store']);

@@ -43,6 +43,14 @@
                     <v-list-item-title>Articulos</v-list-item-title>
                 </v-list-item>
 
+                <v-list-item
+                    link
+                    exact-active-class="active-list-item"
+                    to="/localidades"
+                >
+                    <v-list-item-title>Localidades</v-list-item-title>
+                </v-list-item>
+
                 <!-- Ventas -->
                 <v-list-item
                     link
