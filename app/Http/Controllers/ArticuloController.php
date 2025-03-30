@@ -8,11 +8,11 @@ use Illuminate\Http\Request;
 class ArticuloController extends Controller
 {
      // Método para listar todos los artículos
-     public function index() {
-        $articulos = Articulo::all(); // Obtener todos los artículos
-        return response()->json($articulos); // Devolver como JSON
+    public function index() {
+        $articulos = Articulo::orderBy('nombre')->get(); // Ordena por nombre
+        return response()->json($articulos);
     }
-
+    
     // Método para crear un nuevo artículo
     public function store(Request $request) {
 

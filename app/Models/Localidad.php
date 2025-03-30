@@ -11,5 +11,7 @@ class Localidad extends Model
 
     public $timestamps = false;
 
+    protected $table = 'localidades';
+
     protected $fillable = ['nombre', 'disponibilidad'];
 }

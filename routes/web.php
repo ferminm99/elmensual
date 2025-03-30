@@ -37,6 +37,10 @@ Route::get('/clientes', function () {
     return view('welcome'); // Vue se encargará de manejar la lógica interna
 });
 
+Route::get('/localidades', function () {
+    return view('welcome');
+});
+
 Route::get('/comprascalendario', function () {
     return view('welcome'); // Vue se encargará de manejar la lógica interna
 });
@@ -46,7 +50,7 @@ Route::group(['middleware' => 'cors'], function () {
 });
 
 //Localidades
-Route::get('/localidades', [LocalidadController::class, 'index']);
+Route::get('/api/localidades', [LocalidadController::class, 'index']);
 Route::post('/localidad', [LocalidadController::class, 'store']);
 Route::put('/localidad/{id}', [LocalidadController::class, 'update']);
 Route::delete('/localidad/{id}', [LocalidadController::class, 'destroy']);

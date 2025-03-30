@@ -9,8 +9,9 @@ class LocalidadController extends Controller
 {
     public function index()
     {
-        return response()->json(Localidad::all());
+        return Localidad::orderByDesc('disponibilidad')->orderBy('nombre')->get();
     }
+
 
     public function store(Request $request)
     {

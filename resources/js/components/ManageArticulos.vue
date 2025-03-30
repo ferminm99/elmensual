@@ -7,12 +7,23 @@
             </v-col>
         </v-row>
 
-        <!-- Buscador arriba a la izquierda -->
         <v-row class="d-flex mb-2">
+            <!-- Buscar por nombre -->
             <v-col cols="12" sm="6" md="4">
                 <v-text-field
-                    v-model="search"
+                    v-model="searchNombre"
                     label="Buscar por nombre"
+                    dense
+                    solo
+                    clearable
+                ></v-text-field>
+            </v-col>
+
+            <!-- Buscar por número -->
+            <v-col cols="12" sm="6" md="4">
+                <v-text-field
+                    v-model="searchNumero"
+                    label="Buscar por número"
                     dense
                     solo
                     clearable
@@ -142,7 +153,9 @@ export default {
             isEdit: false,
             articuloAEliminar: null,
             porcentajeAumento: 0,
-            search: "",
+            searchNombre: "",
+            searchNumero: "",
+
             form: {
                 id: null,
                 numero: "",
@@ -169,14 +182,23 @@ export default {
     },
     computed: {
         articulosFiltrados() {
-            const palabras = this.search
+            const palabrasNombre = this.searchNombre
                 .toLowerCase()
                 .split(" ")
                 .filter((p) => p.trim() !== "");
+            const textoNumero = this.searchNumero.toLowerCase().trim();
 
             return this.articulos.filter((art) => {
                 const nombre = art.nombre.toLowerCase();
-                return palabras.every((palabra) => nombre.includes(palabra));
+                const numero = String(art.numero).toLowerCase();
+
+                const coincideNombre = palabrasNombre.every((palabra) =>
+                    nombre.includes(palabra)
+                );
+                const coincideNumero =
+                    textoNumero === "" || numero.includes(textoNumero);
+
+                return coincideNombre && coincideNumero;
             });
         },
     },

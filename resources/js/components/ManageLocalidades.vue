@@ -121,12 +121,13 @@ export default {
             );
         },
     },
+
     created() {
         this.fetchLocalidades();
     },
     methods: {
         fetchLocalidades() {
-            axios.get("/localidades").then((res) => {
+            axios.get("/api/localidades").then((res) => {
                 console.log("PREPARANDO:");
                 this.localidades = res.data;
             });
