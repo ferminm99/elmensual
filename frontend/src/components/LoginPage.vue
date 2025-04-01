@@ -40,26 +40,46 @@ export default {
     methods: {
         async login() {
             try {
+                // 1. Obtener cookie CSRF (esto genera la cookie `XSRF-TOKEN`)
+                await axios.get(
+                    "https://elmensual-production.up.railway.app/csrf-token",
+                    { withCredentials: true }
+                );
+
+                // 2. Obtener la cookie manualmente (si estás en frontend puro)
+                const token = this.getCookie("XSRF-TOKEN");
+
+                // 3. Enviar login con header X-XSRF-TOKEN
                 const response = await axios.post(
-                    "/login",
+                    "https://elmensual-production.up.railway.app/login",
                     {
                         email: this.email,
                         password: this.password,
                     },
                     {
-                        withCredentials: true, // 👈 Esto es esencial
+                        withCredentials: true,
+                        headers: {
+                            "X-XSRF-TOKEN": decodeURIComponent(token),
+                        },
                     }
                 );
 
-                if (response.data.success) {
+                if (response.status === 204 || response.data.success) {
                     localStorage.setItem("auth", true);
                     this.$router.push("/");
                 } else {
                     alert("Credenciales incorrectas");
                 }
             } catch (error) {
+                console.error(error);
                 alert("Error al iniciar sesión");
             }
+        },
+        getCookie(name) {
+            const match = document.cookie.match(
+                new RegExp("(^| )" + name + "=([^;]+)")
+            );
+            if (match) return match[2];
         },
     },
 };
