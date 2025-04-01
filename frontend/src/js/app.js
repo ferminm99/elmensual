@@ -18,7 +18,7 @@ axios.defaults.headers.common["X-CSRF-TOKEN"] = document.querySelector(
 )?.content;
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:8000"; // Si lo deseás
+axios.defaults.baseURL = import.meta.env.VITE_APP_URL; // Si lo deseás
 
 // Crear la instancia de Vuetify
 const vuetify = createVuetify({
