@@ -12,6 +12,7 @@ use App\Http\Controllers\LocalidadController;
 use App\Http\Controllers\Auth\LoginController;
 // use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
 
 
 // Rutas para cargar a google drive el excel
