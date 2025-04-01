@@ -2,7 +2,7 @@
 
 return [
 
-    'paths' => ['api/*', 'login', 'logout'],
+    'paths' => ['api/*', 'login', 'logout', 'csrf-token'],
 
     'allowed_methods' => ['*'],
 
