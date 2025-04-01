@@ -57,6 +57,9 @@ Route::group(['middleware' => 'cors'], function () {
     // Define tus rutas aquí
 });
 
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+});
 
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
