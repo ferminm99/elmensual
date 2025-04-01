@@ -1,0 +1,36 @@
+[33m2c9a115[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33m2c9a115[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m HEAD@{1}: commit: Agregados a articulos y localidades
+[33mb266b5f[m HEAD@{2}: commit: arreglo minimo
+[33m3e9c50c[m HEAD@{3}: commit: Agregado de localidades
+[33mbd1a80a[m HEAD@{4}: commit: agregado de articulos y mejora de calcular precios
+[33ma4bb406[m HEAD@{5}: commit: Arreglos, programa en un excelente nivel ahora.
+[33m112c8fd[m HEAD@{6}: commit: Docker para dev funcionando!
+[33m94dbfdb[m HEAD@{7}: commit: prueeba final vercel
+[33me193bbb[m HEAD@{8}: commit: vercel prueba
+[33m10b47aa[m HEAD@{9}: commit: vercel
+[33m5155d70[m HEAD@{10}: pull: Fast-forward
+[33m7ebcb0e[m HEAD@{11}: commit: vite
+[33mb17c341[m HEAD@{12}: commit: docker cositas
+[33m0ed4e4f[m HEAD@{13}: commit: dockerization
+[33m826c039[m[33m ([m[1;31morigin/master[m[33m)[m HEAD@{14}: commit: Arreglos calendario y varios
+[33m974eaf3[m HEAD@{15}: commit: Clientes y arreglos para que quede fachero
+[33ma72d353[m HEAD@{16}: pull: Merge made by the 'ort' strategy.
+[33mbf014ca[m HEAD@{17}: commit: calendario y google drive conexion que no pude hacer andar
+[33ma60d2d4[m HEAD@{18}: checkout: moving from master to main
+[33m4f3e36e[m[33m ([m[1;32mmaster[m[33m)[m HEAD@{19}: checkout: moving from main to master
+[33ma60d2d4[m HEAD@{20}: checkout: moving from master to main
+[33m4f3e36e[m[33m ([m[1;32mmaster[m[33m)[m HEAD@{21}: checkout: moving from main to master
+[33ma60d2d4[m HEAD@{22}: commit: Ventas completo
+[33m4f3e36e[m[33m ([m[1;32mmaster[m[33m)[m HEAD@{23}: Branch: renamed refs/heads/master to refs/heads/main
+[33m4f3e36e[m[33m ([m[1;32mmaster[m[33m)[m HEAD@{25}: commit: Nuevas mejoras para facturar y demas
+[33m6685e97[m HEAD@{26}: Branch: renamed refs/heads/main to refs/heads/master
+[33m6685e97[m HEAD@{28}: Branch: renamed refs/heads/master to refs/heads/main
+[33m6685e97[m HEAD@{30}: Branch: renamed refs/heads/main to refs/heads/master
+[33m6685e97[m HEAD@{32}: commit: detallito de cerrado
+[33m2bf4703[m HEAD@{33}: Branch: renamed refs/heads/master to refs/heads/main
+[33m2bf4703[m HEAD@{35}: Branch: renamed refs/heads/main to refs/heads/master
+[33m2bf4703[m HEAD@{37}: commit: ventas
+[33m34fc19f[m HEAD@{38}: Branch: renamed refs/heads/master to refs/heads/main
+[33m34fc19f[m HEAD@{40}: Branch: renamed refs/heads/main to refs/heads/master
+[33m34fc19f[m HEAD@{42}: Branch: renamed refs/heads/master to refs/heads/main
+[33m34fc19f[m HEAD@{44}: commit (initial): Implementación de ventas y gestión de clientes

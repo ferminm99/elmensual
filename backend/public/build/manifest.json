@@ -1,0 +1,164 @@
+{
+  "_datepicker-B7zUZ_Hm.js": {
+    "file": "assets/datepicker-B7zUZ_Hm.js",
+    "name": "datepicker",
+    "imports": [
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js"
+    ]
+  },
+  "_vue-Dp34GT9d.js": {
+    "file": "assets/vue-Dp34GT9d.js",
+    "name": "vue"
+  },
+  "_vuetify-HETxidax.js": {
+    "file": "assets/vuetify-HETxidax.js",
+    "name": "vuetify",
+    "imports": [
+      "_vue-Dp34GT9d.js"
+    ]
+  },
+  "node_modules/@mdi/font/fonts/materialdesignicons-webfont.eot": {
+    "file": "assets/materialdesignicons-webfont-CSr8KVlo.eot",
+    "src": "node_modules/@mdi/font/fonts/materialdesignicons-webfont.eot"
+  },
+  "node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf": {
+    "file": "assets/materialdesignicons-webfont-B7mPwVP_.ttf",
+    "src": "node_modules/@mdi/font/fonts/materialdesignicons-webfont.ttf"
+  },
+  "node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff": {
+    "file": "assets/materialdesignicons-webfont-PXm3-2wK.woff",
+    "src": "node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff"
+  },
+  "node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2": {
+    "file": "assets/materialdesignicons-webfont-Dp5v-WZN.woff2",
+    "src": "node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-CHbaJo_C.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-BHOrBh52.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ],
+    "dynamicImports": [
+      "resources/js/components/Login.vue",
+      "resources/js/components/HomePage.vue",
+      "resources/js/components/Clientes.vue",
+      "resources/js/components/ManageArticulos.vue",
+      "resources/js/components/Ventas.vue",
+      "resources/js/components/Calendario.vue",
+      "resources/js/components/ManageLocalidades.vue",
+      "resources/js/components/NotFoundPage.vue"
+    ],
+    "css": [
+      "assets/app-CP72ZHyl.css"
+    ],
+    "assets": [
+      "assets/materialdesignicons-webfont-CSr8KVlo.eot",
+      "assets/materialdesignicons-webfont-Dp5v-WZN.woff2",
+      "assets/materialdesignicons-webfont-PXm3-2wK.woff",
+      "assets/materialdesignicons-webfont-B7mPwVP_.ttf"
+    ]
+  },
+  "resources/js/components/Calendario.vue": {
+    "file": "assets/Calendario-DHCoWi4B.js",
+    "name": "Calendario",
+    "src": "resources/js/components/Calendario.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vue-Dp34GT9d.js",
+      "_datepicker-B7zUZ_Hm.js",
+      "resources/js/app.js",
+      "_vuetify-HETxidax.js"
+    ]
+  },
+  "resources/js/components/Clientes.vue": {
+    "file": "assets/Clientes-MKHdOMbI.js",
+    "name": "Clientes",
+    "src": "resources/js/components/Clientes.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ]
+  },
+  "resources/js/components/HomePage.vue": {
+    "file": "assets/HomePage-D8hx0eBI.js",
+    "name": "HomePage",
+    "src": "resources/js/components/HomePage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ]
+  },
+  "resources/js/components/Login.vue": {
+    "file": "assets/Login-hHTD1Gjr.js",
+    "name": "Login",
+    "src": "resources/js/components/Login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vue-Dp34GT9d.js",
+      "resources/js/app.js",
+      "_vuetify-HETxidax.js"
+    ]
+  },
+  "resources/js/components/ManageArticulos.vue": {
+    "file": "assets/ManageArticulos-DQWgsAWZ.js",
+    "name": "ManageArticulos",
+    "src": "resources/js/components/ManageArticulos.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ]
+  },
+  "resources/js/components/ManageLocalidades.vue": {
+    "file": "assets/ManageLocalidades-aTBIvO38.js",
+    "name": "ManageLocalidades",
+    "src": "resources/js/components/ManageLocalidades.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ],
+    "css": [
+      "assets/ManageLocalidades-BCstqGcm.css"
+    ]
+  },
+  "resources/js/components/NotFoundPage.vue": {
+    "file": "assets/NotFoundPage-Bx5axnax.js",
+    "name": "NotFoundPage",
+    "src": "resources/js/components/NotFoundPage.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ]
+  },
+  "resources/js/components/Ventas.vue": {
+    "file": "assets/Ventas-BYZ2f5qw.js",
+    "name": "Ventas",
+    "src": "resources/js/components/Ventas.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_datepicker-B7zUZ_Hm.js",
+      "resources/js/app.js",
+      "_vue-Dp34GT9d.js",
+      "_vuetify-HETxidax.js"
+    ]
+  }
+}
