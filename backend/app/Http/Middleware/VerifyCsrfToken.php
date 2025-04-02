@@ -23,7 +23,9 @@ class VerifyCsrfToken extends Middleware
             false,
             'None'
         ));
+
         \Log::info('✅ Middleware CSRF custom activo');
+
         return $response;
     }
 }

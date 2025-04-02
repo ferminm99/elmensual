@@ -110,7 +110,6 @@ Route::put('/cliente/{id}', [ClienteController::class, 'update']); // Actualizar
 Route::delete('/cliente/{id}', [ClienteController::class, 'destroy']); // Eliminar un cliente
 
 
-
-Route::get('/{pathMatch}', function () {
-    return view('welcome');
-})->where('/{pathMatch}','.*');
+Route::get('{any}', function () {
+    return File::get(public_path() . '/index.html');
+})->where('any', '.*');
