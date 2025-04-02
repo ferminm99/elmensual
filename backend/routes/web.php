@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\LoginController;
 // use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Symfony\Component\HttpFoundation\Cookie as SymfonyCookie;
 
 
 // Rutas para cargar a google drive el excel
@@ -54,7 +55,20 @@ Route::group(['middleware' => 'cors'], function () {
 });
 
 Route::get('/csrf-token', function () {
-    return response()->json(['token' => csrf_token()]);
+    $token = csrf_token();
+
+    return response()->json(['token' => $token])
+        ->withCookie(new SymfonyCookie(
+            'XSRF-TOKEN',
+            $token,
+            time() + 60 * 60,
+            '/',
+            'elmensual.vercel.app', // <-- IMPORTANTE
+            true,   // Secure
+            false,
+            false,
+            'None'  // SameSite=None
+        ));
 });
 
 Route::post('/login', [LoginController::class, 'login']);

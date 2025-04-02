@@ -40,10 +40,10 @@ export default {
     methods: {
         async login() {
             try {
-                // Paso 1: Disparar la petición para que Laravel genere la cookie XSRF-TOKEN
+                // Hacer que Laravel genere la cookie XSRF-TOKEN
                 await axios.get("/csrf-token", { withCredentials: true });
 
-                // Paso 2: Leer la cookie XSRF-TOKEN
+                // Leer la cookie
                 const token = this.getCookie("XSRF-TOKEN");
 
                 if (!token) {
@@ -51,11 +51,10 @@ export default {
                     return;
                 }
 
-                // Paso 3: Establecerlo en el header correcto
+                // Setear el header para que Laravel lo valide
                 axios.defaults.headers.common["X-XSRF-TOKEN"] =
                     decodeURIComponent(token);
 
-                // Paso 4: Hacer el login
                 const response = await axios.post(
                     "/login",
                     {
