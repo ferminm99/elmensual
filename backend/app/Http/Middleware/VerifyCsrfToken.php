@@ -9,6 +9,7 @@ class VerifyCsrfToken extends Middleware
 {
     protected function addCookieToResponse($request, $response)
     {
+        
         $response = parent::addCookieToResponse($request, $response);
 
         $response->headers->setCookie(new SymfonyCookie(
@@ -22,7 +23,7 @@ class VerifyCsrfToken extends Middleware
             false,
             'None'
         ));
-
+        \Log::info('✅ Middleware CSRF custom activo');
         return $response;
     }
 }
