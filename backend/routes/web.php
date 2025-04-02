@@ -61,13 +61,13 @@ Route::get('/csrf-token', function () {
         ->withCookie(new SymfonyCookie(
             'XSRF-TOKEN',
             $token,
-            time() + 60 * 60,
+            time() + 60 * 60, // 1 hora
             '/',
-            'elmensual.vercel.app', // <-- IMPORTANTE
-            true,   // Secure
+            '.elmensual.vercel.app', // <-- el punto inicial es CLAVE
+            true,  // Secure
             false,
             false,
-            'None'  // SameSite=None
+            'None' // SameSite=None
         ));
 });
 
