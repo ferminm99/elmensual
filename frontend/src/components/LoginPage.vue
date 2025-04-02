@@ -41,10 +41,7 @@ export default {
         async login() {
             try {
                 // 1. Obtener cookie CSRF (esto genera la cookie `XSRF-TOKEN`)
-                await axios.get(
-                    "https://elmensual-production.up.railway.app/csrf-token",
-                    { withCredentials: true }
-                );
+                await axios.get("/csrf-token");
 
                 // 2. Obtener la cookie manualmente (si estás en frontend puro)
                 const token = this.getCookie("XSRF-TOKEN");
