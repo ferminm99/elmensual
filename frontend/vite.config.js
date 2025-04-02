@@ -17,23 +17,23 @@ export default defineConfig({
         },
         chunkSizeWarningLimit: 1600,
     },
-    server: {
-        host: true,
-        port: 5173,
-        https: false,
-        proxy: {
-            "/login": {
-                target: "https://elmensual-production.up.railway.app",
-                changeOrigin: true,
-                secure: false,
-            },
-            "/csrf-token": {
-                target: "https://elmensual-production.up.railway.app",
-                changeOrigin: true,
-                secure: false,
-            },
-        },
-    },
+    // server: {
+    //     host: true,
+    //     port: 5173,
+    //     https: false,
+    //     proxy: {
+    //         "/login": {
+    //             target: "https://elmensual-production.up.railway.app",
+    //             changeOrigin: true,
+    //             secure: false,
+    //         },
+    //         "/csrf-token": {
+    //             target: "https://elmensual-production.up.railway.app",
+    //             changeOrigin: true,
+    //             secure: false,
+    //         },
+    //     },
+    // },
 
     // server: {
     //     watch: {
