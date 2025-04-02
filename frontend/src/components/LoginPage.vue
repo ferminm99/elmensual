@@ -40,14 +40,22 @@ export default {
     methods: {
         async login() {
             try {
-                // Obtener el token CSRF desde el backend
-                const { data } = await axios.get("/csrf-token", {
-                    withCredentials: true,
-                });
+                // Paso 1: Disparar la petición para que Laravel genere la cookie XSRF-TOKEN
+                await axios.get("/csrf-token", { withCredentials: true });
 
-                // Usar el token en todas las peticiones siguientes
-                axios.defaults.headers.common["X-CSRF-TOKEN"] = data.token;
+                // Paso 2: Leer la cookie XSRF-TOKEN
+                const token = this.getCookie("XSRF-TOKEN");
 
+                if (!token) {
+                    alert("No se pudo obtener el token CSRF.");
+                    return;
+                }
+
+                // Paso 3: Establecerlo en el header correcto
+                axios.defaults.headers.common["X-XSRF-TOKEN"] =
+                    decodeURIComponent(token);
+
+                // Paso 4: Hacer el login
                 const response = await axios.post(
                     "/login",
                     {
@@ -66,7 +74,7 @@ export default {
                     alert("Credenciales incorrectas");
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Error al iniciar sesión", error);
                 alert("Error al iniciar sesión");
             }
         },
@@ -74,7 +82,7 @@ export default {
             const match = document.cookie.match(
                 new RegExp("(^| )" + name + "=([^;]+)")
             );
-            if (match) return match[2];
+            return match ? match[2] : null;
         },
     },
 };
