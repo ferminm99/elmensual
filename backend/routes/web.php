@@ -21,11 +21,6 @@ Route::get('/auth/google', [GoogleDriveController::class, 'redirectToGoogle'])->
 Route::get('/google/callback', [GoogleDriveController::class, 'handleGoogleCallback']);
 Route::get('/upload-to-drive', [GoogleDriveController::class, 'uploadToDrive'])->name('drive.upload');
 
-// Ruta para login
-Route::get('/panel', function () {
-    return view('panel');
-})->middleware('auth');
-
 
 // Ruta para la vista Home
 Route::get('/', function () {
