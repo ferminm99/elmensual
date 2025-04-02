@@ -40,12 +40,13 @@ export default {
     methods: {
         async login() {
             try {
-                // ✅ Obtener y setear el token CSRF antes de loguear
-                const response = await axios.get("/csrf-token", {
+                // Obtener el token CSRF desde el backend
+                const { data } = await axios.get("/csrf-token", {
                     withCredentials: true,
                 });
-                axios.defaults.headers.common["X-CSRF-TOKEN"] =
-                    response.data.csrf_token;
+
+                // Usar el token en todas las peticiones siguientes
+                axios.defaults.headers.common["X-CSRF-TOKEN"] = data.token;
 
                 const response = await axios.post(
                     "/login",
