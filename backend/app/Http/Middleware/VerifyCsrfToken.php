@@ -11,23 +11,20 @@ class VerifyCsrfToken extends Middleware
     {
         \Log::info('✅ Middleware CSRF custom activo');
 
-        // No llamamos a parent::addCookieToResponse
-        // Porque eso pone la cookie con HttpOnly
+        // NO usar parent::addCookieToResponse
+        // Laravel setea XSRF-TOKEN con HttpOnly y rompe todo
+
+        $token = $request->session()->token();
 
         $response->headers->setCookie(
-            Cookie::create(
-                'XSRF-TOKEN',
-                $request->session()->token(),
-                time() + 60 * 60
-            )
-            ->withSecure(true)
-            ->withSameSite('None')
-            ->withHttpOnly(false) 
-            ->withPath('/')
-            ->withDomain('elmensual.vercel.app')
+            Cookie::create('XSRF-TOKEN', $token, time() + 3600)
+                ->withSecure(true)
+                ->withSameSite('None')
+                ->withHttpOnly(false) // ❗️Clave para que Vue lo lea
+                ->withPath('/')
+                ->withDomain('.elmensual.vercel.app')
         );
 
         return $response;
     }
-
 }
