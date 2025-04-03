@@ -2,7 +2,7 @@
 
 return [
 
-    'paths' => ['api/*', '/login', '/logout', '/csrf-token'],
+    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 
@@ -12,10 +12,9 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['XSRF-TOKEN'],
 
     'max_age' => 0,
 
     'supports_credentials' => true,
-
 ];
