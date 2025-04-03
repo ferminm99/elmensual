@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     header("Access-Control-Allow-Credentials: true");
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
     // No uses '*'
-    header("Access-Control-Allow-Headers: X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN");
+    header("Access-Control-Allow-Headers: X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN, X-XSRF-TOKEN, x-xsrf-token");
     exit(0);
 }
 
