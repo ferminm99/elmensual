@@ -41,9 +41,10 @@ export default {
         async login() {
             axios.defaults.withCredentials = true;
             try {
-                await axios.get("/csrf-token"); // Carga y setea la cookie
-
-                const token = this.getCookie("XSRF-TOKEN");
+                const csrfResponse = await axios.get("/csrf-token", {
+                    withCredentials: true,
+                });
+                const token = csrfResponse.data.token; // Usá el token del JSON directamente
                 console.log("📦 TOKEN CSRF:", token);
 
                 if (!token) {
