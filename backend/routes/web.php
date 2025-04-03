@@ -56,24 +56,28 @@ Route::group(['middleware' => 'cors'], function () {
     // Define tus rutas aquí
 });
 
+// Route::get('/csrf-token', function () {
+//     $token = csrf_token();
+
+//     // Setear la cookie manualmente (NO usar Symfony Cookie aquí)
+//     setcookie(
+//         'XSRF-TOKEN',
+//         $token,
+//         [
+//             'expires' => time() + 3600,
+//             'path' => '/',
+//             'domain' => '.elmensual.vercel.app',
+//             'secure' => true,
+//             'httponly' => false, // 👈 clave
+//             'samesite' => 'None',
+//         ]
+//     );
+
+//     return Response::json(['token' => $token]);
+// });
+
 Route::get('/csrf-token', function () {
-    $token = csrf_token();
-
-    // Setear la cookie manualmente (NO usar Symfony Cookie aquí)
-    setcookie(
-        'XSRF-TOKEN',
-        $token,
-        [
-            'expires' => time() + 3600,
-            'path' => '/',
-            'domain' => '.elmensual.vercel.app',
-            'secure' => true,
-            'httponly' => false, // 👈 clave
-            'samesite' => 'None',
-        ]
-    );
-
-    return Response::json(['token' => $token]);
+    return response()->json(['token' => csrf_token()]);
 });
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
