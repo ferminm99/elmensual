@@ -10,7 +10,6 @@ class VerifyCsrfToken extends Middleware
     protected function addCookieToResponse($request, $response)
     {
         \Log::info('✅ Middleware CSRF custom activo');
-
         // NO usar parent::addCookieToResponse
         // Laravel setea XSRF-TOKEN con HttpOnly y rompe todo
 
