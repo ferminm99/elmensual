@@ -77,8 +77,10 @@ Route::group(['middleware' => 'cors'], function () {
 // });
 
 Route::get('/csrf-token', function () {
-    return response()->json(['token' => csrf_token()]);
-});
+    $token = csrf_token();
+    return response()->json(['token' => $token]);
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
