@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\Cookie;
+use App\Http\Middleware\VerifyCsrfToken;
 
+App::make(Kernel::class)->prependMiddleware(VerifyCsrfToken::class);
 
 // Rutas para cargar a google drive el excel
 Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');
