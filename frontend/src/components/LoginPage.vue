@@ -39,9 +39,20 @@ export default {
     },
     methods: {
         async login() {
+            axios.defaults.withCredentials = true;
             try {
-                // Cargar la cookie XSRF-TOKEN
-                await axios.get("/csrf-token", { withCredentials: true });
+                await axios.get("/csrf-token"); // Carga y setea la cookie
+
+                const token = this.getCookie("XSRF-TOKEN");
+                console.log("📦 TOKEN CSRF:", token);
+
+                if (!token) {
+                    alert("No se pudo obtener el token CSRF.");
+                    return;
+                }
+
+                axios.defaults.headers.common["X-XSRF-TOKEN"] =
+                    decodeURIComponent(token);
 
                 // Axios se encargará de leer la cookie y enviarla
                 const response = await axios.post(
@@ -74,6 +85,12 @@ export default {
                     alert("Error al iniciar sesión");
                 }
             }
+        },
+        getCookie(name) {
+            const match = document.cookie.match(
+                new RegExp("(^| )" + name + "=([^;]+)")
+            );
+            return match ? match[2] : null;
         },
     },
 };
