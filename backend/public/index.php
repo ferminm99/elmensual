@@ -9,12 +9,12 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
     require $maintenance;
 }
 
+header("Access-Control-Allow-Origin: https://elmensual.vercel.app");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Headers: X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN, X-XSRF-TOKEN, x-xsrf-token");
+header("Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS");
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header("Access-Control-Allow-Origin: https://elmensual.vercel.app");
-    header("Access-Control-Allow-Credentials: true");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-    // No uses '*'
-    header("Access-Control-Allow-Headers: X-Requested-With, Content-Type, Accept, X-CSRF-TOKEN, X-XSRF-TOKEN, x-xsrf-token");
     exit(0);
 }
 
