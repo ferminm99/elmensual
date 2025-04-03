@@ -63,7 +63,16 @@ export default {
                 }
             } catch (error) {
                 console.error("Error al iniciar sesión", error);
-                alert("Error al iniciar sesión");
+
+                if (error.response) {
+                    console.error("💥 Backend dijo:", error.response.data);
+                    alert(
+                        "Error del servidor: " +
+                            JSON.stringify(error.response.data)
+                    );
+                } else {
+                    alert("Error al iniciar sesión");
+                }
             }
         },
     },
