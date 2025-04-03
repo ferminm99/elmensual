@@ -14,10 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->append(\Illuminate\Session\Middleware\StartSession::class); // 🔥 clave para que funcione CSRF
         $middleware->append(\Illuminate\View\Middleware\ShareErrorsFromSession::class); // (opcional, por si usás errores)
-        // $middleware->replace(
-        //     \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-        //     \App\Http\Middleware\VerifyCsrfToken::class
-        // );
+        $middleware->replace(
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\VerifyCsrfToken::class
+        );
         //$middleware->prepend(\App\Http\Middleware\VerifyCsrfToken::class); // ¡En vez de replace!
 
     })

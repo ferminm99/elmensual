@@ -19,8 +19,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        app(Kernel::class)->prependMiddleware(VerifyCsrfToken::class);
-        \Log::info('⚡ Inyectamos el middleware CSRF custom desde AppServiceProvider'); 
-        //
+    
     }
 }
