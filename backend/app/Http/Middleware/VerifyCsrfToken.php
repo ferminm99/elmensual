@@ -19,7 +19,7 @@ class VerifyCsrfToken extends Middleware
             Cookie::create('XSRF-TOKEN', 'TEST-' . $token, time() + 3600)
                 ->withSecure(true)
                 ->withSameSite('None')
-                ->withHttpOnly(false) // ❗️Clave para que Vue lo lea
+                ->withHttpOnly(false)
                 ->withPath('/')
                 ->withDomain('.elmensual.vercel.app')
         );
