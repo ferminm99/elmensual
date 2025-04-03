@@ -17,7 +17,7 @@ class VerifyCsrfToken extends Middleware
         $token = $request->session()->token();
 
         $response->headers->setCookie(
-            Cookie::create('XSRF-TOKEN', $token, time() + 3600)
+            Cookie::create('XSRF-TOKEN', 'TEST-' . $token, time() + 3600)
                 ->withSecure(true)
                 ->withSameSite('None')
                 ->withHttpOnly(false) // ❗️Clave para que Vue lo lea
