@@ -11,7 +11,7 @@ return [
         'Accept',
         'X-CSRF-TOKEN',
         'X-XSRF-TOKEN',
-        'x-xsrf-token'  // Agregamos la variante en minúsculas
+        'x-xsrf-token'
     ],
     'exposed_headers' => ['XSRF-TOKEN'],
     'max_age' => 0,

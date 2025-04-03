@@ -15,7 +15,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\InteractsWithTime;
 use Symfony\Component\HttpFoundation\Cookie;
 
-class CustomVerifyCsrfToken // 👈 CAMBIADO
+class CustomVerifyCsrfToken
 {
     use InteractsWithTime, ExcludesPaths;
 
