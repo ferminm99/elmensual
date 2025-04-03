@@ -22,9 +22,9 @@ class VerifyCsrfToken extends Middleware
             )
             ->withSecure(true)
             ->withSameSite('None')
-            ->withHttpOnly(false) // 👈 clave
+            ->withHttpOnly(false) 
             ->withPath('/')
-            ->withDomain('.elmensual.vercel.app')
+            ->withDomain('elmensual.vercel.app')
         );
 
         return $response;
