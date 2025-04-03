@@ -54,6 +54,7 @@ export default {
                 axios.defaults.headers.common["X-XSRF-TOKEN"] =
                     decodeURIComponent(token);
 
+                console.log(document.cookie);
                 // Axios se encargará de leer la cookie y enviarla
                 const response = await axios.post(
                     "/login",
