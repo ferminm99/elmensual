@@ -55,18 +55,30 @@ Route::group(['middleware' => 'cors'], function () {
     // Define tus rutas aquí
 });
 
-Route::get('/csrf-token', function () {
+
+
+Route::get('/csrf-token', function (\Illuminate\Http\Request $request) {
     $token = csrf_token();
 
-    return response()->json(['token' => $token])
-        ->withCookie(
-            Cookie::create('XSRF-TOKEN', $token, time() + 3600)
-                ->withSecure(true)
-                ->withSameSite('None')
-                ->withPath('/')
-                ->withDomain('.elmensual.vercel.app')
-        );
+    $response = response()->json(['token' => $token]);
+
+    $cookie = Cookie::create(
+        'XSRF-TOKEN',
+        $token,
+        time() + 3600,
+        '/',
+        '.elmensual.vercel.app',
+        true, // secure
+        false, // httpOnly
+        false, // raw
+        'None' // SameSite
+    );
+
+    $response->headers->setCookie($cookie);
+
+    return $response;
 });
+
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
