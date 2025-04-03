@@ -12,6 +12,7 @@ class LoginController extends Controller
 {
     public function login(Request $request)
     {
+        \Log::info('🚨 Entró al método login');
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
