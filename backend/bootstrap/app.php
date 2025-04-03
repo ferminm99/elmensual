@@ -13,9 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         // 🔥 Forzar uso de tu propia clase CSRF
-        $middleware->bindToKernel(\App\Http\Middleware\VerifyCsrfToken::class, 'csrf');
-
-        
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         //$middleware->stateful(); // <- clave para sesiones cross-site
     })
     ->withExceptions(function (Exceptions $exceptions) {
