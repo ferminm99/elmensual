@@ -52,8 +52,7 @@ export default {
                     return;
                 }
 
-                axios.defaults.headers.common["X-XSRF-TOKEN"] =
-                    decodeURIComponent(token);
+                axios.defaults.headers.common["X-XSRF-TOKEN"] = token;
 
                 console.log(document.cookie);
                 // Axios se encargará de leer la cookie y enviarla
