@@ -11,7 +11,8 @@ class VerifyCsrfToken extends Middleware
     {
         \Log::info('✅ Middleware CSRF custom activo');
 
-        $response = parent::addCookieToResponse($request, $response);
+        // No llamamos a parent::addCookieToResponse
+        // Porque eso pone la cookie con HttpOnly
 
         $response->headers->setCookie(
             Cookie::create(
@@ -21,11 +22,12 @@ class VerifyCsrfToken extends Middleware
             )
             ->withSecure(true)
             ->withSameSite('None')
+            ->withHttpOnly(false) // 👈 clave
             ->withPath('/')
             ->withDomain('.elmensual.vercel.app')
-            ->withHttpOnly(false)
         );
 
         return $response;
     }
+
 }
