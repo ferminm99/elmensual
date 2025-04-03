@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->append(\Illuminate\Session\Middleware\StartSession::class); // 🔥 clave para que funcione CSRF
+        $middleware->append(\Illuminate\View\Middleware\ShareErrorsFromSession::class); // (opcional, por si usás errores)
         $middleware->append(\App\Http\Middleware\VerifyCsrfToken::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
