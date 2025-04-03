@@ -14,7 +14,7 @@ use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
-use Symfony\Component\HttpFoundation\Cookie as SymfonyCookie;
+use Symfony\Component\HttpFoundation\Cookie;
 
 
 // Rutas para cargar a google drive el excel
@@ -55,7 +55,18 @@ Route::group(['middleware' => 'cors'], function () {
     // Define tus rutas aquí
 });
 
-Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]));
+Route::get('/csrf-token', function () {
+    $token = csrf_token();
+
+    return response()->json(['token' => $token])
+        ->withCookie(
+            Cookie::create('XSRF-TOKEN', $token, time() + 3600)
+                ->withSecure(true)
+                ->withSameSite('None')
+                ->withPath('/')
+                ->withDomain('.elmensual.vercel.app')
+        );
+});
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
