@@ -79,9 +79,6 @@ Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 
-
-dd(app()->make(\Illuminate\Contracts\Http\Kernel::class)->getMiddleware());
-
 //Localidades
 Route::get('/api/localidades', [LocalidadController::class, 'index']);
 Route::post('/localidad', [LocalidadController::class, 'store']);
