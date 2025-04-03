@@ -13,17 +13,17 @@ class VerifyCsrfToken extends Middleware
 
         $response = parent::addCookieToResponse($request, $response);
 
-        $response->headers->setCookie(new Cookie(
-            'XSRF-TOKEN',
-            $request->session()->token(),
-            time() + 60 * 60,
-            '/',
-            '.elmensual.vercel.app',
-            true, // Secure
-            false,
-            false,
-            'None'
-        ));
+        $response->headers->setCookie(
+            Cookie::create(
+                'XSRF-TOKEN',
+                $request->session()->token(),
+                time() + 60 * 60
+            )
+            ->withSecure(true)
+            ->withSameSite('None')
+            ->withPath('/')
+            ->withDomain('.elmensual.vercel.app')
+        );
 
         return $response;
     }
