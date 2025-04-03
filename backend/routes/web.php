@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Response;
 use Symfony\Component\HttpFoundation\Cookie;
 
 
@@ -55,30 +56,25 @@ Route::group(['middleware' => 'cors'], function () {
     // Define tus rutas aquí
 });
 
-
-
-Route::get('/csrf-token', function (\Illuminate\Http\Request $request) {
+Route::get('/csrf-token', function () {
     $token = csrf_token();
 
-    $response = response()->json(['token' => $token]);
-
-    $cookie = Cookie::create(
+    // Setear la cookie manualmente (NO usar Symfony Cookie aquí)
+    setcookie(
         'XSRF-TOKEN',
         $token,
-        time() + 3600,
-        '/',
-        '.elmensual.vercel.app',
-        true, // secure
-        false, // httpOnly
-        false, // raw
-        'None' // SameSite
+        [
+            'expires' => time() + 3600,
+            'path' => '/',
+            'domain' => '.elmensual.vercel.app',
+            'secure' => true,
+            'httponly' => false, // 👈 clave
+            'samesite' => 'None',
+        ]
     );
 
-    $response->headers->setCookie($cookie);
-
-    return $response;
+    return Response::json(['token' => $token]);
 });
-
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
