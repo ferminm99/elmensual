@@ -15,7 +15,11 @@ class LoginController extends Controller
         \Log::info('🚨 Entró al método login');
         $credentials = $request->only('email', 'password');
 
-        if (Auth::once($credentials)) {
+        if (Auth::attempt($credentials)) {
+            // NO regeneramos (ya sabemos que eso no es el problema)
+            $request->session()->put('logged_in', true); // opcional
+            $request->session()->save(); // 👈 forzamos el guardado de la sesión manualmente
+    
             return response()->json(['success' => true]);
         }
 
