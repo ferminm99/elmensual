@@ -38,36 +38,44 @@ export default {
         };
     },
     methods: {
+        // Supongamos que este es tu método login en el frontend:
         async login() {
             axios.defaults.withCredentials = true;
             try {
+                // Primero obtenés el token CSRF (antes del login)
                 const csrfResponse = await axios.get("/csrf-token", {
                     withCredentials: true,
                 });
-                const token = csrfResponse.data.token; // Usá el token del JSON directamente
-                console.log("📦 TOKEN CSRF:", token);
+                const token = csrfResponse.data.token;
+                console.log("📦 TOKEN CSRF inicial:", token);
 
                 if (!token) {
                     alert("No se pudo obtener el token CSRF.");
                     return;
                 }
 
+                // Configurás Axios para enviar ese token
                 axios.defaults.headers.common["X-XSRF-TOKEN"] = token;
 
-                console.log(document.cookie);
-                // Axios se encargará de leer la cookie y enviarla
+                // Ahora haces la petición de login
                 const response = await axios.post(
                     "/login",
-                    {
-                        email: this.email,
-                        password: this.password,
-                    },
-                    {
-                        withCredentials: true,
-                    }
+                    { email: this.email, password: this.password },
+                    { withCredentials: true }
                 );
 
                 if (response.data.success) {
+                    // Luego de login, la sesión se regenera y el token CSRF cambia.
+                    // Hacé una nueva petición GET para obtener el nuevo token.
+                    const newCsrfResponse = await axios.get("/csrf-token", {
+                        withCredentials: true,
+                    });
+                    const newToken = newCsrfResponse.data.token;
+                    console.log("📦 TOKEN CSRF actualizado:", newToken);
+
+                    // Actualizás la configuración global de Axios con el nuevo token.
+                    axios.defaults.headers.common["X-XSRF-TOKEN"] = newToken;
+
                     localStorage.setItem("auth", true);
                     this.$router.push("/");
                 } else {
@@ -75,7 +83,6 @@ export default {
                 }
             } catch (error) {
                 console.error("Error al iniciar sesión", error);
-
                 if (error.response) {
                     console.error("💥 Backend dijo:", error.response.data);
                     alert(
