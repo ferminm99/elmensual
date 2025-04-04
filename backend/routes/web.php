@@ -88,14 +88,14 @@ Route::get('/session-id', function () {
 //     return response()->json(['token' => $token, 'session_id' => session()->getId()]);
 // });
 
-Route::get('/csrf-token', function () {
-    \Log::info('🧪 CSRF GET', ['session_id' => session()->getId()]);
-    return response()->json(['token' => csrf_token()]);
-});
-
 // Route::get('/csrf-token', function () {
+//     \Log::info('🧪 CSRF GET', ['session_id' => session()->getId()]);
 //     return response()->json(['token' => csrf_token()]);
 // });
+
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+});
 
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
