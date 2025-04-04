@@ -16,7 +16,7 @@ class LoginController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
-            $request->session()->regenerate(); // importante
+            //$request->session()->regenerate(); // importante
             return response()->json(['success' => true]); // agregá esto
         }
 
