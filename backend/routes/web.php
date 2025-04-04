@@ -93,9 +93,9 @@ Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
 
-Route::get('/csrf-token', function () {
-    return response()->json(['token' => csrf_token()]);
-});
+// Route::get('/csrf-token', function () {
+//     return response()->json(['token' => csrf_token()]);
+// });
 
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
