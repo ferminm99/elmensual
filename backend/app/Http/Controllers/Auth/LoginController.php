@@ -15,9 +15,8 @@ class LoginController extends Controller
         \Log::info('🚨 Entró al método login');
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            //$request->session()->regenerate(); // importante
-            return response()->json(['success' => true]); // agregá esto
+        if (Auth::once($credentials)) {
+            return response()->json(['success' => true]);
         }
 
         return response()->json(['message' => 'Credenciales inválidas'], 401);
