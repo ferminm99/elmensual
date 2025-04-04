@@ -76,9 +76,18 @@ Route::group(['middleware' => 'cors'], function () {
 //     return Response::json(['token' => $token]);
 // });
 
-Route::get('/session-id', function () {
-    return response()->json(['session_id' => session()->getId()]);
-});
+
+// Route::get('/session-id', function () {
+//     return response()->json(['session_id' => session()->getId()]);
+// });
+
+// Route::get('/csrf-token', function () {
+//     $token = csrf_token();
+//     setcookie('XSRF-TOKEN', $token, time() + 3600, '/', 'localhost', false, false);
+//     setcookie('elmensual_session', session()->getId(), time() + 3600, '/', 'localhost', false, false);
+//     return response()->json(['token' => $token, 'session_id' => session()->getId()]);
+// });
+
 
 Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
