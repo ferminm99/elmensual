@@ -76,6 +76,10 @@ Route::group(['middleware' => 'cors'], function () {
 //     return Response::json(['token' => $token]);
 // });
 
+Route::get('/session-id', function () {
+    return response()->json(['session_id' => session()->getId()]);
+});
+
 Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
