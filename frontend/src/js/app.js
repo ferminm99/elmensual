@@ -18,7 +18,7 @@ axios.defaults.headers.common["X-CSRF-TOKEN"] = document.querySelector(
 )?.content;
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_APP_URL; // Si lo deseás
+axios.defaults.baseURL = import.meta.env.VITE_APP_URL;
 axios.defaults.xsrfCookieName = "XSRF-TOKEN";
 axios.defaults.xsrfHeaderName = "X-XSRF-TOKEN";
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
