@@ -14,6 +14,7 @@ class LoginController extends Controller
     {
         \Log::info('🚨 Entró al método login');
 
+        die('Login fue ejecutado');
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
