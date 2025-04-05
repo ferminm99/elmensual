@@ -62,17 +62,6 @@ export default {
                 );
 
                 if (response.data.success) {
-                    // Luego de login, la sesión se regenera y el token CSRF cambia.
-                    // Hacé una nueva petición GET para obtener el nuevo token.
-                    const newCsrfResponse = await axios.get("/api/csrf-token", {
-                        withCredentials: true,
-                    });
-                    const newToken = newCsrfResponse.data.token;
-                    console.log("📦 TOKEN CSRF actualizado:", newToken);
-
-                    // Actualizás la configuración global de Axios con el nuevo token.
-                    axios.defaults.headers.common["X-XSRF-TOKEN"] = newToken;
-
                     localStorage.setItem("auth", true);
                     this.$router.push("/");
                 } else {
