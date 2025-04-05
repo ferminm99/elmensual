@@ -14,32 +14,32 @@ import axios from "axios";
 import { es } from "vuetify/locale";
 // Esto establece el token CSRF de Laravel de forma global en Axios
 axios.defaults.headers.common["X-CSRF-TOKEN"] = document.querySelector(
-  'meta[name="csrf-token"]'
+    'meta[name="csrf-token"]'
 )?.content;
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.APP_URL;
+axios.defaults.baseURL = import.meta.env.VITE_APP_URL;
 axios.defaults.xsrfCookieName = "XSRF-TOKEN";
 axios.defaults.xsrfHeaderName = "X-XSRF-TOKEN";
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
 // Crear la instancia de Vuetify
 const vuetify = createVuetify({
-  components,
-  directives,
-  icons: {
-    defaultSet: "mdi", // Usa los iconos de Material Design
-    aliases,
-    sets: { mdi },
-  },
-  locale: {
-    locale: "es", // Establece español como idioma predeterminado
-    messages: { es }, // Define los mensajes en español
-  },
+    components,
+    directives,
+    icons: {
+        defaultSet: "mdi", // Usa los iconos de Material Design
+        aliases,
+        sets: { mdi },
+    },
+    locale: {
+        locale: "es", // Establece español como idioma predeterminado
+        messages: { es }, // Define los mensajes en español
+    },
 });
 
 // Crear la aplicación Vue
 createApp(App)
-  .use(router)
-  .use(vuetify) // Usar Vuetify en la aplicación
-  .mount("#app");
+    .use(router)
+    .use(vuetify) // Usar Vuetify en la aplicación
+    .mount("#app");
