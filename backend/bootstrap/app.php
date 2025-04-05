@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\Illuminate\Session\Middleware\StartSession::class);
         $middleware->append(\Illuminate\View\Middleware\ShareErrorsFromSession::class);
         $middleware->append(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class); // 🔥
+        $middleware->append(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class); // 💥 este era el que faltaba
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {

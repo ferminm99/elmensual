@@ -53,9 +53,6 @@ export default {
                     return;
                 }
 
-                // 🔥 Aseguramos que Axios lo use correctamente
-                axios.defaults.headers.common["X-XSRF-TOKEN"] = token;
-
                 // Petición de login
                 const response = await axios.post(
                     "/api/login",
