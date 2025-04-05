@@ -40,22 +40,23 @@ export default {
     methods: {
         // Supongamos que este es tu método login en el frontend:
         async login() {
-            axios.defaults.withCredentials = true;
             try {
-                const cookies = document.cookie
-                    .split("; ")
-                    .reduce((acc, cookie) => {
-                        const [name, value] = cookie.split("=");
-                        acc[name] = value;
-                        return acc;
-                    }, {});
+                const csrfResponse = await axios.get("/api/csrf-token", {
+                    withCredentials: true,
+                });
 
-                const csrfToken = cookies["XSRF-TOKEN"];
-                axios.defaults.headers.common["X-XSRF-TOKEN"] =
-                    decodeURIComponent(csrfToken);
-                console.log("📦 TOKEN CSRF real desde cookie:", csrfToken);
+                const token = csrfResponse.data.token;
+                console.log("📦 TOKEN CSRF recibido desde endpoint:", token);
 
-                // Ahora haces la petición de login
+                if (!token) {
+                    alert("No se pudo obtener el token CSRF.");
+                    return;
+                }
+
+                // 🔥 Aseguramos que Axios lo use correctamente
+                axios.defaults.headers.common["X-XSRF-TOKEN"] = token;
+
+                // Petición de login
                 const response = await axios.post(
                     "/api/login",
                     { email: this.email, password: this.password },
