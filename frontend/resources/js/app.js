@@ -12,13 +12,9 @@ import { aliases, mdi } from "vuetify/iconsets/mdi"; // Para los iconos (opciona
 import "@mdi/font/css/materialdesignicons.css";
 import axios from "axios";
 import { es } from "vuetify/locale";
-// Esto establece el token CSRF de Laravel de forma global en Axios
-axios.defaults.headers.common["X-CSRF-TOKEN"] = document.querySelector(
-    'meta[name="csrf-token"]'
-)?.content;
 
-axios.defaults.withCredentials = true;
 axios.defaults.baseURL = import.meta.env.VITE_APP_URL;
+axios.defaults.withCredentials = true;
 axios.defaults.xsrfCookieName = "XSRF-TOKEN";
 axios.defaults.xsrfHeaderName = "X-XSRF-TOKEN";
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
