@@ -10,6 +10,9 @@ export default defineConfig({
         }),
         vue(),
     ],
+    build: {
+        outDir: "dist", // ⚠️ Esto le dice a Vite que genere la salida en /dist
+    },
     server: {
         host: "localhost",
         port: 5173,
