@@ -13,11 +13,19 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         \Log::info('🚨 Entró al método login');
+        \Log::info('🧪 Session ID actual: ' . $request->session()->getId());
+        \Log::info('🧪 CSRF token recibido: ' . $request->header('X-XSRF-TOKEN'));
+
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
-            $request->session()->regenerate(); // importante
-            return response()->json(['success' => true]); // agregá esto
+            // ✅ NO regeneres la sesión acá manualmente si usás Sanctum y frontend separado
+            // Laravel ya maneja esto y regenerar puede romper el flujo si no se maneja bien
+
+            // Opcional: podés guardar algo en sesión si querés
+            $request->session()->put('logged_in', true);
+
+            return response()->json(['success' => true]);
         }
 
         return response()->json(['message' => 'Credenciales inválidas'], 401);
