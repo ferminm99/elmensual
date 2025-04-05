@@ -35,7 +35,6 @@ COPY supervisord.conf /etc/supervisord.conf
 # Exponer el puerto para Laravel
 EXPOSE 8000
 
-RUN php artisan config:clear && php artisan cache:clear
-
 # Comando para ejecutar Laravel + supervisord
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+
