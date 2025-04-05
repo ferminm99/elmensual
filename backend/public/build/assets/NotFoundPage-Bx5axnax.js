@@ -1,1 +1,0 @@
-import{_ as o}from"./app-BHOrBh52.js";import{B as e,a5 as t}from"./vue-Dp34GT9d.js";import"./vuetify-HETxidax.js";const r={};function n(c,a){return e(),t("h1",null,"Not Found Page")}const m=o(r,[["render",n]]);export{m as default};

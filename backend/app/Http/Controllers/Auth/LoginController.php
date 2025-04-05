@@ -13,15 +13,11 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         \Log::info('🚨 Entró al método login');
-
-        die('Login fue ejecutado');
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
-            $request->session()->put('logged_in', true); // opcional, para asegurar que se detecte cambio
-            $request->session()->save(); // 🔥 esto es lo que nos importa
-
-            return response()->json(['success' => true]);
+            $request->session()->regenerate(); // importante
+            return response()->json(['success' => true]); // agregá esto
         }
 
         return response()->json(['message' => 'Credenciales inválidas'], 401);

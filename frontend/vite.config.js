@@ -3,47 +3,18 @@ import laravel from "laravel-vite-plugin";
 import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
-    base: "/",
-    plugins: [vue()],
-    build: {
-        outDir: "dist",
-        rollupOptions: {
-            output: {
-                manualChunks: {
-                    vue: ["vue", "vue-router"],
-                    vuetify: ["vuetify"],
-                },
-            },
+    plugins: [
+        laravel({
+            input: ["resources/js/app.js"], // O el archivo principal que estés usando
+            refresh: true,
+        }),
+        vue(),
+    ],
+    server: {
+        host: "localhost",
+        port: 5173,
+        proxy: {
+            "/api": process.env.APP_URL || "http://localhost:8000",
         },
-        chunkSizeWarningLimit: 1600,
     },
-    // server: {
-    //     host: true,
-    //     port: 5173,
-    //     https: false,
-    //     proxy: {
-    //         "/login": {
-    //             target: "https://elmensual-production.up.railway.app",
-    //             changeOrigin: true,
-    //             secure: false,
-    //         },
-    //         "/csrf-token": {
-    //             target: "https://elmensual-production.up.railway.app",
-    //             changeOrigin: true,
-    //             secure: false,
-    //         },
-    //     },
-    // },
-
-    // server: {
-    //     watch: {
-    //         usePolling: true, // Si estás trabajando en contenedores, esto puede ser necesario
-    //     },
-    //     host: "0.0.0.0", // Escuchar en todas las interfaces
-    //     port: 5173, // Forzar el puerto 5173
-    //     strictPort: true, // Asegurarse de que siempre use el puerto 5173
-    //     hmr: {
-    //         host: "localhost", // Hot Module Replacement (HMR) en localhost
-    //     },
-    // },
 });
