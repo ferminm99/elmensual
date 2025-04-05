@@ -13,7 +13,7 @@ import "@mdi/font/css/materialdesignicons.css";
 import axios from "axios";
 import { es } from "vuetify/locale";
 
-axios.defaults.baseURL = import.meta.env.VITE_APP_URL;
+axios.defaults.baseURL = import.meta.env.APP_URL;
 axios.defaults.withCredentials = true;
 axios.defaults.xsrfCookieName = "XSRF-TOKEN";
 axios.defaults.xsrfHeaderName = "X-XSRF-TOKEN";
