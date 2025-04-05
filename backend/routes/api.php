@@ -9,7 +9,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\LocalidadController;
 use App\Http\Controllers\Auth\LoginController;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
-
+use Illuminate\Support\Facades\Cookie;
 // CSRF Token (usado por el frontend antes del login)
 Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
