@@ -11,15 +11,16 @@ use App\Http\Controllers\Auth\LoginController;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Support\Facades\Cookie;
 // CSRF Token (usado por el frontend antes del login)
-Route::get('/csrf-token', function () {
-    return response()->json(['token' => csrf_token()]);
-});
+
 
 // Autenticación
 Route::middleware([
     EnsureFrontendRequestsAreStateful::class,
     'web'
 ])->group(function () {
+    Route::get('/csrf-token', function () {
+        return response()->json(['token' => csrf_token()]);
+    });
     Route::post('/login', [LoginController::class, 'login']);
 });
 Route::post('/logout', [LoginController::class, 'logout']);
