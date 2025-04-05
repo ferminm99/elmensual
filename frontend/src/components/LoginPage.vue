@@ -42,17 +42,18 @@ export default {
         async login() {
             axios.defaults.withCredentials = true;
             try {
-                // Primero obtenés el token CSRF (antes del login)
-                const csrfResponse = await axios.get("/api/csrf-token", {
-                    withCredentials: true,
-                });
-                const token = csrfResponse.data.token;
-                console.log("📦 TOKEN CSRF inicial:", token);
+                const cookies = document.cookie
+                    .split("; ")
+                    .reduce((acc, cookie) => {
+                        const [name, value] = cookie.split("=");
+                        acc[name] = value;
+                        return acc;
+                    }, {});
 
-                if (!token) {
-                    alert("No se pudo obtener el token CSRF.");
-                    return;
-                }
+                const csrfToken = cookies["XSRF-TOKEN"];
+                axios.defaults.headers.common["X-XSRF-TOKEN"] =
+                    decodeURIComponent(csrfToken);
+                console.log("📦 TOKEN CSRF real desde cookie:", csrfToken);
 
                 // Ahora haces la petición de login
                 const response = await axios.post(
