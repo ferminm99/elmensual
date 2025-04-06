@@ -4,6 +4,7 @@ echo "🚀 Init start"
 
 # 🧬 Copiar el .env preparado para producción
 cp .env.production .env
+rm -f bootstrap/cache/config.php
 
 echo "✅ .env copiado:"
 cat .env
