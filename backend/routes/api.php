@@ -21,15 +21,15 @@ Route::get('/force-clear', function () {
     return response('✔ Configuración actualizada', 200);
 });
 
-Route::get('/debug-session-config', function () {
+Route::get('/env-check', function () {
     return response()->json([
-        'domain' => config('session.domain'),
-        'secure' => config('session.secure'),
-        'same_site' => config('session.same_site'),
-        'http_only' => config('session.http_only'),
+        'APP_ENV' => env('APP_ENV'),
+        'SESSION_DRIVER' => config('session.driver'),
+        'SESSION_DOMAIN' => config('session.domain'),
+        'SESSION_SAME_SITE' => config('session.same_site'),
+        'SESSION_SECURE_COOKIE' => config('session.secure'),
     ]);
 });
-
 
 // Autenticación
 Route::middleware([
