@@ -32,7 +32,7 @@ RUN composer install --optimize-autoloader --no-dev && \
 # ✅ SOLO comandos que no requieren DB
 RUN php artisan config:clear && \
     php artisan route:clear && \
-    php artisan view:clear && 
+    php artisan view:clear 
 
 # Supervisord
 COPY supervisord.conf /etc/supervisord.conf
