@@ -14,14 +14,10 @@ use Illuminate\Support\Facades\Cookie;
 
 use Illuminate\Support\Facades\Artisan;
 
-
 Route::get('/force-clear', function () {
     try {
         Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        Artisan::call('route:clear');
-        Artisan::call('view:clear');
-        return '✔️ Configuración limpia y actualizada';
+        return '✔️ Configuración limpia con config:clear';
     } catch (\Throwable $e) {
         return response('❌ Error: ' . $e->getMessage(), 500);
     }
