@@ -12,38 +12,22 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Support\Facades\Cookie;
 // CSRF Token (usado por el frontend antes del login)
 
-use Illuminate\Support\Facades\Artisan;
 
-Route::get('/force-clear', function () {
-    try {
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        Artisan::call('config:cache');
-        return '✅ Configuración y caché borradas con éxito.';
-    } catch (\Throwable $e) {
-        return response()->json([
-            'error' => true,
-            'message' => '❌ Error al ejecutar comandos',
-            'exception' => $e->getMessage(),
-        ], 500);
-    }
-});
-
-Route::get('/env-check', function () {
-    return response()->json([
-        'APP_ENV' => env('APP_ENV'),
-        'DB_CONNECTION' => env('DB_CONNECTION'),
-        'DB_HOST' => env('DB_HOST'),
-        'DB_PORT' => env('DB_PORT'),
-        'DB_DATABASE' => env('DB_DATABASE'),
-        'APP_URL' => env('APP_URL'),
-        'APP_DEBUG' => env('APP_DEBUG'),
-        'SESSION_DRIVER' => env('SESSION_DRIVER'),
-        'SESSION_DOMAIN' => env('SESSION_DOMAIN'),
-        'SESSION_SAME_SITE' => env('SESSION_SAME_SITE'),
-        'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
-    ]);
-});
+// Route::get('/env-check', function () {
+//     return response()->json([
+//         'APP_ENV' => env('APP_ENV'),
+//         'DB_CONNECTION' => env('DB_CONNECTION'),
+//         'DB_HOST' => env('DB_HOST'),
+//         'DB_PORT' => env('DB_PORT'),
+//         'DB_DATABASE' => env('DB_DATABASE'),
+//         'APP_URL' => env('APP_URL'),
+//         'APP_DEBUG' => env('APP_DEBUG'),
+//         'SESSION_DRIVER' => env('SESSION_DRIVER'),
+//         'SESSION_DOMAIN' => env('SESSION_DOMAIN'),
+//         'SESSION_SAME_SITE' => env('SESSION_SAME_SITE'),
+//         'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
+//     ]);
+// });
 
 // Autenticación
 Route::middleware([

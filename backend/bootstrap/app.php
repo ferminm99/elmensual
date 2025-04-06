@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\VerifyCsrfToken;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,8 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->append(\Illuminate\Session\Middleware\StartSession::class);
         $middleware->append(\Illuminate\View\Middleware\ShareErrorsFromSession::class);
-        $middleware->append(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class); // 🔥
-        $middleware->append(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class); // 💥 este era el que faltaba
+        $middleware->append(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class); 
+        $middleware->append(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class); 
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
