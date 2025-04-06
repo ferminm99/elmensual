@@ -29,21 +29,17 @@ use Illuminate\Support\Facades\Cookie;
 //     ]);
 // });
 
-Route::get('/debug-session', function () {
-    return response()->json([
-        'session_config' => config('session.same_site'),
-        'env' => env('SESSION_SAME_SITE'),
-        'driver' => config('session.driver'),
-        'domain' => config('session.domain'),
-    ]);
-});
 
 
-Route::get('/env-check', function () {
+Route::get('/api/env-check', function () {
     return response()->json([
         'env_session_same_site' => env('SESSION_SAME_SITE'),
         'config_session_same_site' => config('session.same_site'),
         'env_loaded' => app()->environment(),
+        'session_driver' => config('session.driver'),
+        'session_domain' => config('session.domain'),
+        'session_secure' => config('session.secure'),
+        'session_http_only' => config('session.http_only'),
     ]);
 });
 
