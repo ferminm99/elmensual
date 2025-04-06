@@ -14,11 +14,17 @@ use Illuminate\Support\Facades\Cookie;
 
 use Illuminate\Support\Facades\Artisan;
 
+
 Route::get('/force-clear', function () {
-    Artisan::call('config:clear');
-    Artisan::call('config:cache');
-    Artisan::call('route:cache');
-    return response('✔ Configuración actualizada', 200);
+    try {
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('route:clear');
+        Artisan::call('view:clear');
+        return '✔️ Configuración limpia y actualizada';
+    } catch (\Throwable $e) {
+        return response('❌ Error: ' . $e->getMessage(), 500);
+    }
 });
 
 Route::get('/env-check', function () {
