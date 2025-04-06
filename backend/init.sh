@@ -9,6 +9,7 @@ cat .env
 
 # ⚠️ Limpiar sin volver a cachear
 rm -f bootstrap/cache/config.php
+php artisan package:discover
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
