@@ -36,6 +36,20 @@ Route::get('/env-check', function () {
     ]);
 });
 
+Route::get('/force-clear', function () {
+    \Artisan::call('config:clear');
+    \Artisan::call('route:clear');
+    \Artisan::call('view:clear');
+    \Artisan::call('cache:clear');
+    \Artisan::call('config:cache');
+
+    return [
+        '✅ limpio' => true,
+        'env_session_same_site' => env('SESSION_SAME_SITE'),
+        'config_session_same_site' => config('session.same_site'),
+        'env_loaded' => app()->environment(),
+    ];
+});
 
 
 // Autenticación
