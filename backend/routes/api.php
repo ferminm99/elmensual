@@ -15,10 +15,11 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Artisan;
 
 Route::get('/force-clear', function () {
+    config(['app.env' => 'production']); // Forzá el entorno
     Artisan::call('config:clear');
     Artisan::call('config:cache');
     Artisan::call('route:cache');
-    return '✔ Configuración limpiada y cacheada de nuevo';
+    return '✔ Configuración actualizada';
 });
 
 Route::get('/debug-session-config', function () {
