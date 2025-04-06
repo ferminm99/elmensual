@@ -1,11 +1,12 @@
 #!/bin/sh
 
-# Limpiar y regenerar el cache de Laravel en tiempo de arranque
+echo "🔥 Limpiando caches de Laravel"
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
-php artisan cache:clear
+
+echo "⚙️ Cacheando config (usa .env ya cargado)"
 php artisan config:cache
 
-# Luego arranca Laravel normalmente
+echo "🚀 Iniciando Laravel"
 php artisan serve --host=0.0.0.0 --port=8000
