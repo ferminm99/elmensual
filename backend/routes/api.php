@@ -28,6 +28,17 @@ use Illuminate\Support\Facades\Cookie;
 //         'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
 //     ]);
 // });
+
+Route::get('/debug-session', function () {
+    return response()->json([
+        'session_config' => config('session.same_site'),
+        'env' => env('SESSION_SAME_SITE'),
+        'driver' => config('session.driver'),
+        'domain' => config('session.domain'),
+    ]);
+});
+
+
 Route::get('/env-check', function () {
     return response()->json([
         'env_session_same_site' => env('SESSION_SAME_SITE'),
