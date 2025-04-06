@@ -22,25 +22,21 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 # Establecer directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar archivos del proyecto (incluye .env si está en raíz del repo)
+# Copiar archivos de Laravel (incluye .env si está en raíz)
 COPY . .
 
-# ✅ Instalar dependencias y dar permisos
+# Instalar dependencias y permisos
 RUN composer install --optimize-autoloader --no-dev && \
     chmod -R 775 storage bootstrap/cache
 
-# ✅ Laravel: limpiar caches y regenerar config (usa el .env correcto)
+# ✅ SOLO comandos que no requieren DB
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear && \
-    php artisan cache:clear && \
     php artisan config:cache
 
-# ✅ Copiar configuración de supervisord
+# Supervisord
 COPY supervisord.conf /etc/supervisord.conf
 
-# Exponer el puerto para Laravel
 EXPOSE 8000
-
-# Comando para ejecutar Laravel + supervisord
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
