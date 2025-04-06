@@ -2,42 +2,27 @@
 
 echo "🚀 Init start"
 
-# ✅ Generar .env ANTES que cualquier otra cosa
-cat <<EOF > .env
-APP_ENV=$APP_ENV
-APP_DEBUG=$APP_DEBUG
-APP_KEY=$APP_KEY
+# 🧬 Copiar el .env preparado para producción
+cp .env.production .env
 
-DB_CONNECTION=$DB_CONNECTION
-DB_HOST=$DB_HOST
-DB_PORT=$DB_PORT
-DB_DATABASE=$DB_DATABASE
-DB_USERNAME=$DB_USERNAME
-DB_PASSWORD=$DB_PASSWORD
-
-SESSION_DRIVER=$SESSION_DRIVER
-SESSION_DOMAIN=$SESSION_DOMAIN
-SESSION_SECURE_COOKIE=$SESSION_SECURE_COOKIE
-SESSION_SAME_SITE=$SESSION_SAME_SITE
-
-SANCTUM_STATEFUL_DOMAINS=$SANCTUM_STATEFUL_DOMAINS
-XDG_CACHE_HOME=/tmp
-EOF
-
-echo "✅ .env generado:"
+echo "✅ .env copiado:"
 cat .env
 
-# ✅ Limpiar y cachear todo una vez con el .env ya presente
+# 🧼 Limpiar cualquier cache previa
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
+
+# ⚙️ Generar nueva cache con entorno limpio
 php artisan config:cache
 
-# ✅ Mostrar valor leido desde config
+# 🧪 Mostrar valor real cargado
 php artisan tinker --execute="echo config('session.same_site');"
 
-# 🧬 Migraciones
-php artisan migrate --force
+# # 🧬 (opcional) Migrar base de datos
+# php artisan migrate --force
 
-# 🚀 Mantener contenedor vivo
+echo "✅ Init completo"
+
+# 🚀 Levantar el servidor para Railway
 php artisan serve --host=0.0.0.0 --port=8000
