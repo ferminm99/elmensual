@@ -24,6 +24,6 @@ COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
 # NO HAGAS config:cache acá
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install --optimize-autoloader --no-dev --no-scripts
 
 CMD ["sh", "/init.sh"]
