@@ -30,10 +30,10 @@ RUN composer install --optimize-autoloader --no-dev && \
     chmod -R 775 storage bootstrap/cache
 
 # 🔥 Limpiar caches de Laravel (acá va el bloque)
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear && \
-    php artisan config:cache
+# RUN php artisan config:clear && \
+#     php artisan route:clear && \
+#     php artisan view:clear && \
+#     php artisan config:cache
 
 
 # Copiar configuración de supervisord
