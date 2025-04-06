@@ -3,8 +3,14 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
     plugins: [vue()],
+    base: "/build/", // ⚠️ Esto es CLAVE
     build: {
-        outDir: "dist", // Donde Vercel espera los archivos generados
+        outDir: "../backend/public/build", // 👈 apunta al public del backend
+        emptyOutDir: true,
+        manifest: true,
+        rollupOptions: {
+            input: "src/main.js", // o tu archivo de entrada real
+        },
     },
     // server: {
     //     host: "localhost",
