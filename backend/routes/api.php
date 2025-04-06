@@ -29,6 +29,15 @@ use Illuminate\Support\Facades\Cookie;
 //     ]);
 // });
 
+Route::get('/env-check', function () {
+    return response()->json([
+        'SESSION_SAME_SITE' => config('session.same_site'),
+        'SESSION_DOMAIN' => config('session.domain'),
+        'SESSION_SECURE_COOKIE' => config('session.secure'),
+    ]);
+});
+
+
 // Autenticación
 Route::middleware([
     EnsureFrontendRequestsAreStateful::class,
