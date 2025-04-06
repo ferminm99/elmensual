@@ -28,15 +28,14 @@ use Illuminate\Support\Facades\Cookie;
 //         'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
 //     ]);
 // });
-
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+});
 // Autenticación
 Route::middleware([
     EnsureFrontendRequestsAreStateful::class,
     'web'
-])->group(function () {
-    Route::get('/csrf-token', function () {
-        return response()->json(['token' => csrf_token()]);
-    });
+])->group(function () {   
     Route::post('/login', [LoginController::class, 'login']);
 });
 Route::post('/logout', [LoginController::class, 'logout']);
