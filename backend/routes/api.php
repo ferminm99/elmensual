@@ -26,10 +26,11 @@ Route::get('/force-clear', function () {
 Route::get('/env-check', function () {
     return response()->json([
         'APP_ENV' => env('APP_ENV'),
-        'SESSION_DRIVER' => config('session.driver'),
-        'SESSION_DOMAIN' => config('session.domain'),
-        'SESSION_SAME_SITE' => config('session.same_site'),
-        'SESSION_SECURE_COOKIE' => config('session.secure'),
+        'DB_CONNECTION' => env('DB_CONNECTION'),
+        'SESSION_DRIVER' => env('SESSION_DRIVER'),
+        'SESSION_DOMAIN' => env('SESSION_DOMAIN'),
+        'SESSION_SAME_SITE' => env('SESSION_SAME_SITE'),
+        'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
     ]);
 });
 
