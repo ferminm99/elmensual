@@ -17,9 +17,15 @@ use Illuminate\Support\Facades\Artisan;
 Route::get('/force-clear', function () {
     try {
         Artisan::call('config:clear');
-        return '✔️ Configuración limpia con config:clear';
+        Artisan::call('cache:clear');
+        Artisan::call('config:cache');
+        return '✅ Configuración y caché borradas con éxito.';
     } catch (\Throwable $e) {
-        return response('❌ Error: ' . $e->getMessage(), 500);
+        return response()->json([
+            'error' => true,
+            'message' => '❌ Error al ejecutar comandos',
+            'exception' => $e->getMessage(),
+        ], 500);
     }
 });
 
