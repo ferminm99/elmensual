@@ -61,13 +61,7 @@ Route::middleware([
 ])->group(function () {
     Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]));
     Route::post('/login', [LoginController::class, 'login']);
-    Route::get('/env-check', function () {
-        return response()->json([
-            'env_session_same_site' => env('SESSION_SAME_SITE'),
-            'config_session_same_site' => config('session.same_site'),
-            'env_loaded' => app()->environment(),
-        ]);
-    });
+    
 });
 
 Route::post('/logout', [LoginController::class, 'logout']);
