@@ -1,46 +1,29 @@
-# Etapa 1: Instalar dependencias de Composer
-FROM composer:latest AS composer
-
-# Etapa 2: Backend Laravel
 FROM php:8.2-fpm-alpine
 
-# Instalar dependencias del sistema y PHP
+# Instalar dependencias necesarias
 RUN apk --no-cache add \
     git \
     curl \
     zip \
     unzip \
     mysql-client \
+    supervisor \
     nodejs \
     npm \
-    supervisor \
     && docker-php-ext-install pdo pdo_mysql
 
-# Copiar Composer
-COPY --from=composer /usr/bin/composer /usr/bin/composer
+# Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Establecer directorio de trabajo
+# Set working dir
 WORKDIR /var/www/html
 
-# Copiar archivos de Laravel (incluye .env si está en raíz)
+# Copiar todo el código + init.sh
 COPY . .
-
-# Instalar dependencias y permisos
-RUN composer install --optimize-autoloader --no-dev && \
-    chmod -R 775 storage bootstrap/cache
-
-# ✅ SOLO comandos que no requieren DB
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear 
-
-# Supervisord
-# COPY supervisord.conf /etc/supervisord.conf
-
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
+# NO HAGAS config:cache acá
+RUN composer install --optimize-autoloader --no-dev
 
-EXPOSE 8000
-CMD ["/init.sh"]
-
+CMD ["sh", "/init.sh"]
