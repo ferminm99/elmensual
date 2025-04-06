@@ -12,6 +12,24 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Support\Facades\Cookie;
 // CSRF Token (usado por el frontend antes del login)
 
+use Illuminate\Support\Facades\Artisan;
+
+Route::get('/force-clear', function () {
+    Artisan::call('config:clear');
+    Artisan::call('config:cache');
+    Artisan::call('route:cache');
+    return '✔ Configuración limpiada y cacheada de nuevo';
+});
+
+Route::get('/debug-session-config', function () {
+    return response()->json([
+        'domain' => config('session.domain'),
+        'secure' => config('session.secure'),
+        'same_site' => config('session.same_site'),
+        'http_only' => config('session.http_only'),
+    ]);
+});
+
 
 // Autenticación
 Route::middleware([
