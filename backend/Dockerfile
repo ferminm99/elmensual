@@ -33,8 +33,8 @@ RUN composer install --optimize-autoloader --no-dev && \
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear && \
-    php artisan cache:clear && \
     php artisan config:cache
+
 
 # Copiar configuración de supervisord
 COPY supervisord.conf /etc/supervisord.conf
