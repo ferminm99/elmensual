@@ -34,6 +34,9 @@ php artisan config:cache
 
 php artisan tinker --execute="echo config('session.same_site');"
 
-php artisan migrate --force
+# php artisan migrate --force
 
 echo "✅ Init completo"
+
+php artisan serve --host=0.0.0.0 --port=8000
+
