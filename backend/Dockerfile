@@ -35,7 +35,12 @@ RUN composer install --optimize-autoloader --no-dev && \
 #     php artisan view:clear 
 
 # Supervisord
-COPY supervisord.conf /etc/supervisord.conf
+# COPY supervisord.conf /etc/supervisord.conf
+
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
+
 
 EXPOSE 8000
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/init.sh"]
+
