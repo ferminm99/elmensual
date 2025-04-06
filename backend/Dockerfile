@@ -29,10 +29,10 @@ COPY . .
 RUN composer install --optimize-autoloader --no-dev && \
     chmod -R 775 storage bootstrap/cache
 
-# # ✅ SOLO comandos que no requieren DB
-# RUN php artisan config:clear && \
-#     php artisan route:clear && \
-#     php artisan view:clear 
+# ✅ SOLO comandos que no requieren DB
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear 
 
 # Supervisord
 # COPY supervisord.conf /etc/supervisord.conf

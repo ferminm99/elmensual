@@ -1,17 +1,15 @@
 #!/bin/sh
 
-echo "🔥 Limpiando caches de Laravel"
+echo "🧼 Limpiando cache de Laravel"
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 
-echo "SESSION_SAME_SITE=none" >> .env
-echo "SESSION_DOMAIN=" >> .env
-echo "SESSION_SECURE_COOKIE=true" >> .env
+echo "🛠 Migrando base de datos (si no está migrada)"
+php artisan migrate --force
 
-
-echo "⚙️ Cacheando config (usa .env ya cargado)"
+echo "⚙️ Cacheando configuración"
 php artisan config:cache
 
 echo "🚀 Iniciando Laravel"
-php artisan serve --host=0.0.0.0 --port=8000
+exec php artisan serve --host=0.0.0.0 --port=8000
