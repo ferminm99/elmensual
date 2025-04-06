@@ -199,7 +199,7 @@ return [
     |
     */
 
-    'same_site' => dd('ACA ESTOY CARGANDO SESSION.PHP'),
+    'same_site' => 'none',
 
     /*
     |--------------------------------------------------------------------------
