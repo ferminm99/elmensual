@@ -9,7 +9,7 @@ export default defineConfig({
         emptyOutDir: true,
         manifest: true,
         rollupOptions: {
-            input: "src/main.js", // o tu archivo de entrada real
+            input: "resources/js/app.js", // o tu archivo de entrada real
         },
     },
     // server: {
