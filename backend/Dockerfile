@@ -25,9 +25,16 @@ WORKDIR /var/www/html
 # Copiar archivos de Laravel
 COPY . .
 
-# Instalar dependencias
+# Instalar dependencias y dar permisos
 RUN composer install --optimize-autoloader --no-dev && \
     chmod -R 775 storage bootstrap/cache
+
+# 🔥 Limpiar caches de Laravel (acá va el bloque)
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
+    php artisan cache:clear && \
+    php artisan config:cache
 
 # Copiar configuración de supervisord
 COPY supervisord.conf /etc/supervisord.conf
@@ -37,4 +44,3 @@ EXPOSE 8000
 
 # Comando para ejecutar Laravel + supervisord
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
-
