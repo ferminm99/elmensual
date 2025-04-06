@@ -28,14 +28,14 @@ use Illuminate\Support\Facades\Cookie;
 //         'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
 //     ]);
 // });
-
 Route::get('/env-check', function () {
     return response()->json([
-        'SESSION_SAME_SITE' => config('session.same_site'),
-        'SESSION_DOMAIN' => config('session.domain'),
-        'SESSION_SECURE_COOKIE' => config('session.secure'),
+        'env_session_same_site' => env('SESSION_SAME_SITE'),
+        'config_session_same_site' => config('session.same_site'),
+        'env_loaded' => app()->environment(),
     ]);
 });
+
 
 
 // Autenticación
