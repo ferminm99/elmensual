@@ -27,6 +27,8 @@ echo "XDG_CACHE_HOME=/tmp" >> .env
 echo "✅ .env generado:"
 cat .env
 
+php -r "file_exists('.env') && Dotenv\Dotenv::createUnsafeImmutable(__DIR__)->load();"
+
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
