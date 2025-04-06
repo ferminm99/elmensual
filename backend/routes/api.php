@@ -27,6 +27,11 @@ Route::get('/env-check', function () {
     return response()->json([
         'APP_ENV' => env('APP_ENV'),
         'DB_CONNECTION' => env('DB_CONNECTION'),
+        'DB_HOST' => env('DB_HOST'),
+        'DB_PORT' => env('DB_PORT'),
+        'DB_DATABASE' => env('DB_DATABASE'),
+        'APP_URL' => env('APP_URL'),
+        'APP_DEBUG' => env('APP_DEBUG'),
         'SESSION_DRIVER' => env('SESSION_DRIVER'),
         'SESSION_DOMAIN' => env('SESSION_DOMAIN'),
         'SESSION_SAME_SITE' => env('SESSION_SAME_SITE'),
