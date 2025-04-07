@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->append(\Illuminate\Session\Middleware\StartSession::class);
         $middleware->append(\Illuminate\View\Middleware\ShareErrorsFromSession::class);
-        $middleware->append(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class); 
+        $middleware->append(\App\Http\Middleware\CustomEnsureFrontendRequestsAreStateful::class);
         $middleware->append(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class); 
         //
     })
