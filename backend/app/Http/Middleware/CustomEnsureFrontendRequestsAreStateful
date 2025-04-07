@@ -4,16 +4,23 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful as SanctumEnsureFrontendRequestsAreStateful;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
-class CustomEnsureFrontendRequestsAreStateful extends SanctumEnsureFrontendRequestsAreStateful
+class CustomEnsureFrontendRequestsAreStateful extends EnsureFrontendRequestsAreStateful
 {
     /**
      * Maneja la solicitud entrante.
+     *
+     * Sobrescribimos el método handle para forzar la configuración de la sesión.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
      */
     public function handle(Request $request, Closure $next)
     {
-        // Si necesitas forzar el valor de same_site a "none", lo podés hacer acá:
+        // Forzamos explícitamente el valor de la sesión para "same_site" a "none"
+        // Esto hará que, antes de proceder, se actualice la configuración:
         config()->set('session.same_site', 'none');
 
         return parent::handle($request, $next);

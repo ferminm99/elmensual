@@ -13,9 +13,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
-        // $this->app->singleton(EnsureFrontendRequestsAreStateful::class, function () {
-        //     return new CustomEnsureFrontendRequestsAreStateful;
-        // });
+        $this->app->singleton(EnsureFrontendRequestsAreStateful::class, function () {
+            return new CustomEnsureFrontendRequestsAreStateful;
+        });
     }
 
     /**
