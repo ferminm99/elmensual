@@ -20,6 +20,19 @@ Route::get('/debug-session', function () {
     ]);
 });
 
+
+Route::get('/env-check', function () {
+    return response()->json([
+        'env_session_same_site' => env('SESSION_SAME_SITE'),
+        'config_session_same_site' => config('session.same_site'),
+        'env_loaded' => app()->environment(),
+        'session_driver' => config('session.driver'),
+        'session_domain' => config('session.domain'),
+        'session_secure' => config('session.secure'),
+        'session_http_only' => config('session.http_only'),
+    ]);
+});
+
 Route::get('/force-recache', function () {
     \Artisan::call('config:clear');
     \Artisan::call('config:cache');
