@@ -17,9 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\Illuminate\View\Middleware\ShareErrorsFromSession::class);
         $middleware->append(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class); 
         $middleware->append(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class); 
-        $middleware->validateCsrfTokens(except: [
-            'api/login',  // <--- O la ruta que quieras deshabilitar
-        ]);
+        // $middleware->validateCsrfTokens(except: [
+        //     'api/login',  // <--- O la ruta que quieras deshabilitar
+        // ]);
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {

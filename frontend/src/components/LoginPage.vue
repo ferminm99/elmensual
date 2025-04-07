@@ -41,9 +41,12 @@ export default {
         // Supongamos que este es tu método login en el frontend:
         async login() {
             try {
-                const csrfResponse = await axios.get("/api/csrf-token", {
-                    withCredentials: true,
-                });
+                const csrfResponse = await axios.get(
+                    "/api/sanctum/csrf-token",
+                    {
+                        withCredentials: true,
+                    }
+                );
 
                 const token = csrfResponse.data.token;
                 console.log("📦 TOKEN CSRF recibido desde endpoint:", token);

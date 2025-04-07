@@ -49,7 +49,7 @@ Route::middleware([
     EnsureFrontendRequestsAreStateful::class,
     'web',
 ])->group(function () {
-    Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]));
+    Route::get('/sanctum/csrf-token', fn () => response()->json(['token' => csrf_token()]));
     Route::post('/login', [LoginController::class, 'login']);
     
 });
