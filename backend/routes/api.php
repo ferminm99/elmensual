@@ -12,33 +12,11 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Support\Facades\Cookie;
 // CSRF Token (usado por el frontend antes del login)
 
-
-// Route::get('/env-check', function () {
-//     return response()->json([
-//         'APP_ENV' => env('APP_ENV'),
-//         'DB_CONNECTION' => env('DB_CONNECTION'),
-//         'DB_HOST' => env('DB_HOST'),
-//         'DB_PORT' => env('DB_PORT'),
-//         'DB_DATABASE' => env('DB_DATABASE'),
-//         'APP_URL' => env('APP_URL'),
-//         'APP_DEBUG' => env('APP_DEBUG'),
-//         'SESSION_DRIVER' => env('SESSION_DRIVER'),
-//         'SESSION_DOMAIN' => env('SESSION_DOMAIN'),
-//         'SESSION_SAME_SITE' => env('SESSION_SAME_SITE'),
-//         'SESSION_SECURE_COOKIE' => env('SESSION_SECURE_COOKIE'),
-//     ]);
-// });
-
-
-Route::get('/env-check', function () {
+Route::get('/debug-session', function () {
     return response()->json([
-        'env_session_same_site' => env('SESSION_SAME_SITE'),
-        'config_session_same_site' => config('session.same_site'),
-        'env_loaded' => app()->environment(),
-        'session_driver' => config('session.driver'),
-        'session_domain' => config('session.domain'),
-        'session_secure' => config('session.secure'),
-        'session_http_only' => config('session.http_only'),
+        'session_id' => session()->getId(),
+        'csrf_token' => csrf_token(),
+        'session_data' => session()->all(),
     ]);
 });
 

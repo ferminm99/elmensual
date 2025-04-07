@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Providers;
+use Illuminate\Support\Facades\Config;
 
 use Illuminate\Support\ServiceProvider;
 
