@@ -3,20 +3,19 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
     plugins: [vue()],
-    base: "/build/", // ⚠️ Esto es CLAVE
     build: {
-        outDir: "../backend/public/build", // 👈 apunta al public del backend
+        outDir: "dist", // 👈 Vercel espera esto
         emptyOutDir: true,
         manifest: true,
         rollupOptions: {
-            input: "resources/js/app.js", // o tu archivo de entrada real
+            input: "index.html", // ⚠️ Usá el path real de tu app
         },
     },
     // server: {
-    //     host: "localhost",
-    //     port: 5173,
-    //     proxy: {
-    //         "/api": process.env.APP_URL || "http://localhost:8000",
-    //     },
+    //   host: "localhost",
+    //   port: 5173,
+    //   proxy: {
+    //     "/api": "http://localhost:8000",
+    //   },
     // },
 });
