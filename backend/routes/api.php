@@ -30,7 +30,6 @@ use Illuminate\Support\Facades\Cookie;
 // });
 
 
-
 Route::get('/env-check', function () {
     return response()->json([
         'env_session_same_site' => env('SESSION_SAME_SITE'),
