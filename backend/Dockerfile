@@ -1,33 +1,31 @@
+# Base PHP
 FROM php:8.2-fpm-alpine
 
+# Instalar cosas necesarias
 RUN apk --no-cache add \
-    git \
-    curl \
-    zip \
-    unzip \
-    mysql-client \
-    supervisor \
-    nodejs \
-    npm \
+    git curl zip unzip mysql-client \
+    nodejs npm \
     && docker-php-ext-install pdo pdo_mysql
 
+# Copiar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Trabajamos en /var/www/html
 WORKDIR /var/www/html
 
-# Copiar solo composer.json y composer.lock
+# SOLO composer.json al principio
 COPY composer.json composer.lock ./
 
-# Instalar dependencias sin ejecutar NADA
-RUN COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_DISABLE_XDEBUG_WARN=1 composer install --no-scripts --no-plugins --no-autoloader
+# 🚫 Acá Laravel todavía no existe
+RUN composer install --no-scripts --no-plugins --no-autoloader
 
-# Ahora sí copiamos todo el código (después de instalar)
+# Ahora sí, copio Laravel
 COPY . .
 
-# Generar autoloader SIN ejecutar Laravel
+# Genero autoload sin ejecutar Laravel
 RUN composer dump-autoload --optimize --no-scripts
 
-# Copiar el script init
+# Copio init
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
