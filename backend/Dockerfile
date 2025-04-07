@@ -1,6 +1,5 @@
 FROM php:8.2-fpm-alpine
 
-# Instalar dependencias necesarias
 RUN apk --no-cache add \
     git \
     curl \
@@ -12,18 +11,22 @@ RUN apk --no-cache add \
     npm \
     && docker-php-ext-install pdo pdo_mysql
 
-# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working dir
 WORKDIR /var/www/html
 
-# Copiar todo el código + init.sh
+# Copiamos solo composer.json para instalar dependencias sin tocar Laravel todavía
+COPY composer.json composer.lock ./
+RUN composer install --no-scripts --no-autoloader
+
+# Ahora sí copiamos todo el código
 COPY . .
+
+# Generamos el autoloader SIN ejecutar Laravel
+RUN composer dump-autoload --optimize --no-scripts
+
+# Copiamos el init.sh
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
-
-# NO HAGAS config:cache acá
-RUN composer install --optimize-autoloader --no-dev --no-scripts
 
 CMD ["sh", "/init.sh"]
