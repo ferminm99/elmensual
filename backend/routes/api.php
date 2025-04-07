@@ -46,13 +46,13 @@ Route::get('/force-recache', function () {
 
 // Autenticación
 Route::middleware([
-    \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    EnsureFrontendRequestsAreStateful::class,
     'web',
 ])->group(function () {
     Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]));
     Route::post('/login', [LoginController::class, 'login']);
+    
 });
-
 
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
