@@ -15,17 +15,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiamos solo composer.json para instalar dependencias sin tocar Laravel todavía
+# Copiar solo composer.json y composer.lock
 COPY composer.json composer.lock ./
-RUN composer install --no-scripts --no-autoloader
 
-# Ahora sí copiamos todo el código
+# Instalar dependencias sin ejecutar NADA
+RUN COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_DISABLE_XDEBUG_WARN=1 composer install --no-scripts --no-plugins --no-autoloader
+
+# Ahora sí copiamos todo el código (después de instalar)
 COPY . .
 
-# Generamos el autoloader SIN ejecutar Laravel
+# Generar autoloader SIN ejecutar Laravel
 RUN composer dump-autoload --optimize --no-scripts
 
-# Copiamos el init.sh
+# Copiar el script init
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
