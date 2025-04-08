@@ -12,11 +12,10 @@ http {
     keepalive_timeout  65;
 
     server {
-        listen ${PORT}; 
-        server_name localhost;
+        listen       ${PORT};
+        server_name  localhost;
 
         root /var/www/html/public;
-
         index index.php;
 
         location / {
@@ -25,10 +24,8 @@ http {
 
         location ~ \.php$ {
             include fastcgi_params;
-            fastcgi_intercept_errors on;
             fastcgi_pass 127.0.0.1:9000;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            fastcgi_param PATH_INFO $fastcgi_path_info;
         }
 
         location ~ /\.ht {
