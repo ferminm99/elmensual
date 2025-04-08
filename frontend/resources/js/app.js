@@ -20,13 +20,18 @@ axios.defaults.withCredentials = true; // solo necesario si estás usando cookie
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
 // 👉 Interceptor para agregar automáticamente el token Bearer
-axios.interceptors.request.use((config) => {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Token inválido o expirado
+            localStorage.removeItem("auth_token");
+            delete axios.defaults.headers.common["Authorization"];
+            router.push("/login");
+        }
+        return Promise.reject(error);
     }
-    return config;
-});
+);
 
 // Crear la instancia de Vuetify
 const vuetify = createVuetify({
