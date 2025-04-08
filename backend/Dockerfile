@@ -26,7 +26,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["/init.sh"]
 
