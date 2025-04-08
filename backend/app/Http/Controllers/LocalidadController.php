@@ -9,8 +9,14 @@ class LocalidadController extends Controller
 {
     public function index()
     {
-        return Localidad::orderByDesc('disponibilidad')->orderBy('nombre')->get();
+        try {
+            return Localidad::orderByDesc('disponibilidad')->orderBy('nombre')->get();
+        } catch (\Throwable $e) {
+            \Log::error("Error en LocalidadController@index: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['message' => 'Error interno en el servidor', 'error' => $e->getMessage()], 500);
+        }
     }
+
 
 
     public function store(Request $request)
