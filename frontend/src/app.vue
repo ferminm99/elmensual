@@ -88,7 +88,7 @@ export default {
     methods: {
         logout() {
             axios.post("/logout").finally(() => {
-                localStorage.removeItem("auth");
+                localStorage.removeItem("auth_token");
                 this.$router.push("/login");
             });
         },

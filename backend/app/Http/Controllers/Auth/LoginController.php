@@ -40,12 +40,12 @@ class LoginController extends Controller
     }
 
 
-    public function checkAuth()
+    public function checkAuth(Request $request)
     {
-        if (Auth::check()) {
-            return response()->json(['authenticated' => true, 'user' => Auth::user()]);
-        } else {
-            return response()->json(['authenticated' => false]);
-        }
+        return response()->json([
+            'authenticated' => true,
+            'user' => $request->user(),
+        ]);
     }
+
 }

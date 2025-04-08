@@ -37,6 +37,13 @@ export default {
             password: "",
         };
     },
+    mounted() {
+        const token = localStorage.getItem("auth_token");
+        if (token) {
+            this.$router.push("/");
+        }
+    },
+
     methods: {
         // Supongamos que este es tu método login en el frontend:
         async login() {
@@ -47,7 +54,7 @@ export default {
                 });
 
                 const token = response.data.token;
-                localStorage.setItem("token", token);
+                localStorage.setItem("auth_token", token); // corregido
 
                 // Setear header Authorization para futuras requests
                 axios.defaults.headers.common[
