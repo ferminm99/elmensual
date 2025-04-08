@@ -3,8 +3,5 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return response()->json(['ok' => true]);
+    return redirect(env('VITE_APP_URL', 'https://elmensual.vercel.app'));
 });
-
-
-Route::get('/prueba-viva', fn() => '🔥 Laravel responde correctamente');
