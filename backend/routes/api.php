@@ -19,6 +19,9 @@ Route::post('/logout', [LoginController::class, 'logout']);
 
 // Opcional para debug
 Route::get('/debug-error', fn () => response()->json(['debug' => 'OK']));
+Route::get('/cors-check', function () {
+    return response()->json(['ok' => true]);
+});
 
 /**
  * ---------------------------
