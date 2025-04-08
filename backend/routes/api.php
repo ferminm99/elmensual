@@ -29,7 +29,6 @@ Route::get('/cors-debug', function () {
     ]);
 });
 
-Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 /**
  * ---------------------------
  * 🔐 Rutas protegidas con auth:sanctum
@@ -37,7 +36,8 @@ Route::get('/check-auth', [LoginController::class, 'checkAuth']);
  */
 Route::middleware('auth:sanctum')->group(function () {
     
-    
+    Route::get('/check-auth', [LoginController::class, 'checkAuth']);
+
     
     // Artículos
     Route::get('/articulos', [ArticuloController::class, 'index']);
