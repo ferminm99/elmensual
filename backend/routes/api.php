@@ -44,6 +44,31 @@ use Illuminate\Support\Facades\Cookie;
 //     ]);
 // });
 
+Route::post('/test-login-debug', function (Request $request) {
+    try {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['error' => 'Credenciales incorrectas'], 401);
+        }
+
+        $user = Auth::user();
+        $token = $user->createToken('token-name')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+});
 
 
 Route::get('/debug-error', function () {

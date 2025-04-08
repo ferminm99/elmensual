@@ -56,8 +56,23 @@ export default {
 
                 this.$router.push("/");
             } catch (error) {
-                console.error("Error al iniciar sesión", error);
-                alert("Login fallido");
+                if (error.response) {
+                    if (error.response.status === 422) {
+                        alert("Faltan campos o son inválidos.");
+                    } else if (error.response.status === 401) {
+                        alert("Credenciales incorrectas.");
+                    } else if (error.response.status === 500) {
+                        alert("Error interno del servidor.");
+                        console.error(
+                            "❌ INTERNAL ERROR:",
+                            error.response.data
+                        );
+                    } else {
+                        alert("Error inesperado.");
+                    }
+                } else {
+                    alert("Error de conexión.");
+                }
             }
         },
     },
