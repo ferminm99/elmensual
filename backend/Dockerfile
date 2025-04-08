@@ -23,6 +23,6 @@ RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memlimit.ini
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["/init.sh"]
