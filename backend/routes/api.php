@@ -7,6 +7,7 @@ use App\Http\Controllers\GoogleDriveController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\LocalidadController;
 use App\Http\Controllers\Auth\LoginController;
+use Illuminate\Http\Request;
 
 /**
  * ---------------------------
