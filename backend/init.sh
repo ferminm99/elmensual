@@ -1,12 +1,12 @@
 #!/bin/sh
 
-echo "🛠️ Iniciando contenedor..."
+echo "🚀 Init start"
 
-# Laravel optimizations
+# Limpiar y cachear config
 php artisan config:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Correr nginx y php-fpm
-php-fpm & nginx -g "daemon off;"
+# Iniciar servidor interno de Laravel
+php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
