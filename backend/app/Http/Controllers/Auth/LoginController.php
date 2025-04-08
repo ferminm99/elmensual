@@ -42,10 +42,14 @@ class LoginController extends Controller
 
     public function checkAuth(Request $request)
     {
-        return response()->json([
-            'authenticated' => true,
-            'user' => $request->user(),
-        ]);
+        $user = $request->user(); // Esto sí funciona con el token Bearer
+
+        if ($user) {
+            return response()->json(['authenticated' => true, 'user' => $user]);
+        } else {
+            return response()->json(['authenticated' => false]);
+        }
     }
+
 
 }
