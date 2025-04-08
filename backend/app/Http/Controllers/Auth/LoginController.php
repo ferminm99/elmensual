@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class LoginController extends Controller
 {
@@ -40,22 +41,25 @@ class LoginController extends Controller
     }
 
 
-    public function checkAuth()
+   
+
+    public function checkAuth(Request $request)
     {
-        try {
-            if (Auth::check()) {
-                return response()->json(['authenticated' => true, 'user' => Auth::user()]);
-            } else {
-                return response()->json(['authenticated' => false]);
-            }
-        } catch (\Throwable $e) {
+        $authHeader = $request->header('Authorization');
+        $tokenString = str_replace('Bearer ', '', $authHeader);
+
+        $token = PersonalAccessToken::findToken($tokenString);
+
+        if ($token && $token->tokenable) {
             return response()->json([
-                'error' => true,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
+                'authenticated' => true,
+                'user' => $token->tokenable,
+            ]);
         }
+
+        return response()->json(['authenticated' => false]);
     }
+
 
 
 
