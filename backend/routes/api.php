@@ -42,6 +42,13 @@ Route::get('/middleware-check', function (Request $request) {
     ]);
 });
 
+Route::get('/token-test', function (Request $request) {
+    return response()->json([
+        'user' => $request->user(),
+        'token' => $request->bearerToken(),
+    ]);
+});
+
 /**
  * ---------------------------
  * 🔐 Rutas protegidas con auth:sanctum
