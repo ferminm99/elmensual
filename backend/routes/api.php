@@ -22,6 +22,14 @@ Route::get('/cors-check', function () {
     return response()->json(['ok' => true]);
 });
 
+Route::get('/cors-debug', function () {
+    return response()->json([
+        'config' => config('cors'),
+        'env' => env('APP_ENV'),
+    ]);
+});
+
+
 /**
  * ---------------------------
  * 🔐 Rutas protegidas con auth:sanctum
