@@ -37,15 +37,32 @@ const router = createRouter({
     routes,
 });
 
-router.beforeEach((to, from, next) => {
-    const isAuthenticated = !!localStorage.getItem("token");
-    if (to.meta.requiresAuth && !isAuthenticated) {
-        next("/login");
-    } else if (to.path === "/login" && isAuthenticated) {
-        next("/");
-    } else {
-        next();
+router.beforeEach(async (to, from, next) => {
+    const token = localStorage.getItem("auth_token");
+
+    if (to.meta.requiresAuth) {
+        if (!token) {
+            return next("/login");
+        }
+
+        try {
+            const res = await axios.get("/api/check-auth");
+            if (!res.data.user) {
+                localStorage.removeItem("auth_token");
+                return next("/login");
+            }
+        } catch (err) {
+            console.warn("⚠️ No se pudo validar el token:", err);
+            localStorage.removeItem("auth_token");
+            return next("/login");
+        }
     }
+
+    if (to.path === "/login" && token) {
+        return next("/");
+    }
+
+    next();
 });
 
 export default router;
