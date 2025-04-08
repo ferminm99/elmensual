@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'login', 'logout', 'csrf-token', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'login', 'logout', 'sanctum/csrf-cookie', 'check-auth'],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['https://elmensual.vercel.app'],
     'allowed_origins_patterns' => [],
