@@ -29,6 +29,19 @@ Route::get('/cors-debug', function () {
     ]);
 });
 
+Route::get('/middleware-check', function (Request $request) {
+    $app = App::getInstance();
+
+    return response()->json([
+        'middleware' => $app->getMiddleware(),
+        'route_middleware' => $app->getRouter()->getMiddleware(),
+        'middleware_groups' => $app->getRouter()->getMiddlewareGroups(),
+        'headers' => $request->headers->all(),
+        'env' => env('APP_ENV'),
+        'cors_config' => config('cors'),
+    ]);
+});
+
 /**
  * ---------------------------
  * 🔐 Rutas protegidas con auth:sanctum
