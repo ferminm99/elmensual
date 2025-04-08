@@ -10,32 +10,38 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { aliases, mdi } from "vuetify/iconsets/mdi"; // Para los iconos (opcional)
 import "@mdi/font/css/materialdesignicons.css";
+
 import axios from "axios";
 import { es } from "vuetify/locale";
 
-axios.defaults.baseURL = import.meta.env.VITE_APP_URL;
-axios.defaults.withCredentials = true;
-axios.defaults.xsrfCookieName = "XSRF-TOKEN";
-axios.defaults.xsrfHeaderName = "X-XSRF-TOKEN";
+// Configuración base de Axios
+axios.defaults.baseURL = import.meta.env.VITE_APP_URL; // por ej: https://elmensual-production.up.railway.app
+axios.defaults.withCredentials = true; // solo necesario si estás usando cookies (ahora no es obligatorio)
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
+
+// 👉 Interceptor para agregar automáticamente el token Bearer
+axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
 
 // Crear la instancia de Vuetify
 const vuetify = createVuetify({
     components,
     directives,
     icons: {
-        defaultSet: "mdi", // Usa los iconos de Material Design
+        defaultSet: "mdi",
         aliases,
         sets: { mdi },
     },
     locale: {
-        locale: "es", // Establece español como idioma predeterminado
-        messages: { es }, // Define los mensajes en español
+        locale: "es",
+        messages: { es },
     },
 });
 
 // Crear la aplicación Vue
-createApp(App)
-    .use(router)
-    .use(vuetify) // Usar Vuetify en la aplicación
-    .mount("#app");
+createApp(App).use(router).use(vuetify).mount("#app");

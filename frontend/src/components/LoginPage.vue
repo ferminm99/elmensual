@@ -41,45 +41,23 @@ export default {
         // Supongamos que este es tu método login en el frontend:
         async login() {
             try {
-                const csrfResponse = await axios.get(
-                    "/api/sanctum/csrf-token",
-                    {
-                        withCredentials: true,
-                    }
-                );
+                const response = await axios.post("/api/login", {
+                    email: this.email,
+                    password: this.password,
+                });
 
-                const token = csrfResponse.data.token;
-                console.log("📦 TOKEN CSRF recibido desde endpoint:", token);
+                const token = response.data.token;
 
-                if (!token) {
-                    alert("No se pudo obtener el token CSRF.");
-                    return;
-                }
-
-                // Petición de login
-                const response = await axios.post(
-                    "/api/login",
-                    { email: this.email, password: this.password },
-                    { withCredentials: true }
-                );
-
-                if (response.data.success) {
-                    localStorage.setItem("auth", true);
+                if (token) {
+                    // Guardamos el token en localStorage
+                    localStorage.setItem("auth_token", token);
                     this.$router.push("/");
                 } else {
-                    alert("Credenciales incorrectas");
+                    alert("Error al obtener el token");
                 }
             } catch (error) {
                 console.error("Error al iniciar sesión", error);
-                if (error.response) {
-                    console.error("💥 Backend dijo:", error.response.data);
-                    alert(
-                        "Error del servidor: " +
-                            JSON.stringify(error.response.data)
-                    );
-                } else {
-                    alert("Error al iniciar sesión");
-                }
+                alert("Credenciales incorrectas o error de servidor");
             }
         },
         getCookie(name) {

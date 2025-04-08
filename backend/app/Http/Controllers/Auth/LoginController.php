@@ -12,12 +12,19 @@ class LoginController extends Controller
 {
     public function login(Request $request)
     {
-        \Log::info('🚨 Entró al método login');
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
         if (Auth::attempt($credentials)) {
-            // $request->session()->regenerate();
-            return response()->json(['success' => true]);
+            $user = Auth::user();
+            $token = $user->createToken('token-name')->plainTextToken;
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user,
+            ]);
         }
 
         return response()->json(['message' => 'Credenciales inválidas'], 401);
@@ -27,11 +34,11 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return response()->json(['message' => 'Logout exitoso']);
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Token revocado correctamente']);
     }
+
 
     public function checkAuth()
     {
