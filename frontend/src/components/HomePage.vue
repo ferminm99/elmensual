@@ -672,41 +672,24 @@ export default {
             this.dialog = true;
         },
 
-        fetchArticulos() {
-            // Primer fetch: ARTÍCULOS LISTAR
-            fetch("/api/articulos/listar")
-                .then((response) => {
-                    if (!response.ok)
-                        throw new Error("Error al obtener /articulos/listar");
-                    return response.json();
-                })
-                .then((data) => {
-                    this.articulos = data;
-                    console.log("ARTICULOS", this.articulos);
-                })
-                .catch((error) => {
-                    console.error("Error en /api/articulos/listar:", error);
-                });
+        async fetchArticulos() {
+            try {
+                const articulosRes = await axios.get("/api/articulos/listar");
+                this.articulos = articulosRes.data;
+                console.log("ARTICULOS", this.articulos);
+            } catch (error) {
+                console.error("Error en /api/articulos/listar:", error);
+            }
 
-            // Segundo fetch: ARTÍCULOS CON TALLES
-            fetch("/api/articulo/listar/talles")
-                .then((response) => {
-                    if (!response.ok)
-                        throw new Error(
-                            "Error al obtener /articulo/listar/talles"
-                        );
-                    return response.json();
-                })
-                .then((data) => {
-                    this.articulosCompletos = data;
-                    console.log("ARTICULOS COMPLETOS", data);
-                })
-                .catch((error) => {
-                    console.error(
-                        "Error en /api/articulo/listar/talles:",
-                        error
-                    );
-                });
+            try {
+                const articulosTallesRes = await axios.get(
+                    "/api/articulo/listar/talles"
+                );
+                this.articulosCompletos = articulosTallesRes.data;
+                console.log("ARTICULOS COMPLETOS", this.articulosCompletos);
+            } catch (error) {
+                console.error("Error en /api/articulo/listar/talles:", error);
+            }
         },
         onArticuloChange() {
             this.fetchTalles();
