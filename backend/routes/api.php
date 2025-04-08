@@ -55,7 +55,7 @@ Route::middleware('auth:sanctum')->get('/token-check', function (Request $reques
  * 🔐 Rutas protegidas con auth:sanctum
  * ---------------------------
  */
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['web', 'auth:sanctum'])->group(function () {
     
     Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 
