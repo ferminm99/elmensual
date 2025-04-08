@@ -12,37 +12,37 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Support\Facades\Cookie;
 // CSRF Token (usado por el frontend antes del login)
 
-Route::get('/debug-session', function () {
-    return response()->json([
-        'session_id' => session()->getId(),
-        'csrf_token' => csrf_token(),
-        'session_data' => session()->all(),
-    ]);
-});
+// Route::get('/debug-session', function () {
+//     return response()->json([
+//         'session_id' => session()->getId(),
+//         'csrf_token' => csrf_token(),
+//         'session_data' => session()->all(),
+//     ]);
+// });
 
 
-Route::get('/env-check', function () {
-    return response()->json([
-        'env_session_same_site' => env('SESSION_SAME_SITE'),
-        'config_session_same_site' => config('session.same_site'),
-        'env_loaded' => app()->environment(),
-        'session_driver' => config('session.driver'),
-        'session_domain' => config('session.domain'),
-        'session_secure' => config('session.secure'),
-        'session_http_only' => config('session.http_only'),
-    ]);
-});
+// Route::get('/env-check', function () {
+//     return response()->json([
+//         'env_session_same_site' => env('SESSION_SAME_SITE'),
+//         'config_session_same_site' => config('session.same_site'),
+//         'env_loaded' => app()->environment(),
+//         'session_driver' => config('session.driver'),
+//         'session_domain' => config('session.domain'),
+//         'session_secure' => config('session.secure'),
+//         'session_http_only' => config('session.http_only'),
+//     ]);
+// });
 
-Route::get('/force-recache', function () {
-    \Artisan::call('config:clear');
-    \Artisan::call('config:cache');
-    return response()->json([
-        '✅ limpio' => true,
-        'env_session_same_site' => env('SESSION_SAME_SITE'),
-        'config_session_same_site' => config('session.same_site'),
-        'env_loaded' => app()->environment(),
-    ]);
-});
+// Route::get('/force-recache', function () {
+//     \Artisan::call('config:clear');
+//     \Artisan::call('config:cache');
+//     return response()->json([
+//         '✅ limpio' => true,
+//         'env_session_same_site' => env('SESSION_SAME_SITE'),
+//         'config_session_same_site' => config('session.same_site'),
+//         'env_loaded' => app()->environment(),
+//     ]);
+// });
 
 // Autenticacións
 Route::middleware([
@@ -53,6 +53,16 @@ Route::middleware([
     Route::post('/login', [LoginController::class, 'login']);
     
 });
+
+Route::get('/debug-error', function () {
+    try {
+        // Simulá algo que pueda lanzar el error
+        return response()->json(['debug' => 'OK']);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
+    }
+});
+
 
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
