@@ -43,10 +43,10 @@ Route::get('/middleware-check', function (Request $request) {
     ]);
 });
 
-Route::get('/token-test', function (Request $request) {
+Route::middleware('auth:sanctum')->get('/token-check', function (Request $request) {
     return response()->json([
+        'auth' => true,
         'user' => $request->user(),
-        'token' => $request->bearerToken(),
     ]);
 });
 
