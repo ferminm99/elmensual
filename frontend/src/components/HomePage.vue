@@ -463,6 +463,7 @@ export default {
         };
     },
     created() {
+        console.log("CREATING?");
         this.fetchArticulos();
     },
     computed: {
