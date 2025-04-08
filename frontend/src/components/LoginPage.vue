@@ -47,24 +47,18 @@ export default {
                 });
 
                 const token = response.data.token;
+                localStorage.setItem("token", token);
 
-                if (token) {
-                    // Guardamos el token en localStorage
-                    localStorage.setItem("auth_token", token);
-                    this.$router.push("/");
-                } else {
-                    alert("Error al obtener el token");
-                }
+                // Setear header Authorization para futuras requests
+                axios.defaults.headers.common[
+                    "Authorization"
+                ] = `Bearer ${token}`;
+
+                this.$router.push("/");
             } catch (error) {
                 console.error("Error al iniciar sesión", error);
-                alert("Credenciales incorrectas o error de servidor");
+                alert("Login fallido");
             }
-        },
-        getCookie(name) {
-            const match = document.cookie.match(
-                new RegExp("(^| )" + name + "=([^;]+)")
-            );
-            return match ? match[2] : null;
         },
     },
 };
