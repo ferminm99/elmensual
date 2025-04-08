@@ -43,7 +43,7 @@ Route::get('/middleware-check', function (Request $request) {
     ]);
 });
 
-Route::middleware(['web', 'auth:sanctum'])->get('/sanctum-check', function (Request $request) {
+Route::middleware(['auth:sanctum'])->get('/sanctum-check', function (Request $request) {
     return response()->json(['auth' => true, 'user' => $request->user()]);
 });
 

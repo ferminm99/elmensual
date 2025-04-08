@@ -41,26 +41,14 @@ class LoginController extends Controller
     }
 
 
-   
 
     public function checkAuth(Request $request)
     {
-        $authHeader = $request->header('Authorization');
-        $tokenString = str_replace('Bearer ', '', $authHeader);
-
-        $token = PersonalAccessToken::findToken($tokenString);
-
-        if ($token && $token->tokenable) {
-            return response()->json([
-                'authenticated' => true,
-                'user' => $token->tokenable,
-            ]);
-        }
-
-        return response()->json(['authenticated' => false]);
+        return response()->json([
+            'authenticated' => (bool) $request->user(),
+            'user' => $request->user(),
+        ]);
     }
-
-
 
 
 }
