@@ -12,3 +12,5 @@ docker-entrypoint-initdb.d/elmensual.sql
 tests/                   
 .vscode/                
 .env.example    
+*.log
+*.sql
