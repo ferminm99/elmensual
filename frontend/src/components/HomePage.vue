@@ -673,19 +673,39 @@ export default {
         },
 
         fetchArticulos() {
+            // Primer fetch: ARTÍCULOS LISTAR
             fetch("/api/articulos/listar")
-                .then((response) => response.json())
+                .then((response) => {
+                    if (!response.ok)
+                        throw new Error("Error al obtener /articulos/listar");
+                    return response.json();
+                })
                 .then((data) => {
                     this.articulos = data;
-                    console.log("ARTICULOS");
-                    console.log(this.articulos);
+                    console.log("ARTICULOS", this.articulos);
+                })
+                .catch((error) => {
+                    console.error("Error en /api/articulos/listar:", error);
                 });
+
+            // Segundo fetch: ARTÍCULOS CON TALLES
             fetch("/api/articulo/listar/talles")
-                .then((response) => response.json())
+                .then((response) => {
+                    if (!response.ok)
+                        throw new Error(
+                            "Error al obtener /articulo/listar/talles"
+                        );
+                    return response.json();
+                })
                 .then((data) => {
                     this.articulosCompletos = data;
-                    console.log("ARTICULOS COMPLETOS");
-                    console.log(data);
+                    console.log("ARTICULOS COMPLETOS", data);
+                })
+                .catch((error) => {
+                    console.error(
+                        "Error en /api/articulo/listar/talles:",
+                        error
+                    );
                 });
         },
         onArticuloChange() {
