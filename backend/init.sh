@@ -4,7 +4,7 @@ echo "🛠️ Iniciando contenedor..."
 
 # Reemplazar variable de entorno $PORT en nginx.conf
 export PORT=${PORT:-8080}
-envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+# envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 # Laravel cache
 php artisan config:clear
