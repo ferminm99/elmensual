@@ -37,22 +37,25 @@ const router = createRouter({
     routes,
 });
 
-router.beforeEach(async (to, from, next) => {
+router.berouter.beforeEach(async (to, from, next) => {
     const token = localStorage.getItem("auth_token");
+    console.log("➡️ Navegando a:", to.path, "con token:", token);
 
     if (to.meta.requiresAuth) {
         if (!token) {
+            console.log("❌ No token, redirigiendo a login");
             return next("/login");
         }
 
         try {
             const res = await axios.get("/api/check-auth");
             if (!res.data.user) {
+                console.log("❌ Usuario no válido, redirigiendo a login");
                 localStorage.removeItem("auth_token");
                 return next("/login");
             }
         } catch (err) {
-            console.warn("⚠️ No se pudo validar el token:", err);
+            console.warn("⚠️ Error en check-auth", err);
             localStorage.removeItem("auth_token");
             return next("/login");
         }
