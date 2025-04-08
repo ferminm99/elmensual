@@ -14,7 +14,6 @@ use App\Http\Controllers\Auth\LoginController;
  * ---------------------------
  */
 Route::post('/login', [LoginController::class, 'login']);
-Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 Route::post('/logout', [LoginController::class, 'logout']);
 
 // Opcional para debug
@@ -30,6 +29,8 @@ Route::get('/cors-check', function () {
  */
 Route::middleware('auth:sanctum')->group(function () {
     
+    
+    Route::get('/check-auth', [LoginController::class, 'checkAuth']);
     // Artículos
     Route::get('/articulos', [ArticuloController::class, 'index']);
     Route::post('/articulo', [ArticuloController::class, 'store']);
