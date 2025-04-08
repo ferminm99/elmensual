@@ -19,7 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class); 
         $middleware->validateCsrfTokens(except: [
             'api/login',  // <--- O la ruta que quieras deshabilitar
-            'api/'
+            'api/',
+            '/'
         ]);
         //
     })
