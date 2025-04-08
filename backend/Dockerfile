@@ -13,7 +13,7 @@ COPY . .
 RUN composer install --optimize-autoloader --no-dev
 
 # Copiar nginx.conf y darle permisos
-COPY nginx.conf /etc/nginx/nginx.conf
+RUN cp /etc/nginx/nginx.conf.template /etc/nginx/nginx.conf
 
 # Copiar y dar permisos a script de inicio
 COPY init.sh /init.sh
