@@ -44,15 +44,7 @@ use Illuminate\Support\Facades\Cookie;
 //     ]);
 // });
 
-// Autenticacións
-Route::middleware([
-    EnsureFrontendRequestsAreStateful::class,
-    'web',
-])->group(function () {
-    Route::get('/sanctum/csrf-token', fn () => response()->json(['token' => csrf_token()]));
-    Route::post('/login', [LoginController::class, 'login']);
-    
-});
+
 
 Route::get('/debug-error', function () {
     try {
@@ -72,7 +64,7 @@ Route::get('/cors-check', function () {
     return response()->json(['ok' => true]);
 });
 
-
+Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 
