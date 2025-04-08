@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticuloController;
 use App\Http\Controllers\VentasController;
@@ -8,99 +7,26 @@ use App\Http\Controllers\GoogleDriveController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\LocalidadController;
 use App\Http\Controllers\Auth\LoginController;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
-use Illuminate\Support\Facades\Cookie;
-// CSRF Token (usado por el frontend antes del login)
 
-// Route::get('/debug-session', function () {
-//     return response()->json([
-//         'session_id' => session()->getId(),
-//         'csrf_token' => csrf_token(),
-//         'session_data' => session()->all(),
-//     ]);
-// });
-
-
-// Route::get('/env-check', function () {
-//     return response()->json([
-//         'env_session_same_site' => env('SESSION_SAME_SITE'),
-//         'config_session_same_site' => config('session.same_site'),
-//         'env_loaded' => app()->environment(),
-//         'session_driver' => config('session.driver'),
-//         'session_domain' => config('session.domain'),
-//         'session_secure' => config('session.secure'),
-//         'session_http_only' => config('session.http_only'),
-//     ]);
-// });
-
-// Route::get('/force-recache', function () {
-//     \Artisan::call('config:clear');
-//     \Artisan::call('config:cache');
-//     return response()->json([
-//         '✅ limpio' => true,
-//         'env_session_same_site' => env('SESSION_SAME_SITE'),
-//         'config_session_same_site' => config('session.same_site'),
-//         'env_loaded' => app()->environment(),
-//     ]);
-// });
-
-Route::post('/test-login-debug', function (Request $request) {
-    try {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
-
-        if (!Auth::attempt($credentials)) {
-            return response()->json(['error' => 'Credenciales incorrectas'], 401);
-        }
-
-        $user = Auth::user();
-        $token = $user->createToken('token-name')->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ], 500);
-    }
-});
-
-
-Route::get('/debug-error', function () {
-    try {
-        // Simulá algo que pueda lanzar el error
-        return response()->json(['debug' => 'OK']);
-    } catch (\Throwable $e) {
-        return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
-    }
-});
-
-// Para debug
-Route::get('/session-id', function () {
-    return response()->json(['session_id' => session()->getId()]);
-});
-
-Route::get('/cors-check', function () {
-    return response()->json(['ok' => true]);
-});
-
+/**
+ * ---------------------------
+ * 🔓 Rutas públicas
+ * ---------------------------
+ */
 Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
+Route::post('/logout', [LoginController::class, 'logout']);
 
+// Opcional para debug
+Route::get('/debug-error', fn () => response()->json(['debug' => 'OK']));
+
+/**
+ * ---------------------------
+ * 🔐 Rutas protegidas con auth:sanctum
+ * ---------------------------
+ */
 Route::middleware('auth:sanctum')->group(function () {
-
-    // Google Drive
-    Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');
-    Route::get('/auth/google', [GoogleDriveController::class, 'redirectToGoogle'])->name('auth.google');
-    Route::get('/google/callback', [GoogleDriveController::class, 'handleGoogleCallback']);
-    Route::get('/upload-to-drive', [GoogleDriveController::class, 'uploadToDrive'])->name('drive.upload');
-
+    
     // Artículos
     Route::get('/articulos', [ArticuloController::class, 'index']);
     Route::post('/articulo', [ArticuloController::class, 'store']);
@@ -142,5 +68,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/localidad', [LocalidadController::class, 'store']);
     Route::put('/localidad/{id}', [LocalidadController::class, 'update']);
     Route::delete('/localidad/{id}', [LocalidadController::class, 'destroy']);
-    
+
+    // Google Drive
+    Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');
+    Route::get('/auth/google', [GoogleDriveController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/google/callback', [GoogleDriveController::class, 'handleGoogleCallback']);
+    Route::get('/upload-to-drive', [GoogleDriveController::class, 'uploadToDrive'])->name('drive.upload');
 });
