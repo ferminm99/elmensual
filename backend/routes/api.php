@@ -44,7 +44,7 @@ Route::get('/force-recache', function () {
     ]);
 });
 
-// Autenticación
+// Autenticacións
 Route::middleware([
     EnsureFrontendRequestsAreStateful::class,
     'web',
