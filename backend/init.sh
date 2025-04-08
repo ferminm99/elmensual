@@ -13,7 +13,7 @@ echo "🚀 Init start"
 
 # Limpiar config
 php artisan config:clear
-# php artisan config:cache
+php artisan config:cache
 
 # Verificar que se tomó correctamente
 # php artisan tinker --execute="echo '🧪 same_site: ' . config('session.same_site');"

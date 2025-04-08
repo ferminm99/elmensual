@@ -68,6 +68,10 @@ Route::get('/session-id', function () {
     return response()->json(['session_id' => session()->getId()]);
 });
 
+Route::get('/cors-check', function () {
+    return response()->json(['ok' => true]);
+});
+
 
 Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/check-auth', [LoginController::class, 'checkAuth']);
