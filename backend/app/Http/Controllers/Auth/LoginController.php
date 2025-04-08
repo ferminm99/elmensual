@@ -40,16 +40,23 @@ class LoginController extends Controller
     }
 
 
-    public function checkAuth(Request $request)
+    public function checkAuth()
     {
-        $user = $request->user(); // Esto sí funciona con el token Bearer
-
-        if ($user) {
-            return response()->json(['authenticated' => true, 'user' => $user]);
-        } else {
-            return response()->json(['authenticated' => false]);
+        try {
+            if (Auth::check()) {
+                return response()->json(['authenticated' => true, 'user' => Auth::user()]);
+            } else {
+                return response()->json(['authenticated' => false]);
+            }
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
     }
+
 
 
 }
