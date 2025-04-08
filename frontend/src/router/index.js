@@ -37,7 +37,7 @@ const router = createRouter({
     routes,
 });
 
-router.berouter.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const token = localStorage.getItem("auth_token");
     console.log("➡️ Navegando a:", to.path, "con token:", token);
 
