@@ -10,13 +10,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar composer e instalar
-COPY composer.json composer.lock ./
-RUN composer install --optimize-autoloader --no-dev
 
-# Copiar todo el proyecto
 COPY . .
 
+# Ejecutar composer una vez que todo el código (incluyendo artisan) esté copiado
+RUN composer install --optimize-autoloader --no-dev
+    
 # Copiar nginx.template y darle permisos
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
