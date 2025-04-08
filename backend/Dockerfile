@@ -1,16 +1,28 @@
-FROM php:8.2-cli-alpine
+FROM php:8.2-fpm-alpine
 
-RUN apk add --no-cache git curl zip unzip mysql-client \
+# Instalar dependencias
+RUN apk add --no-cache nginx curl git zip unzip mysql-client bash \
     && docker-php-ext-install pdo pdo_mysql
 
+# Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Crear carpeta de trabajo
 WORKDIR /var/www/html
 
+# Copiar todo el proyecto
 COPY . .
 
-RUN composer install --optimize-autoloader
+# Instalar dependencias de Laravel
+RUN composer install --optimize-autoloader --no-dev
 
-EXPOSE 8000
+# Copiar configuración de nginx
+COPY nginx.conf /etc/nginx/nginx.conf
 
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# Copiar script de inicio
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
+
+EXPOSE 80
+
+CMD ["/init.sh"]
