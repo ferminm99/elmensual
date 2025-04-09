@@ -47,22 +47,22 @@ Route::middleware(['auth:sanctum'])->get('/sanctum-check', function (Request $re
     return response()->json(['auth' => true, 'user' => $request->user()]);
 });
 
-Route::middleware('token-auth')->group(function () {
-    Route::get('/check-auth', fn (Request $request) => response()->json([
-        'authenticated' => true,
-        'user' => $request->user(),
-    ]));
+// Route::middleware('token-auth')->group(function () {
+//     Route::get('/check-auth', fn (Request $request) => response()->json([
+//         'authenticated' => true,
+//         'user' => $request->user(),
+//     ]));
 
     // Y todas tus demás rutas seguras...
-});
+// });
 /**
  * ---------------------------
  * 🔐 Rutas protegidas con auth:sanctum
  * ---------------------------
  */
-Route::middleware(['web', 'auth:sanctum'])->group(function () {
+Route::middleware('token-auth')->group(function () {
     
-    // Route::get('/check-auth', [LoginController::class, 'checkAuth']);
+    Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 
     
     // Artículos
