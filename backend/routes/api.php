@@ -19,52 +19,11 @@ Route::post('/logout', [LoginController::class, 'logout']);
 
 // Opcional para debug
 Route::get('/debug-error', fn () => response()->json(['debug' => 'OK']));
-Route::get('/cors-check', function () {
-    return response()->json(['ok' => true]);
-});
-
-Route::get('/cors-debug', function () {
-    return response()->json([
-        'config' => config('cors'),
-        'env' => env('APP_ENV'),
-    ]);
-});
-
-Route::get('/middleware-check', function (Request $request) {
-    $app = App::getInstance();
-
-    return response()->json([
-        'middleware' => $app->getMiddleware(),
-        'route_middleware' => $app->getRouter()->getMiddleware(),
-        'middleware_groups' => $app->getRouter()->getMiddlewareGroups(),
-        'headers' => $request->headers->all(),
-        'env' => env('APP_ENV'),
-        'cors_config' => config('cors'),
-    ]);
-});
-
-Route::middleware(['auth:sanctum'])->get('/sanctum-check', function (Request $request) {
-    return response()->json(['auth' => true, 'user' => $request->user()]);
-});
 
 
-
-// Route::middleware(TokenAuthMiddleware::class)->get('/check-auth', function (Request $request) {
-//     return response()->json([
-//         'user' => $request->user(),
-//         'token' => $request->bearerToken(),
-//     ]);
-// });
+use App\Http\Middleware\TokenAuthMiddleware;
 
 
-// Route::middleware('token-auth')->group(function () {
-//     Route::get('/check-auth', fn (Request $request) => response()->json([
-//         'authenticated' => true,
-//         'user' => $request->user(),
-//     ]));
-
-    // Y todas tus demás rutas seguras...
-// });
 /**
  * ---------------------------
  * 🔐 Rutas protegidas con auth:sanctum
