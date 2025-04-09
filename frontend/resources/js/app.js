@@ -53,5 +53,10 @@ const vuetify = createVuetify({
     },
 });
 
+// 👉 COMPONENTE GLOBAL
+import ResponsiveTable from "@/components/ResponsiveTable.vue";
+
 // Crear la aplicación Vue
-createApp(App).use(router).use(vuetify).mount("#app");
+const app = createApp(App);
+app.component("ResponsiveTable", ResponsiveTable); // ⬅️ Aquí lo registrás global
+app.use(router).use(vuetify).mount("#app");
