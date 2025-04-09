@@ -704,11 +704,13 @@ export default {
 
             axios
                 .get(`/api/articulo/${this.selectedArticulo}`)
-                .then((response) => response.json())
-                .then((data) => {
-                    this.talles = data.talles.sort((a, b) => a.talle - b.talle);
-
-                    console.log(this.talles);
+                .then((response) => {
+                    this.talles = response.data.talles.sort(
+                        (a, b) => a.talle - b.talle
+                    );
+                })
+                .catch((error) => {
+                    console.error("Error al traer talles:", error);
                 });
         },
         getTotalBombachas(talle) {
