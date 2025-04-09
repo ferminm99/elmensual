@@ -702,7 +702,8 @@ export default {
                 return;
             }
 
-            fetch(`/api/articulo/${this.selectedArticulo}`)
+            axios
+                .get(`/api/articulo/${this.selectedArticulo}`)
                 .then((response) => response.json())
                 .then((data) => {
                     this.talles = data.talles.sort((a, b) => a.talle - b.talle);

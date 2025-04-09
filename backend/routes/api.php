@@ -7,6 +7,7 @@ use App\Http\Controllers\GoogleDriveController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\LocalidadController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Middleware\TokenAuthMiddleware;
 use Illuminate\Http\Request;
 
 /**
@@ -21,7 +22,7 @@ Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/debug-error', fn () => response()->json(['debug' => 'OK']));
 
 
-use App\Http\Middleware\TokenAuthMiddleware;
+
 
 
 /**
