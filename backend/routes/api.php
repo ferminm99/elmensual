@@ -47,6 +47,16 @@ Route::middleware(['auth:sanctum'])->get('/sanctum-check', function (Request $re
     return response()->json(['auth' => true, 'user' => $request->user()]);
 });
 
+use App\Http\Middleware\TokenAuthMiddleware;
+
+Route::middleware(TokenAuthMiddleware::class)->get('/check-auth', function (Request $request) {
+    return response()->json([
+        'user' => $request->user(),
+        'token' => $request->bearerToken(),
+    ]);
+});
+
+
 // Route::middleware('token-auth')->group(function () {
 //     Route::get('/check-auth', fn (Request $request) => response()->json([
 //         'authenticated' => true,
