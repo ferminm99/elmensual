@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\TokenAuthMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
          // 👇 ESTE orden importa:
          $middleware->append(\Illuminate\Session\Middleware\StartSession::class);
          $middleware->append(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class);
+         $middleware->alias([
+            'token-auth' => TokenAuthMiddleware::class,
+        ]);
 
     })
     ->withExceptions(function (Exceptions $exceptions) {
