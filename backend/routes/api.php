@@ -49,12 +49,12 @@ Route::middleware(['auth:sanctum'])->get('/sanctum-check', function (Request $re
 
 use App\Http\Middleware\TokenAuthMiddleware;
 
-Route::middleware(TokenAuthMiddleware::class)->get('/check-auth', function (Request $request) {
-    return response()->json([
-        'user' => $request->user(),
-        'token' => $request->bearerToken(),
-    ]);
-});
+// Route::middleware(TokenAuthMiddleware::class)->get('/check-auth', function (Request $request) {
+//     return response()->json([
+//         'user' => $request->user(),
+//         'token' => $request->bearerToken(),
+//     ]);
+// });
 
 
 // Route::middleware('token-auth')->group(function () {
@@ -72,7 +72,7 @@ Route::middleware(TokenAuthMiddleware::class)->get('/check-auth', function (Requ
  */
 Route::middleware('token-auth')->group(function () {
     
-    // Route::get('/check-auth', [LoginController::class, 'checkAuth']);
+    Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 
     
     // Artículos
