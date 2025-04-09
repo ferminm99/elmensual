@@ -72,7 +72,7 @@ Route::middleware(TokenAuthMiddleware::class)->get('/check-auth', function (Requ
  */
 Route::middleware('token-auth')->group(function () {
     
-    Route::get('/check-auth', [LoginController::class, 'checkAuth']);
+    // Route::get('/check-auth', [LoginController::class, 'checkAuth']);
 
     
     // Artículos
