@@ -466,6 +466,11 @@ export default {
         console.log("CREATING?");
         this.fetchArticulos();
     },
+    watch: {
+        selectedArticulo(nuevo) {
+            console.log("selectedArticulo cambió a:", nuevo);
+        },
+    },
     computed: {
         headers() {
             return [
@@ -692,6 +697,7 @@ export default {
             }
         },
         onArticuloChange() {
+            console.log("ON ARTICULO CHANGE");
             this.fetchTalles();
         },
         fetchTalles() {
