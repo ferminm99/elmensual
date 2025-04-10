@@ -1,4 +1,3 @@
-<!-- components/ResponsiveTable.vue -->
 <template>
     <div>
         <!-- Escritorio -->
@@ -16,27 +15,41 @@
         </v-data-table>
 
         <!-- Móvil -->
-        <v-card
-            v-else
-            class="mb-3"
-            v-for="item in filteredItems"
-            :key="item.id"
-        >
-            <v-card-text>
-                <div v-for="header in headers" :key="header.key" class="mb-1">
-                    <strong>{{ header.title }}:</strong>
-                    <span>
-                        <slot
-                            :name="`item.${header.key}`"
-                            v-bind="{ item }"
-                            v-if="$slots[`item.${header.key}`]"
-                        />
-                        <span v-else>{{ item[header.key] }}</span>
-                    </span>
-                </div>
-            </v-card-text>
-            <v-divider></v-divider>
-        </v-card>
+        <div v-else class="d-flex flex-column gap-2 mt-2">
+            <v-card
+                v-for="item in filteredItems"
+                :key="item.id"
+                class="pa-3"
+                elevation="2"
+            >
+                <v-card-text>
+                    <div
+                        v-for="header in headers"
+                        :key="header.key"
+                        v-if="header.key !== 'actions'"
+                        class="d-flex justify-space-between mb-2"
+                    >
+                        <strong>{{ header.title }}:</strong>
+                        <span>
+                            <slot
+                                :name="`item.${header.key}`"
+                                v-bind="{ item }"
+                                v-if="$slots[`item.${header.key}`]"
+                            />
+                            <span v-else>{{ item[header.key] }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Acciones al final -->
+                    <div
+                        v-if="hasActionsSlot"
+                        class="d-flex justify-end mt-3 gap-2"
+                    >
+                        <slot :name="'item.actions'" v-bind="{ item }" />
+                    </div>
+                </v-card-text>
+            </v-card>
+        </div>
     </div>
 </template>
 
@@ -47,10 +60,12 @@ export default {
         items: Array,
         search: String,
     },
+    data() {
+        return {
+            isMobile: window.innerWidth < 768,
+        };
+    },
     computed: {
-        isMobile() {
-            return window.innerWidth < 768;
-        },
         filteredItems() {
             if (!this.search) return this.items;
             const searchLower = this.search.toLowerCase();
@@ -60,14 +75,29 @@ export default {
                 )
             );
         },
+        hasActionsSlot() {
+            return !!this.$slots["item.actions"];
+        },
+    },
+    mounted() {
+        window.addEventListener("resize", this.handleResize);
+    },
+    beforeUnmount() {
+        window.removeEventListener("resize", this.handleResize);
+    },
+    methods: {
+        handleResize() {
+            this.isMobile = window.innerWidth < 768;
+        },
     },
 };
 </script>
 
 <style scoped>
+/* Para spacing en mobile */
 @media (max-width: 767px) {
-    .v-data-table {
-        display: none;
+    .gap-2 > * + * {
+        margin-top: 8px;
     }
 }
 </style>

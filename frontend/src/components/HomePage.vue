@@ -702,13 +702,10 @@ export default {
                 );
                 return;
             }
-            console.log("Fetching:", `/api/articulo/${this.selectedArticulo}`);
 
             axios
                 .get(`/api/articulo/${this.selectedArticulo}`)
                 .then((response) => {
-                    console.log("RESPONSE HEADERS", response.headers);
-                    console.log("RESPONSE DATA", response.data);
                     this.talles = response.data.talles.sort(
                         (a, b) => a.talle - b.talle
                     );
