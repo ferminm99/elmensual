@@ -7,6 +7,7 @@
             <v-col>
                 <h2 class="text-h4">Inventario de Bombachas</h2>
             </v-col>
+            <v-btn @click="fetchTalles">Test Manual Fetch</v-btn>
         </v-row>
 
         <!-- Selector de artículos y botones -->
@@ -18,6 +19,7 @@
                     :item-title="(item) => `${item.numero} - ${item.nombre}`"
                     item-value="id"
                     label="Selecciona un artículo"
+                    @update:modelValue="onArticuloChange"
                     clearable
                     filterable
                     variant="solo"
@@ -465,12 +467,17 @@ export default {
         console.log("CREATING?");
         this.fetchArticulos();
     },
+
     watch: {
         selectedArticulo(nuevo) {
-            console.log("selectedArticulo cambió a:", nuevo);
+            console.log("Valor de selectedArticulo:", nuevo);
+            if (typeof nuevo === "object") {
+                console.warn("👀 selectedArticulo es un OBJETO");
+            }
             if (nuevo) this.fetchTalles();
         },
     },
+
     computed: {
         headers() {
             return [
