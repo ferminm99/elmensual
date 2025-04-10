@@ -705,11 +705,7 @@ export default {
             console.log("Fetching:", `/api/articulo/${this.selectedArticulo}`);
 
             axios
-                .get(
-                    `${import.meta.env.VITE_API_URL}/api/articulo/${
-                        this.selectedArticulo
-                    }`
-                )
+                .get(`/api/articulo/${this.selectedArticulo}`)
                 .then((response) => {
                     console.log("RESPONSE HEADERS", response.headers);
                     console.log("RESPONSE DATA", response.data);
