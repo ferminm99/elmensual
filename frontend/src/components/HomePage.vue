@@ -18,7 +18,6 @@
                     :item-title="(item) => `${item.numero} - ${item.nombre}`"
                     item-value="id"
                     label="Selecciona un artículo"
-                    @change="onArticuloChange"
                     clearable
                     filterable
                     variant="solo"
