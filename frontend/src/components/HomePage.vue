@@ -676,7 +676,7 @@ export default {
             try {
                 const articulosRes = await axios.get("/api/articulos/listar");
                 this.articulos = articulosRes.data;
-                console.log("ARTICULOS", this.articulos);
+                // console.log("ARTICULOS", this.articulos);
             } catch (error) {
                 console.error("Error en /api/articulos/listar:", error);
             }
@@ -686,17 +686,16 @@ export default {
                     "/api/articulo/listar/talles"
                 );
                 this.articulosCompletos = articulosTallesRes.data;
-                console.log("ARTICULOS COMPLETOS", this.articulosCompletos);
+                // console.log("ARTICULOS COMPLETOS", this.articulosCompletos);
             } catch (error) {
                 console.error("Error en /api/articulo/listar/talles:", error);
             }
         },
         onArticuloChange() {
-            console.log("ON ARTICULO CHANGE");
             this.fetchTalles();
         },
         fetchTalles() {
-            console.log("FETCHING TALLES");
+            // console.log("FETCHING TALLES");
             if (!this.selectedArticulo) {
                 console.error(
                     "No hay artículo seleccionado para obtener los talles"
