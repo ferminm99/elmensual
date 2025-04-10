@@ -18,7 +18,7 @@
                     :item-title="(item) => `${item.numero} - ${item.nombre}`"
                     item-value="id"
                     label="Selecciona un artículo"
-                    @update:modelValue="onArticuloChange"
+                    @change="onArticuloChange"
                     clearable
                     filterable
                     variant="solo"
@@ -469,6 +469,7 @@ export default {
     watch: {
         selectedArticulo(nuevo) {
             console.log("selectedArticulo cambió a:", nuevo);
+            if (nuevo) this.fetchTalles();
         },
     },
     computed: {
