@@ -222,14 +222,17 @@ class ArticuloController extends Controller
         // Calcular precio efectivo según regla
         if ($costo >= 25000) {
             $precio_efectivo = $costo * 1.75;
+            $precio_transferencia = $costo * 1.9;
         } elseif ($costo < 15750) {
             $precio_efectivo = $costo * 1.8;
+            $precio_transferencia = $costo * 1.95;
         } else {
             $precio_efectivo = $costo * 1.75;
+            $precio_transferencia = $costo * 1.9;
         }
 
         // Transferencia = efectivo * 1.1
-        $precio_transferencia = $precio_efectivo * 1.1;
+        // $precio_transferencia = $precio_efectivo * 1.1;
 
         // Redondear con regla especial
         $precio_efectivo = $this->redondearPrecio($precio_efectivo, $costo);
