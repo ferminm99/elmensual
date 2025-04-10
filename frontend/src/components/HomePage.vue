@@ -701,16 +701,28 @@ export default {
                 );
                 return;
             }
+            console.log("Fetching:", `/api/articulo/${this.selectedArticulo}`);
 
             axios
-                .get(`/api/articulo/${this.selectedArticulo}`)
+                .get(
+                    `${import.meta.env.VITE_API_URL}/api/articulo/${
+                        this.selectedArticulo
+                    }`
+                )
                 .then((response) => {
+                    console.log("RESPONSE HEADERS", response.headers);
+                    console.log("RESPONSE DATA", response.data);
                     this.talles = response.data.talles.sort(
                         (a, b) => a.talle - b.talle
                     );
                 })
                 .catch((error) => {
                     console.error("Error al traer talles:", error);
+                    if (error.response) {
+                        console.error("STATUS", error.response.status);
+                        console.error("HEADERS", error.response.headers);
+                        console.error("DATA", error.response.data);
+                    }
                 });
         },
         getTotalBombachas(talle) {
