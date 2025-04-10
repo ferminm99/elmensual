@@ -1,25 +1,25 @@
 <template>
     <div>
-        <!-- Escritorio -->
+        <!-- Desktop -->
         <v-data-table
             v-if="!isMobile"
             :headers="headers"
             :items="items"
             :search="search"
-            dense
             class="elevation-1 mt-2"
+            dense
         >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
                 <slot :name="slotName" v-bind="slotProps" />
             </template>
         </v-data-table>
 
-        <!-- Móvil -->
-        <div v-else class="d-flex flex-column gap-2 mt-2">
+        <!-- Mobile -->
+        <div v-else>
             <v-card
                 v-for="item in filteredItems"
                 :key="item.id"
-                class="pa-3"
+                class="mb-3"
                 elevation="2"
             >
                 <v-card-text>
@@ -27,7 +27,6 @@
                         v-for="header in headers"
                         :key="header.key"
                         v-if="header.key !== 'actions'"
-                        class="d-flex justify-space-between mb-2"
                     >
                         <strong>{{ header.title }}:</strong>
                         <span>
@@ -39,15 +38,10 @@
                             <span v-else>{{ item[header.key] }}</span>
                         </span>
                     </div>
-
-                    <!-- Acciones al final -->
-                    <div
-                        v-if="hasActionsSlot"
-                        class="d-flex justify-end mt-3 gap-2"
-                    >
-                        <slot :name="'item.actions'" v-bind="{ item }" />
-                    </div>
                 </v-card-text>
+                <v-card-actions v-if="$slots['item.actions']">
+                    <slot name="item.actions" v-bind="{ item }" />
+                </v-card-actions>
             </v-card>
         </div>
     </div>
@@ -62,7 +56,7 @@ export default {
     },
     data() {
         return {
-            isMobile: window.innerWidth < 768,
+            isMobile: false,
         };
     },
     computed: {
@@ -75,11 +69,9 @@ export default {
                 )
             );
         },
-        hasActionsSlot() {
-            return !!this.$slots["item.actions"];
-        },
     },
     mounted() {
+        this.isMobile = window.innerWidth < 768;
         window.addEventListener("resize", this.handleResize);
     },
     beforeUnmount() {

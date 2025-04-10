@@ -1,74 +1,66 @@
 <template>
     <v-app>
-        <!-- Navegación lateral -->
-        <v-navigation-drawer v-if="!esLogin" app>
-            <v-list-item title="El Mensual"></v-list-item>
-            <v-divider></v-divider>
+        <!-- App bar con botón hamburguesa -->
+        <v-app-bar app color="white" elevate-on-scroll v-if="!esLogin">
+            <v-app-bar-nav-icon @click="drawer = !drawer" />
+            <v-toolbar-title>El Mensual</v-toolbar-title>
+        </v-app-bar>
+
+        <!-- Drawer responsive -->
+        <v-navigation-drawer
+            v-model="drawer"
+            app
+            :temporary="isMobile"
+            :permanent="!isMobile"
+        >
+            <v-list-item title="El Mensual" />
+            <v-divider />
             <v-list>
-                <!-- Home -->
-                <v-list-item
-                    link
-                    exact
-                    exact-active-class="active-list-item"
-                    to="/"
-                >
+                <v-list-item to="/" link exact-active-class="active-list-item">
                     <v-list-item-title>Inventario</v-list-item-title>
                 </v-list-item>
-
-                <!-- Home -->
                 <v-list-item
-                    link
-                    exact
-                    exact-active-class="active-list-item"
                     to="/clientes"
+                    link
+                    exact-active-class="active-list-item"
                 >
                     <v-list-item-title>Clientes</v-list-item-title>
                 </v-list-item>
-
-                <!-- Calendario -->
                 <v-list-item
+                    to="/comprascalendario"
                     link
                     exact-active-class="active-list-item"
-                    to="/comprascalendario"
                 >
                     <v-list-item-title>Calendario</v-list-item-title>
                 </v-list-item>
-
-                <!-- Articulos -->
                 <v-list-item
-                    link
-                    exact-active-class="active-list-item"
                     to="/managearticulos"
-                >
-                    <v-list-item-title>Articulos</v-list-item-title>
-                </v-list-item>
-
-                <v-list-item
                     link
                     exact-active-class="active-list-item"
+                >
+                    <v-list-item-title>Artículos</v-list-item-title>
+                </v-list-item>
+                <v-list-item
                     to="/localidades"
+                    link
+                    exact-active-class="active-list-item"
                 >
                     <v-list-item-title>Localidades</v-list-item-title>
                 </v-list-item>
-
-                <!-- Ventas -->
                 <v-list-item
+                    to="/ventas"
                     link
                     exact-active-class="active-list-item"
-                    to="/ventas"
                 >
                     <v-list-item-title>Ventas</v-list-item-title>
                 </v-list-item>
-
-                <v-divider></v-divider>
-
+                <v-divider />
                 <v-list-item link @click="logout">
                     <v-list-item-title>Cerrar sesión</v-list-item-title>
                 </v-list-item>
             </v-list>
         </v-navigation-drawer>
 
-        <!-- Contenido principal -->
         <v-main style="background-color: #eeeeee">
             <v-container fluid>
                 <router-view />
@@ -78,16 +70,29 @@
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
-    name: "MainLayout",
+    data() {
+        return {
+            drawer: true,
+            isMobile: false,
+        };
+    },
     computed: {
         esLogin() {
             return this.$route.path === "/login";
         },
     },
+    mounted() {
+        this.isMobile = window.innerWidth < 768;
+        window.addEventListener("resize", this.checkSize);
+    },
+    beforeUnmount() {
+        window.removeEventListener("resize", this.checkSize);
+    },
     methods: {
+        checkSize() {
+            this.isMobile = window.innerWidth < 768;
+        },
         logout() {
             axios.post("/logout").finally(() => {
                 localStorage.removeItem("auth_token");
