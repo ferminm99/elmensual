@@ -22,8 +22,12 @@
             </v-col>
         </v-row>
 
-        <v-data-table :headers="headers" :items="localidadesFiltradas" dense>
-            <template v-slot:item.disponibilidad="{ item }">
+        <ResponsiveTable
+            :headers="headers"
+            :items="localidadesFiltradas"
+            :search="search"
+        >
+            <template #item.disponibilidad="{ item }">
                 <v-chip
                     :color="
                         item.disponibilidad
@@ -42,15 +46,15 @@
                 </v-chip>
             </template>
 
-            <template v-slot:item.actions="{ item }">
-                <v-btn icon @click="editLocalidad(item)"
-                    ><v-icon>mdi-pencil</v-icon></v-btn
-                >
-                <v-btn icon @click="deleteLocalidad(item.id)"
-                    ><v-icon color="red">mdi-delete</v-icon></v-btn
-                >
+            <template #item.actions="{ item }">
+                <v-btn icon @click="editLocalidad(item)">
+                    <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon @click="deleteLocalidad(item.id)">
+                    <v-icon color="red">mdi-delete</v-icon>
+                </v-btn>
             </template>
-        </v-data-table>
+        </ResponsiveTable>
 
         <!-- Diálogo para agregar/editar -->
         <v-dialog v-model="dialog" max-width="500px">

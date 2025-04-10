@@ -62,43 +62,42 @@
         </v-row>
 
         <!-- Tabla de talles y colores -->
-        <v-data-table
-            :key="selectedArticulo"
+        <ResponsiveTable
             :headers="headers"
             :items="talles"
-            class="elevation-1 mt-4"
+            :search="''"
+            :key="selectedArticulo"
         >
-            <!-- Personalización de las celdas -->
-            <template v-slot:item.marron="{ item }">
+            <!-- Colores -->
+            <template #item.marron="{ item }">
                 <span class="marron-text">{{ item.marron }}</span>
             </template>
-            <template v-slot:item.negro="{ item }">
+            <template #item.negro="{ item }">
                 <span class="negro-text">{{ item.negro }}</span>
             </template>
-            <template v-slot:item.verde="{ item }">
+            <template #item.verde="{ item }">
                 <span class="verde-text">{{ item.verde }}</span>
             </template>
-            <template v-slot:item.azul="{ item }">
+            <template #item.azul="{ item }">
                 <span class="azul-text">{{ item.azul }}</span>
             </template>
-            <template v-slot:item.celeste="{ item }">
+            <template #item.celeste="{ item }">
                 <span
                     :class="{
                         'celeste-text': !esAlpargatas,
                         'rojo-text': esAlpargatas,
                     }"
-                    >{{ item.celeste }}</span
                 >
+                    {{ item.celeste }}
+                </span>
             </template>
-
-            <template v-slot:item.blancobeige="{ item }">
+            <template #item.blancobeige="{ item }">
                 <span class="blanco-text">{{ item.blancobeige }}</span>
             </template>
-            <template v-slot:item.total_bombachas="{ item }">
+            <template #item.total_bombachas="{ item }">
                 {{ getTotalBombachas(item) }}
             </template>
-            <!-- Botones de acciones con íconos más estilizados -->
-            <template v-slot:item.actions="{ item }">
+            <template #item.actions="{ item }">
                 <v-btn flat icon @click="openEditDialog(item)">
                     <v-icon color="#4A4A4A">mdi-pencil-outline</v-icon>
                 </v-btn>
@@ -106,7 +105,8 @@
                     <v-icon color="#E57373">mdi-trash-can-outline</v-icon>
                 </v-btn>
             </template>
-        </v-data-table>
+        </ResponsiveTable>
+
         <!-- </v-card> -->
 
         <!-- Diálogo para agregar bombachas -->

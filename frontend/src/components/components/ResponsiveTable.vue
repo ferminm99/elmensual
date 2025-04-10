@@ -1,6 +1,6 @@
 <template>
     <div>
-        <!-- Desktop -->
+        <!-- Escritorio -->
         <v-data-table
             v-if="!isMobile"
             :headers="headers"
@@ -27,19 +27,27 @@
                         v-for="header in headers"
                         :key="header.key"
                         v-if="header.key !== 'actions'"
+                        class="mb-2"
                     >
-                        <strong>{{ header.title }}:</strong>
-                        <span>
+                        <div class="label">
+                            <strong>{{ header.title }}</strong>
+                        </div>
+                        <div class="value">
                             <slot
                                 :name="`item.${header.key}`"
                                 v-bind="{ item }"
                                 v-if="$slots[`item.${header.key}`]"
                             />
                             <span v-else>{{ item[header.key] }}</span>
-                        </span>
+                        </div>
+                        <v-divider class="my-2" />
                     </div>
                 </v-card-text>
-                <v-card-actions v-if="$slots['item.actions']">
+
+                <v-card-actions
+                    v-if="$slots['item.actions']"
+                    class="d-flex justify-end"
+                >
                     <slot name="item.actions" v-bind="{ item }" />
                 </v-card-actions>
             </v-card>
@@ -86,10 +94,12 @@ export default {
 </script>
 
 <style scoped>
-/* Para spacing en mobile */
-@media (max-width: 767px) {
-    .gap-2 > * + * {
-        margin-top: 8px;
-    }
+.label {
+    color: #555;
+    font-size: 14px;
+}
+.value {
+    font-size: 15px;
+    margin-top: 2px;
 }
 </style>
