@@ -3,6 +3,11 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
     plugins: [vue()],
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "src"), // 👈 apunta a tu carpeta "src"
+        },
+    },
     build: {
         outDir: "dist", // 👈 Vercel espera esto
         emptyOutDir: true,

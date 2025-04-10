@@ -466,16 +466,6 @@ export default {
         this.fetchArticulos();
     },
 
-    watch: {
-        selectedArticulo(nuevo) {
-            console.log("Valor de selectedArticulo:", nuevo);
-            if (typeof nuevo === "object") {
-                console.warn("👀 selectedArticulo es un OBJETO");
-            }
-            if (nuevo) this.fetchTalles();
-        },
-    },
-
     computed: {
         headers() {
             return [
