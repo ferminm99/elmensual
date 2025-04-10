@@ -7,7 +7,6 @@
             <v-col>
                 <h2 class="text-h4">Inventario de Bombachas</h2>
             </v-col>
-            <v-btn @click="fetchTalles">Test Manual Fetch</v-btn>
         </v-row>
 
         <!-- Selector de artículos y botones -->
@@ -43,6 +42,7 @@
             </v-col>
         </v-row>
 
+        <v-row><v-btn @click="fetchTalles">Test Manual Fetch</v-btn></v-row>
         <!-- Botón para agregar y eliminar bombachas -->
         <v-row class="mt-4">
             <v-col cols="12">
@@ -464,7 +464,6 @@ export default {
         };
     },
     created() {
-        console.log("CREATING?");
         this.fetchArticulos();
     },
 
