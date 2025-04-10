@@ -25,7 +25,7 @@
                     :class="{ 'rojo-text': esAlpargatas }"
                 />
             </v-col>
-            <v-col cols="12" md="4" class="d-flex justify-end">
+            <!-- <v-col cols="12" md="4" class="d-flex justify-end">
                 <v-btn color="#6E7E8E" @click="exportarAExcel" outlined>
                     <v-icon left>mdi-file-excel</v-icon>
                     Exportar a Excel
@@ -39,10 +39,9 @@
                     <v-icon left>mdi-google-drive</v-icon>
                     Exportar y Subir a Drive
                 </v-btn>
-            </v-col>
+            </v-col> -->
         </v-row>
 
-        <v-row><v-btn @click="fetchTalles">Test Manual Fetch</v-btn></v-row>
         <!-- Botón para agregar y eliminar bombachas -->
         <v-row class="mt-4">
             <v-col cols="12">
