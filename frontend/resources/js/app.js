@@ -54,7 +54,7 @@ const vuetify = createVuetify({
 });
 
 // 👉 COMPONENTE GLOBAL
-import ResponsiveTable from "@/components/ResponsiveTable.vue";
+import ResponsiveTable from "@/components/components/ResponsiveTable.vue";
 
 // Crear la aplicación Vue
 const app = createApp(App);
