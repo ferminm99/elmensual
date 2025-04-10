@@ -695,6 +695,7 @@ export default {
             this.fetchTalles();
         },
         fetchTalles() {
+            console.log("FETCHING TALLES");
             if (!this.selectedArticulo) {
                 console.error(
                     "No hay artículo seleccionado para obtener los talles"
