@@ -181,26 +181,33 @@ export default {
     },
     computed: {
         articulosFiltrados() {
-            const palabrasNombre = this.searchNombre
-                .toLowerCase()
-                .split(" ")
-                .filter((p) => p.trim() !== "");
-            const textoNumero = this.searchNumero.toLowerCase().trim();
+            const normalizar = (str) =>
+                str
+                    ?.toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "");
+
+            const nombreBuscado = normalizar(this.searchNombre.trim());
+            const numeroBuscado = normalizar(this.searchNumero.trim());
 
             return this.articulos.filter((art) => {
-                const nombre = art.nombre.toLowerCase();
-                const numero = String(art.numero).toLowerCase();
+                const nombreArticulo = normalizar(art.nombre);
+                const numeroArticulo = normalizar(String(art.numero));
 
-                const coincideNombre = palabrasNombre.every((palabra) =>
-                    nombre.includes(palabra)
-                );
+                const coincideNombre =
+                    !nombreBuscado ||
+                    nombreBuscado
+                        .split(" ")
+                        .some((palabra) => nombreArticulo.includes(palabra));
+
                 const coincideNumero =
-                    textoNumero === "" || numero.includes(textoNumero);
+                    !numeroBuscado || numeroArticulo.includes(numeroBuscado);
 
                 return coincideNombre && coincideNumero;
             });
         },
     },
+
     created() {
         this.fetchArticulos();
     },

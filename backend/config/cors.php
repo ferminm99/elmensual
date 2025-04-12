@@ -3,7 +3,7 @@
 return [
     'paths' => ['api/*', 'login', 'logout', 'sanctum/csrf-cookie', 'check-auth'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['https://elmensual.vercel.app'],
+    'allowed_origins' => ['https://elmensual.vercel.app','http://localhost:5173'],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
