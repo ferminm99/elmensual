@@ -56,11 +56,7 @@
         </v-row>
 
         <!-- Tabla -->
-        <ResponsiveTable
-            :headers="headers"
-            :items="articulosFiltrados"
-            :search="searchNombre + ' ' + searchNumero"
-        >
+        <ResponsiveTable :headers="headers" :items="articulosFiltrados">
             <template #item.actions="{ item }">
                 <v-btn flat icon @click="openEditDialog(item)">
                     <v-icon color="black">mdi-pencil-outline</v-icon>
@@ -187,27 +183,30 @@ export default {
                     .normalize("NFD")
                     .replace(/[\u0300-\u036f]/g, "");
 
-            const nombreBuscado = normalizar(this.searchNombre.trim());
-            const numeroBuscado = normalizar(this.searchNumero.trim());
+            const textoNombre = normalizar(this.searchNombre.trim());
+            const textoNumero = normalizar(this.searchNumero.trim());
 
             return this.articulos.filter((art) => {
-                const nombreArticulo = normalizar(art.nombre);
-                const numeroArticulo = normalizar(String(art.numero));
+                const nombre = normalizar(art.nombre);
+                const numero = normalizar(String(art.numero));
+
+                console.log({
+                    nombreOriginal: art.nombre,
+                    nombreNormalizado: nombre,
+                    textoNombre,
+                    coincide: nombre.includes(textoNombre),
+                });
 
                 const coincideNombre =
-                    !nombreBuscado ||
-                    nombreBuscado
-                        .split(" ")
-                        .some((palabra) => nombreArticulo.includes(palabra));
+                    !textoNombre || nombre.includes(textoNombre);
 
                 const coincideNumero =
-                    !numeroBuscado || numeroArticulo.includes(numeroBuscado);
+                    !textoNumero || numero.includes(textoNumero);
 
                 return coincideNombre && coincideNumero;
             });
         },
     },
-
     created() {
         this.fetchArticulos();
     },
