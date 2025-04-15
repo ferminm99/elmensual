@@ -392,6 +392,14 @@
 import { toRaw } from "vue";
 import { shallowReactive } from "vue";
 import ExcelJS from "exceljs";
+import {
+    cachedFetch,
+    updateCache,
+    modifyInCache,
+    applyStockDelta,
+    getMemoryCache,
+} from "@/utils/cacheFetch";
+
 export default {
     data() {
         return {
@@ -658,13 +666,24 @@ export default {
                         talle: this.currentTalle.talle,
                     }
                 )
-                .then((response) => {
-                    console.log(response.data.message);
+                .then(() => {
+                    // Actualizar el cache con los nuevos valores absolutos
+                    modifyInCache("articulos_completos", (articulos) => {
+                        return articulos.map((articulo) => {
+                            if (articulo.id !== this.selectedArticulo)
+                                return articulo;
+                            return {
+                                ...articulo,
+                                talles: articulo.talles.map((t) =>
+                                    t.talle === this.currentTalle.talle
+                                        ? { ...this.currentTalle }
+                                        : t
+                                ),
+                            };
+                        });
+                    });
                     this.editDialog = false;
-                    this.fetchTalles(); // Actualiza la tabla después de guardar los cambios
-                })
-                .catch((error) => {
-                    console.error(error);
+                    this.fetchTalles();
                 });
         },
         openDialog(action) {
@@ -673,51 +692,80 @@ export default {
         },
 
         async fetchArticulos() {
-            try {
-                const articulosRes = await axios.get("/api/articulos/listar");
-                this.articulos = articulosRes.data;
-                // console.log("ARTICULOS", this.articulos);
-            } catch (error) {
-                console.error("Error en /api/articulos/listar:", error);
-            }
+            const ttl = 86400;
+
+            const fetchArticulos = () =>
+                axios.get("/api/articulos/listar").then((res) => res.data);
+            const fetchArticulosTalles = () =>
+                axios
+                    .get("/api/articulo/listar/talles")
+                    .then((res) => res.data);
 
             try {
-                const articulosTallesRes = await axios.get(
-                    "/api/articulo/listar/talles"
+                const articulos = await cachedFetch(
+                    "articulos",
+                    fetchArticulos,
+                    { ttl }
                 );
-                this.articulosCompletos = articulosTallesRes.data;
-                // console.log("ARTICULOS COMPLETOS", this.articulosCompletos);
+                const articulosCompletos = await cachedFetch(
+                    "articulos_completos",
+                    fetchArticulosTalles,
+                    { ttl }
+                );
+
+                this.articulos = articulos;
+                this.articulosCompletos = articulosCompletos;
             } catch (error) {
-                console.error("Error en /api/articulo/listar/talles:", error);
+                console.error("Error al obtener artículos:", error);
             }
         },
         onArticuloChange() {
             this.fetchTalles();
         },
-        fetchTalles() {
-            // console.log("FETCHING TALLES");
+        async fetchTalles() {
             if (!this.selectedArticulo) {
+                console.error("No hay artículo seleccionado");
+                return;
+            }
+
+            const ttl = 86400;
+
+            // Buscar en memoria
+            let articulosCompletos = getMemoryCache("articulos_completos", ttl);
+
+            // Si no hay en memoria, intentar en localStorage o backend
+            if (!articulosCompletos) {
+                try {
+                    articulosCompletos = await cachedFetch(
+                        "articulos_completos",
+                        () =>
+                            axios
+                                .get("/api/articulo/listar/talles")
+                                .then((res) => res.data),
+                        { ttl }
+                    );
+                } catch (error) {
+                    console.error(
+                        "Error al traer talles desde el backend:",
+                        error
+                    );
+                    return;
+                }
+            }
+
+            const articulo = articulosCompletos.find(
+                (a) => a.id === this.selectedArticulo
+            );
+            if (!articulo) {
                 console.error(
-                    "No hay artículo seleccionado para obtener los talles"
+                    "No se encontró el artículo seleccionado en los datos"
                 );
                 return;
             }
 
-            axios
-                .get(`/api/articulo/${this.selectedArticulo}`)
-                .then((response) => {
-                    this.talles = response.data.talles.sort(
-                        (a, b) => a.talle - b.talle
-                    );
-                })
-                .catch((error) => {
-                    console.error("Error al traer talles:", error);
-                    if (error.response) {
-                        console.error("STATUS", error.response.status);
-                        console.error("HEADERS", error.response.headers);
-                        console.error("DATA", error.response.data);
-                    }
-                });
+            this.talles = [...articulo.talles].sort(
+                (a, b) => a.talle - b.talle
+            );
         },
         getTotalBombachas(talle) {
             return (
@@ -741,6 +789,18 @@ export default {
                     )
                     .then((response) => {
                         console.log(response.data.message);
+                        Object.keys(this.newQuantities).forEach((color) => {
+                            const cantidad =
+                                parseInt(this.newQuantities[color]) || 0;
+                            if (cantidad > 0) {
+                                applyStockDelta(
+                                    this.selectedArticuloDialog,
+                                    talle,
+                                    color,
+                                    cantidad
+                                );
+                            }
+                        });
                         this.dialog = false;
                         this.confirmAddDialog = false;
                         this.fetchTalles(); // Actualiza la tabla
@@ -763,6 +823,19 @@ export default {
                     )
                     .then((response) => {
                         console.log(response.data.message);
+                        // Actualizar el cache con delta negativo
+                        for (const color in this.newQuantities) {
+                            const cantidad =
+                                parseInt(this.newQuantities[color]) || 0;
+                            if (cantidad > 0) {
+                                applyStockDelta(
+                                    this.selectedArticuloDialog,
+                                    talle,
+                                    color,
+                                    -cantidad
+                                );
+                            }
+                        }
                         this.dialog = false;
                         this.confirmDeleteDialog = false;
                         this.fetchTalles(); // Actualiza la tabla
@@ -797,6 +870,19 @@ export default {
                 )
                 .then((response) => {
                     console.log(response.data.message);
+                    // Eliminar el talle del cache
+                    modifyInCache("articulos_completos", (articulos) => {
+                        return articulos.map((articulo) => {
+                            if (articulo.id !== this.selectedArticulo)
+                                return articulo;
+                            return {
+                                ...articulo,
+                                talles: articulo.talles.filter(
+                                    (t) => t.talle !== this.talleAEliminar
+                                ),
+                            };
+                        });
+                    });
                     this.confirmFullDeleteDialog = false;
                     this.fetchTalles(); // Actualiza la tabla después de eliminar
                 })

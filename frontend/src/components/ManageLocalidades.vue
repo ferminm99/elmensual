@@ -84,6 +84,13 @@
 </template>
 
 <script>
+import {
+    cachedFetch,
+    appendToCache,
+    modifyInCache,
+    removeFromCache,
+    getMemoryCache,
+} from "@/utils/cacheFetch";
 import ExcelJS from "exceljs";
 
 function normalize(text) {
@@ -125,16 +132,21 @@ export default {
             );
         },
     },
-
     created() {
-        this.fetchLocalidades();
+        const mem = getMemoryCache("localidades", 86400);
+        if (mem) {
+            this.localidades = mem;
+        } else {
+            this.fetchLocalidades();
+        }
     },
     methods: {
-        fetchLocalidades() {
-            axios.get("/api/localidades").then((res) => {
-                console.log("PREPARANDO:");
-                this.localidades = res.data;
-            });
+        async fetchLocalidades() {
+            this.localidades = await cachedFetch(
+                "localidades",
+                () => axios.get("/api/localidades").then((r) => r.data),
+                { ttl: 86400 }
+            );
         },
         openDialog() {
             this.isEdit = false;
@@ -151,16 +163,26 @@ export default {
                 ? axios.put(`/api/localidad/${this.form.id}`, this.form)
                 : axios.post("/api/localidad", this.form);
 
-            req.then(() => {
+            req.then((res) => {
+                const nueva = this.isEdit ? this.form : res.data;
+                if (this.isEdit) {
+                    this.localidades = modifyInCache("localidades", (list) =>
+                        list.map((l) => (l.id === nueva.id ? nueva : l))
+                    );
+                } else {
+                    this.localidades = appendToCache("localidades", nueva);
+                }
                 this.dialog = false;
-                this.fetchLocalidades();
             });
         },
         deleteLocalidad(id) {
             if (confirm("¿Eliminar esta localidad?")) {
-                axios
-                    .delete(`/api/localidad/${id}`)
-                    .then(() => this.fetchLocalidades());
+                axios.delete(`/api/localidad/${id}`).then(() => {
+                    this.localidades = removeFromCache(
+                        "localidades",
+                        (l) => l.id === id
+                    );
+                });
             }
         },
         async exportarExcel() {

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import home from "../components/HomePage.vue";
 import login from "../components/LoginPage.vue"; // AÑADIR
 import managearticulos from "../components/ManageArticulos.vue";
+import managepedidos from "../components/ManagePedidos.vue";
 import clientes from "../components/Clientes.vue";
 import ventas from "../components/Ventas.vue";
 import calendario from "../components/Calendario.vue";
@@ -15,6 +16,11 @@ const routes = [
     {
         path: "/managearticulos",
         component: managearticulos,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: "/managepedidos",
+        component: managepedidos,
         meta: { requiresAuth: true },
     },
     { path: "/ventas", component: ventas, meta: { requiresAuth: true } },

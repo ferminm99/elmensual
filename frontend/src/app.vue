@@ -41,6 +41,13 @@
                     <v-list-item-title>Artículos</v-list-item-title>
                 </v-list-item>
                 <v-list-item
+                    to="/managepedidos"
+                    link
+                    exact-active-class="active-list-item"
+                >
+                    <v-list-item-title>Pedidos</v-list-item-title>
+                </v-list-item>
+                <v-list-item
                     to="/localidades"
                     link
                     exact-active-class="active-list-item"

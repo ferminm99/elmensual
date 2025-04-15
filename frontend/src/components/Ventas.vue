@@ -250,7 +250,9 @@
                                 <v-list-item-content>
                                     {{ producto.articulo.nombre }} - Talle
                                     {{ producto.talle }} - Color
-                                    {{ producto.color }}
+                                    {{ producto.color }} - Precio ${{
+                                        producto.precio
+                                    }}
                                 </v-list-item-content>
                                 <v-list-item-action>
                                     <v-btn
@@ -574,6 +576,14 @@
 <script>
 import Datepicker from "./components/datepicker.vue";
 import moment from "moment";
+import {
+    cachedFetch,
+    updateCache,
+    appendToCache,
+    removeFromCache,
+    modifyInCache,
+    getMemoryCache,
+} from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
 
 export default {
     components: {
@@ -656,23 +666,26 @@ export default {
         };
     },
     created() {
-        this.fetchArticulos();
-        this.fetchVentas();
-        this.fetchUltimaFacturacion();
-        console.log("PRUEBA 2");
-        this.options.sortBy = ["fecha"];
-        this.options.sortDesc = [true];
-    },
-    watch: {
-        // Este watch actualiza el precio total cada vez que cambien los productos
-        productos: {
-            handler(nuevosProductos) {
-                this.calcularPrecioTotal(); // Calculamos el precio total al cambiar la lista de productos
-            },
-            deep: true, // Observar cambios profundos dentro del array de productos
-        },
-    },
+        const articulosMem = getMemoryCache("articulos", 86400);
+        const ventasMem = getMemoryCache("ventas", 86400);
 
+        if (articulosMem) {
+            this.articulos = articulosMem;
+        } else {
+            this.fetchArticulos(); // usa cachedFetch y guarda en memory
+        }
+
+        if (ventasMem) {
+            this.ventas = ventasMem.sort(
+                (a, b) => new Date(b.fecha) - new Date(a.fecha)
+            );
+            this.ventasFiltradas = this.ventas;
+        } else {
+            this.fetchVentas(); // idem
+        }
+
+        this.fetchUltimaFacturacion(); // también usa ventas así que se llama siempre después
+    },
     computed: {
         snackbarStyle() {
             return {
@@ -682,6 +695,22 @@ export default {
                 "max-width": "400px",
                 width: "auto",
             };
+        },
+        precioTotal() {
+            return this.productos
+                .reduce((total, producto) => {
+                    const precio =
+                        this.form.forma_pago === "efectivo"
+                            ? parseFloat(producto.articulo.precio_efectivo)
+                            : parseFloat(
+                                  producto.articulo.precio_transferencia
+                              );
+                    return total + (isNaN(precio) ? 0 : precio);
+                }, 0)
+                .toLocaleString("es-AR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
         },
         totalVentas() {
             const total = this.ventas.reduce((total, venta) => {
@@ -745,6 +774,10 @@ export default {
                                 fecha_facturacion:
                                     ultimaFacturacion.fecha_facturacion,
                             };
+                            updateCache(
+                                "ultimaFacturacion",
+                                this.ultimaFacturacion
+                            );
                         } else {
                             // Si no se encuentra la venta
                             this.ultimaFacturacion = null;
@@ -797,19 +830,30 @@ export default {
                         color: this.selectedVenta.color,
                     },
                     nueva: this.cambioBombacha,
-                    // Enviar también los campos que no cambian (opcional)
                     precio: this.selectedVenta.precio,
                     costo_original: this.selectedVenta.costo_original,
                     fecha: this.selectedVenta.fecha,
                     forma_pago: this.selectedVenta.forma_pago,
                 })
                 .then(() => {
-                    this.fetchVentas(); // Actualizar las ventas
-                    this.fetchArticulos(); // Actualizar los articulos
-                    this.articuloActual = null;
-                    this.tallesDisponibles = [];
-                    this.coloresDisponibles = [];
-                    this.dialogCambioBombacha = false; // Cerrar el diálogo
+                    // Reponer stock de la bombacha vieja
+                    applyStockDelta(
+                        this.selectedVenta.articulo.id,
+                        this.selectedVenta.talle,
+                        this.selectedVenta.color,
+                        1
+                    );
+
+                    // Descontar stock de la nueva
+                    applyStockDelta(
+                        this.cambioBombacha.articulo_id,
+                        this.cambioBombacha.talle,
+                        this.cambioBombacha.color,
+                        -1
+                    );
+
+                    this.articulos = getMemoryCache("articulos", 86400);
+                    this.dialogCambioBombacha = false;
                     this.snackbarText =
                         "Cambio de bombacha realizado con éxito.";
                     this.snackbar = true;
@@ -1100,23 +1144,50 @@ export default {
         },
         // Actualizar el precio de la venta
         updateVenta() {
+            const ventaAnterior = this.ventas.find(
+                (v) => v.id === this.selectedVenta.id
+            );
+
             axios
                 .put(`/api/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
                     costo_original: this.selectedVenta.costo_original,
                     fecha: moment(this.selectedVenta.fecha).format(
                         "YYYY-MM-DD"
-                    ), // Incluimos la fecha
-                    forma_pago: this.selectedVenta.forma_pago, // Incluimos la forma de pago
+                    ),
+                    forma_pago: this.selectedVenta.forma_pago,
                 })
-                .then((response) => {
-                    this.fetchVentas(); // Recargar la lista de ventas
-                    this.editDialog = false; // Cerrar el diálogo
+                .then(() => {
+                    // 🧠 1. Actualizar la venta en cache
+                    this.ventas = modifyInCache("ventas", (ventas) =>
+                        ventas.map((v) =>
+                            v.id === this.selectedVenta.id
+                                ? {
+                                      ...v,
+                                      precio: this.selectedVenta.precio,
+                                      costo_original:
+                                          this.selectedVenta.costo_original,
+                                      fecha: moment(
+                                          this.selectedVenta.fecha
+                                      ).format("YYYY-MM-DD"),
+                                      forma_pago: this.selectedVenta.forma_pago,
+                                  }
+                                : v
+                        )
+                    );
+                    this.ventasFiltradas = this.ventas;
+
+                    this.snackbarText = "Venta actualizada correctamente.";
+                    this.snackbar = true;
+                    this.editDialog = false;
                 })
                 .catch((error) => {
                     console.error(error);
+                    this.snackbarText = "Error al actualizar la venta.";
+                    this.snackbar = true;
                 });
         },
+
         // Abrir el diálogo de confirmación para eliminar la venta
         openDeleteConfirm(item) {
             this.selectedVenta = { ...item };
@@ -1126,15 +1197,55 @@ export default {
         deleteVenta() {
             axios
                 .delete(`/api/ventas/${this.selectedVenta.id}`)
-                .then((response) => {
-                    this.fetchVentas(); // Recargar la lista de ventas
-                    this.fetchArticulos();
+                .then(() => {
+                    // 🧠 1. Eliminar la venta del cache
+                    this.ventas = removeFromCache(
+                        "ventas",
+                        (venta) => venta.id === this.selectedVenta.id
+                    );
+                    this.ventasFiltradas = this.ventas;
+
+                    // 🧠 2. Restaurar el stock del artículo vendido
+                    this.articulos = modifyInCache("articulos", (articulos) => {
+                        return articulos.map((art) => {
+                            if (art.id === this.selectedVenta.articulo.id) {
+                                return {
+                                    ...art,
+                                    talles: art.talles.map((talle) => {
+                                        if (
+                                            talle.talle ===
+                                            this.selectedVenta.talle
+                                        ) {
+                                            return {
+                                                ...talle,
+                                                [this.selectedVenta.color]:
+                                                    (parseInt(
+                                                        talle[
+                                                            this.selectedVenta
+                                                                .color
+                                                        ]
+                                                    ) || 0) + 1,
+                                            };
+                                        }
+                                        return talle;
+                                    }),
+                                };
+                            }
+                            return art;
+                        });
+                    });
+
                     this.confirmDeleteDialog = false;
+                    this.snackbarText = "Venta eliminada y stock restaurado.";
+                    this.snackbar = true;
                 })
                 .catch((error) => {
                     console.error(error);
+                    this.snackbarText = "Error al eliminar la venta.";
+                    this.snackbar = true;
                 });
         },
+
         openVentaDialog() {
             this.dialogVenta = true;
         },
@@ -1182,19 +1293,29 @@ export default {
             this.dialogVenta = false;
         },
         // Cargar los artículos desde el backend
-        fetchArticulos() {
-            axios.get("/api/articulo/listar/talles").then((response) => {
-                this.articulos = response.data;
-            });
+
+        async fetchArticulos() {
+            const data = await cachedFetch(
+                "articulos",
+                () =>
+                    axios
+                        .get("/api/articulo/listar/talles")
+                        .then((r) => r.data),
+                { ttl: 60 * 60 * 24 } // 1 día
+            );
+            this.articulos = data;
         },
         // Cargar ventas para mostrar en la tabla
-        fetchVentas() {
-            axios.get("/api/ventas/listar").then((response) => {
-                this.ventas = response.data.sort((a, b) => {
-                    return new Date(b.fecha) - new Date(a.fecha);
-                });
-                this.ventasFiltradas = this.ventas;
-            });
+        async fetchVentas() {
+            const data = await cachedFetch(
+                "ventas",
+                () => axios.get("/api/ventas/listar").then((r) => r.data),
+                { ttl: 1000 * 60 * 60 * 24 } // 1 dia
+            );
+            this.ventas = data.sort(
+                (a, b) => new Date(b.fecha) - new Date(a.fecha)
+            );
+            this.ventasFiltradas = this.ventas;
         },
         onTalleChange(talleSeleccionado) {
             let articuloSeleccionado = null;
@@ -1307,7 +1428,11 @@ export default {
                     articulo: articulo,
                     talle: this.form.talle,
                     color: this.form.color,
-                    precio: parseInt(articulo.precio),
+                    precio:
+                        this.form.forma_pago === "efectivo"
+                            ? parseInt(articulo.precio_efectivo)
+                            : parseInt(articulo.precio_transferencia),
+
                     costo_original: parseInt(articulo.costo_original),
                 });
 
@@ -1394,7 +1519,7 @@ export default {
             this.productos.splice(index, 1);
         },
         // Registrar venta
-        registrarVenta() {
+        async registrarVenta() {
             this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
             this.form.cliente_nombre = this.capitalizarPalabras(
                 this.form.cliente_nombre
@@ -1402,14 +1527,13 @@ export default {
             this.form.cliente_apellido = this.capitalizarPalabras(
                 this.form.cliente_apellido
             );
-            // Validar que haya productos
+
             if (!this.productos.length) {
                 this.snackbarText = "Por favor ingresa los productos";
                 this.snackbar = true;
                 return;
             }
 
-            // Validar que el nombre y apellido estén presentes
             if (!this.form.cliente_nombre || !this.form.cliente_apellido) {
                 this.snackbarText =
                     "Por favor ingresa el nombre y apellido del cliente.";
@@ -1423,33 +1547,62 @@ export default {
                 cliente_cuit: this.form.cliente_cuit,
                 cliente_cbu: this.form.cliente_cbu,
                 forma_pago: this.form.forma_pago,
-                productos: this.productos, // Enviamos los productos agregados
+                productos: this.productos,
                 fecha: this.form.fecha,
             };
 
-            axios
-                .post("/api/ventas", ventaData)
-                .then((response) => {
-                    this.fetchVentas(); // Actualiza la lista de ventas
-                    this.fetchArticulos(); // Actualizar los articulos
-                    this.dialogVenta = false;
-                    // Limpiar formulario y productos
-                    this.form = {
-                        cliente_nombre: "",
-                        cliente_apellido: "",
-                        cliente_cuit: "",
-                        cliente_cbu: "",
-                        fecha: moment().format("YYYY-MM-DD"),
-                        forma_pago: "efectivo",
-                    };
-                    this.productos = [];
-                    this.articuloActual = null;
-                    this.tallesDisponibles = [];
-                    this.coloresDisponibles = [];
-                })
-                .catch((error) => {
-                    console.error(error);
+            try {
+                await axios.post("/api/ventas", ventaData);
+
+                // Armar las ventas como si fueran separadas
+                const nuevasVentas = this.productos.map((producto) => ({
+                    articulo: producto.articulo,
+                    talle: producto.talle,
+                    color: producto.color,
+                    cliente: {
+                        nombre: ventaData.cliente_nombre,
+                        apellido: ventaData.cliente_apellido,
+                        cuit: ventaData.cliente_cuit,
+                        cbu: ventaData.cliente_cbu,
+                    },
+                    forma_pago: ventaData.forma_pago,
+                    fecha: ventaData.fecha,
+                    precio: producto.precio,
+                    costo_original: producto.costo_original,
+                }));
+
+                // Cachear las nuevas ventas y actualizar local
+                nuevasVentas.forEach((v) => appendToCache("ventas", v));
+                this.ventas.push(...nuevasVentas);
+                this.ventas.sort(
+                    (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                );
+                this.ventasFiltradas = [...this.ventas];
+
+                // Restar stock en cache y local
+                this.productos.forEach((p) => {
+                    applyStockDelta(p.articulo.id, p.talle, p.color, -1);
                 });
+                this.articulos = getMemoryCache("articulos", 86400); // refrescar desde memoria
+
+                this.dialogVenta = false;
+                this.form = {
+                    cliente_nombre: "",
+                    cliente_apellido: "",
+                    cliente_cuit: "",
+                    cliente_cbu: "",
+                    fecha: moment().format("YYYY-MM-DD"),
+                    forma_pago: "efectivo",
+                };
+                this.productos = [];
+                this.articuloActual = null;
+                this.tallesDisponibles = [];
+                this.coloresDisponibles = [];
+
+                this.fetchUltimaFacturacion();
+            } catch (error) {
+                console.error(error);
+            }
         },
         calcularPrecioTotal() {
             // Recalcula el precio total

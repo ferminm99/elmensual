@@ -118,6 +118,15 @@
 </template>
 
 <script>
+import {
+    cachedFetch,
+    getMemoryCache,
+    appendToCache,
+    removeFromCache,
+    modifyInCache,
+    updateCache,
+} from "@/utils/cacheFetch";
+
 export default {
     data() {
         return {
@@ -125,7 +134,7 @@ export default {
             confirmDeleteDialog: false,
             isEdit: false,
             clienteAEliminar: null,
-            search: "", // Campo para el buscador
+            search: "",
             valid: true,
             form: {
                 id: null,
@@ -157,23 +166,43 @@ export default {
         };
     },
     created() {
-        this.fetchClientes();
-        this.fetchVentas();
+        const clientesMem = getMemoryCache("clientes", 86400);
+        const ventasMem = getMemoryCache("ventas", 86400);
+
+        if (clientesMem) {
+            this.clientes = clientesMem;
+            this.datosCargados.clientes = true;
+        } else {
+            this.fetchClientes();
+        }
+
+        if (ventasMem) {
+            this.ventas = ventasMem;
+            this.datosCargados.ventas = true;
+        } else {
+            this.fetchVentas();
+        }
+
+        this.verificarYCalcularTotales();
     },
     methods: {
-        fetchClientes() {
-            return axios.get("/api/clientes/listar").then((response) => {
-                this.clientes = response.data || [];
-                this.datosCargados.clientes = true; // Marcar clientes como cargados
-                this.verificarYCalcularTotales();
-            });
+        async fetchClientes() {
+            this.clientes = await cachedFetch(
+                "clientes",
+                () => axios.get("/api/clientes/listar").then((r) => r.data),
+                { ttl: 86400 }
+            );
+            this.datosCargados.clientes = true;
+            this.verificarYCalcularTotales();
         },
-        fetchVentas() {
-            return axios.get("/api/ventas/listar").then((response) => {
-                this.ventas = response.data || [];
-                this.datosCargados.ventas = true; // Marcar ventas como cargadas
-                this.verificarYCalcularTotales();
-            });
+        async fetchVentas() {
+            this.ventas = await cachedFetch(
+                "ventas",
+                () => axios.get("/api/ventas/listar").then((r) => r.data),
+                { ttl: 86400 }
+            );
+            this.datosCargados.ventas = true;
+            this.verificarYCalcularTotales();
         },
         verificarYCalcularTotales() {
             if (this.datosCargados.clientes && this.datosCargados.ventas) {
@@ -181,20 +210,18 @@ export default {
             }
         },
         calculateTotals() {
-            // Reinicia los totales en cada cliente
             this.clientes.forEach((cliente) => {
                 cliente.totalVentas = 0;
                 cliente.totalPago = 0;
             });
 
-            // Suma las ventas y el total pagado para cada cliente
             this.ventas.forEach((venta) => {
                 const cliente = this.clientes.find(
                     (c) => c.id === venta.cliente_id
                 );
                 if (cliente) {
                     cliente.totalVentas += 1;
-                    cliente.totalPago += parseFloat(venta.precio);
+                    cliente.totalPago += parseFloat(venta.precio || 0);
                 }
             });
         },
@@ -212,37 +239,39 @@ export default {
                 apellido: "",
                 cuit: "",
                 cbu: "",
-            }; // Limpiar el formulario
+            };
             this.dialog = true;
         },
         openEditDialog(item) {
             this.isEdit = true;
-            this.form = { ...item }; // Cargar los datos del cliente a editar
+            this.form = { ...item };
             this.dialog = true;
         },
         saveCliente() {
-            // Validar que nombre y apellido no estén vacíos
             if (!this.form.nombre || !this.form.apellido) {
                 alert("Por favor ingresa nombre y apellido.");
                 return;
             }
 
-            // Capitalizamos el nombre y apellido
             this.form.nombre = this.capitalizarPalabras(this.form.nombre);
             this.form.apellido = this.capitalizarPalabras(this.form.apellido);
 
-            // Si estamos editando
             if (this.isEdit) {
                 axios
                     .put(`/api/cliente/${this.form.id}`, this.form)
                     .then(() => {
-                        this.fetchClientes();
+                        this.clientes = modifyInCache("clientes", (clientes) =>
+                            clientes.map((c) =>
+                                c.id === this.form.id ? { ...this.form } : c
+                            )
+                        );
+                        this.calculateTotals();
                         this.dialog = false;
                     });
             } else {
-                // Si estamos creando un cliente nuevo
-                axios.post("/api/cliente", this.form).then(() => {
-                    this.fetchClientes();
+                axios.post("/api/cliente", this.form).then((res) => {
+                    this.clientes = appendToCache("clientes", res.data);
+                    this.calculateTotals();
                     this.dialog = false;
                 });
             }
@@ -255,18 +284,13 @@ export default {
             axios
                 .delete(`/api/cliente/${this.clienteAEliminar.id}`)
                 .then(() => {
-                    this.fetchClientes();
+                    this.clientes = removeFromCache(
+                        "clientes",
+                        (c) => c.id === this.clienteAEliminar.id
+                    );
+                    this.calculateTotals();
                     this.confirmDeleteDialog = false;
                 });
-        },
-        // Método de validación
-        validateForm() {
-            return (
-                this.form.nombre &&
-                this.form.apellido &&
-                this.form.cuit &&
-                this.form.cbu
-            );
         },
         capitalizarPalabras(texto) {
             return texto

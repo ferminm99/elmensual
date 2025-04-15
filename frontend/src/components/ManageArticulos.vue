@@ -138,7 +138,16 @@
 </template>
 
 <script>
+import {
+    cachedFetch,
+    updateCache,
+    appendToCache,
+    removeFromCache,
+    modifyInCache,
+    getMemoryCache,
+} from "@/utils/cacheFetch";
 import ExcelJS from "exceljs";
+
 export default {
     data() {
         return {
@@ -189,67 +198,28 @@ export default {
             return this.articulos.filter((art) => {
                 const nombre = normalizar(art.nombre);
                 const numero = normalizar(String(art.numero));
-
-                console.log({
-                    nombreOriginal: art.nombre,
-                    nombreNormalizado: nombre,
-                    textoNombre,
-                    coincide: nombre.includes(textoNombre),
-                });
-
-                const coincideNombre =
-                    !textoNombre || nombre.includes(textoNombre);
-
-                const coincideNumero =
-                    !textoNumero || numero.includes(textoNumero);
-
-                return coincideNombre && coincideNumero;
+                return (
+                    (!textoNombre || nombre.includes(textoNombre)) &&
+                    (!textoNumero || numero.includes(textoNumero))
+                );
             });
         },
     },
     created() {
-        this.fetchArticulos();
+        const cache = getMemoryCache("articulos", 86400);
+        if (cache) {
+            this.articulos = cache;
+        } else {
+            this.fetchArticulos();
+        }
     },
     methods: {
-        async exportarExcel() {
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet("Artículos");
-
-            // Encabezados
-            worksheet.columns = [
-                { header: "Número", key: "numero", width: 15 },
-                { header: "Nombre", key: "nombre", width: 40 },
-                { header: "Precio", key: "precio", width: 15 },
-                { header: "Costo Original", key: "costo_original", width: 20 },
-                { header: "Efectivo", key: "efectivo", width: 15 },
-                { header: "Transferencia", key: "transferencia", width: 20 },
-            ];
-
-            // Agregar datos
-            this.articulosFiltrados.forEach((item) => {
-                worksheet.addRow({
-                    numero: item.numero,
-                    nombre: item.nombre,
-                    precio: item.precio,
-                    costo_original: item.costo_original,
-                    efectivo: item.precio_efectivo,
-                    transferencia: item.precio_transferencia,
-                });
-            });
-
-            const buffer = await workbook.xlsx.writeBuffer();
-            const blob = new Blob([buffer], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "articulos.xlsx";
-            link.click();
-        },
-        fetchArticulos() {
-            axios.get("/api/articulos").then((res) => {
-                this.articulos = res.data;
-            });
+        async fetchArticulos() {
+            this.articulos = await cachedFetch(
+                "articulos",
+                () => axios.get("/api/articulos").then((res) => res.data),
+                { ttl: 86400 }
+            );
         },
         openAddDialog() {
             this.isEdit = false;
@@ -272,12 +242,20 @@ export default {
             this.form.precio = parseInt(this.form.precio);
             this.form.costo_original = parseInt(this.form.costo_original);
 
-            const request = this.isEdit
+            const req = this.isEdit
                 ? axios.put(`/api/articulo/${this.form.id}`, this.form)
                 : axios.post("/api/articulo", this.form);
 
-            request.then(() => {
-                this.fetchArticulos();
+            req.then((res) => {
+                if (this.isEdit) {
+                    this.articulos = modifyInCache("articulos", (articulos) =>
+                        articulos.map((a) =>
+                            a.id === this.form.id ? { ...this.form } : a
+                        )
+                    );
+                } else {
+                    this.articulos = appendToCache("articulos", res.data);
+                }
                 this.dialog = false;
             });
         },
@@ -289,13 +267,17 @@ export default {
             axios
                 .delete(`/api/articulo/${this.articuloAEliminar.id}`)
                 .then(() => {
-                    this.fetchArticulos();
+                    this.articulos = removeFromCache(
+                        "articulos",
+                        (a) => a.id === this.articuloAEliminar.id
+                    );
                     this.confirmDeleteDialog = false;
                 });
         },
         recalcularPrecios() {
-            axios.put("/api/articulos/recalcular-precios").then(() => {
-                this.fetchArticulos();
+            axios.put("/api/articulos/recalcular-precios").then((res) => {
+                this.articulos = res.data;
+                updateCache("articulos", res.data);
                 alert("Precios recalculados correctamente.");
             });
         },
@@ -304,16 +286,49 @@ export default {
             this.dialogoAumento = true;
         },
         aumentarCostos() {
-            //usar 0.01 % si reste y quiero sumar algo, por ej 1% seria 1.01% y asi sale bien calculado nose porque
             axios
                 .put("/api/articulos/aumentar-costos", {
                     porcentaje: this.porcentajeAumento,
                 })
-                .then(() => {
-                    this.fetchArticulos();
+                .then((res) => {
+                    this.articulos = res.data;
+                    updateCache("articulos", res.data);
                     this.dialogoAumento = false;
                     alert("Costos actualizados correctamente.");
                 });
+        },
+        async exportarExcel() {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("Artículos");
+
+            worksheet.columns = [
+                { header: "Número", key: "numero", width: 15 },
+                { header: "Nombre", key: "nombre", width: 40 },
+                { header: "Precio", key: "precio", width: 15 },
+                { header: "Costo Original", key: "costo_original", width: 20 },
+                { header: "Efectivo", key: "efectivo", width: 15 },
+                { header: "Transferencia", key: "transferencia", width: 20 },
+            ];
+
+            this.articulosFiltrados.forEach((item) => {
+                worksheet.addRow({
+                    numero: item.numero,
+                    nombre: item.nombre,
+                    precio: item.precio,
+                    costo_original: item.costo_original,
+                    efectivo: item.precio_efectivo,
+                    transferencia: item.precio_transferencia,
+                });
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "articulos.xlsx";
+            link.click();
         },
         validateForm() {
             if (!this.form.numero || String(this.form.numero).trim() === "")

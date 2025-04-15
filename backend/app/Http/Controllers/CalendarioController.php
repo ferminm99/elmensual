@@ -24,7 +24,8 @@ class CalendarioController extends Controller
         $compra->descripcion = $request->descripcion; // Guardamos la descripción
         $compra->save();
 
-        return response()->json(['message' => 'Compra agendada correctamente.']);
+         // Retornar el objeto entero en la respuesta
+        return response()->json($compra, 201);
     }
 
     public function update(Request $request, $id)
@@ -37,7 +38,7 @@ class CalendarioController extends Controller
         $compra->descripcion = $request->descripcion; // Actualizamos la descripción
         $compra->save();
 
-        return response()->json(['message' => 'Compra actualizada correctamente.']);
+        return response()->json($compra, 201);
     }
 
 
