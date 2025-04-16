@@ -106,6 +106,7 @@ import {
     getMemoryCache,
     modifyInCache,
 } from "@/utils/cacheFetch";
+import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
 
 export default {
     components: {

@@ -126,6 +126,8 @@ import {
     modifyInCache,
     updateCache,
 } from "@/utils/cacheFetch";
+import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import { CLIENTES_KEY, VENTAS_KEY } from "@/utils/cacheKeys"; // si querés ser prolijo
 
 export default {
     data() {
@@ -166,8 +168,8 @@ export default {
         };
     },
     created() {
-        const clientesMem = getMemoryCache("clientes", 86400);
-        const ventasMem = getMemoryCache("ventas", 86400);
+        const clientesMem = getMemoryCache(CLIENTES_KEY, 86400);
+        const ventasMem = getMemoryCache(VENTAS_KEY, 86400);
 
         if (clientesMem) {
             this.clientes = clientesMem;
@@ -184,11 +186,21 @@ export default {
         }
 
         this.verificarYCalcularTotales();
+        onCacheChange((key) => {
+            if (key === CLIENTES_KEY) {
+                console.log("♻️ Clientes actualizados desde otro componente");
+                this.fetchClientes();
+            }
+        });
     },
+    beforeUnmount() {
+        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
+    },
+
     methods: {
         async fetchClientes() {
             this.clientes = await cachedFetch(
-                "clientes",
+                CLIENTES_KEY,
                 () => axios.get("/api/clientes/listar").then((r) => r.data),
                 { ttl: 86400 }
             );
@@ -197,7 +209,7 @@ export default {
         },
         async fetchVentas() {
             this.ventas = await cachedFetch(
-                "ventas",
+                VENTAS_KEY,
                 () => axios.get("/api/ventas/listar").then((r) => r.data),
                 { ttl: 86400 }
             );
@@ -260,17 +272,21 @@ export default {
                 axios
                     .put(`/api/cliente/${this.form.id}`, this.form)
                     .then(() => {
-                        this.clientes = modifyInCache("clientes", (clientes) =>
-                            clientes.map((c) =>
-                                c.id === this.form.id ? { ...this.form } : c
-                            )
+                        this.clientes = modifyInCache(
+                            CLIENTES_KEY,
+                            (clientes) =>
+                                clientes.map((c) =>
+                                    c.id === this.form.id ? { ...this.form } : c
+                                )
                         );
+                        notifyCacheChange(CLIENTES_KEY);
                         this.calculateTotals();
                         this.dialog = false;
                     });
             } else {
                 axios.post("/api/cliente", this.form).then((res) => {
-                    this.clientes = appendToCache("clientes", res.data);
+                    this.clientes = appendToCache(CLIENTES_KEY, res.data);
+                    notifyCacheChange(CLIENTES_KEY);
                     this.calculateTotals();
                     this.dialog = false;
                 });
@@ -285,9 +301,10 @@ export default {
                 .delete(`/api/cliente/${this.clienteAEliminar.id}`)
                 .then(() => {
                     this.clientes = removeFromCache(
-                        "clientes",
+                        CLIENTES_KEY,
                         (c) => c.id === this.clienteAEliminar.id
                     );
+                    notifyCacheChange(CLIENTES_KEY);
                     this.calculateTotals();
                     this.confirmDeleteDialog = false;
                 });

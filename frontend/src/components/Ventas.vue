@@ -571,6 +571,18 @@
             <v-btn color="red" text @click="snackbar = false">Cerrar</v-btn>
         </v-snackbar>
     </div>
+    <v-overlay
+        :model-value="loading"
+        class="d-flex align-center justify-center"
+        persistent
+    >
+        <v-progress-circular
+            indeterminate
+            size="64"
+            width="6"
+            color="primary"
+        />
+    </v-overlay>
 </template>
 
 <script>
@@ -586,7 +598,8 @@ import {
     getCacheLastUpdate,
     applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
-import { ARTICULOS_KEY, VENTAS_KEY } from "@/utils/cacheKeys";
+import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
+import { ARTICULOS_TALLES_KEY, VENTAS_KEY } from "../utils/cacheKeys";
 
 export default {
     components: {
@@ -594,6 +607,7 @@ export default {
     },
     data() {
         return {
+            loading: false,
             ultimaFacturacion: null, // Para almacenar el último registro de facturación
             ventaUltimaFacturada: null, // Para almacenar el ID de la venta última facturada
             dialogCambioBombacha: false,
@@ -669,18 +683,19 @@ export default {
         };
     },
     created() {
+        this.loading = true;
         const ttl = 86400;
 
-        const lastUpdate = getCacheLastUpdate(ARTICULOS_KEY);
+        const lastUpdate = getCacheLastUpdate(ARTICULOS_TALLES_KEY);
         const localTime = parseInt(
-            localStorage.getItem(`${ARTICULOS_KEY}_time`) || "0"
+            localStorage.getItem(`${ARTICULOS_TALLES_KEY}_time`) || "0"
         );
         if (lastUpdate > localTime) {
             console.warn(
                 "🟡 Cambios detectados en ARTICULOS desde otro dispositivo. Limpiando..."
             );
-            localStorage.removeItem(ARTICULOS_KEY);
-            localStorage.removeItem(`${ARTICULOS_KEY}_time`);
+            localStorage.removeItem(ARTICULOS_TALLES_KEY);
+            localStorage.removeItem(`${ARTICULOS_TALLES_KEY}_time`);
         }
 
         const lastVentasUpdate = getCacheLastUpdate(VENTAS_KEY);
@@ -695,7 +710,7 @@ export default {
             localStorage.removeItem(`${VENTAS_KEY}_time`);
         }
 
-        const articulosMem = getMemoryCache(ARTICULOS_KEY, ttl);
+        const articulosMem = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
         const ventasMem = getMemoryCache(VENTAS_KEY, ttl);
 
         if (articulosMem) {
@@ -716,6 +731,7 @@ export default {
         this.fetchUltimaFacturacion();
 
         window.addEventListener("notifyCacheChange", this.handleCacheSync);
+        this.loading = false;
     },
 
     computed: {
@@ -784,8 +800,8 @@ export default {
         handleCacheSync(e) {
             const key = e.detail;
             const ttl = 86400;
-            if (key === ARTICULOS_KEY) {
-                const updated = getMemoryCache(ARTICULOS_KEY, ttl);
+            if (key === ARTICULOS_TALLES_KEY) {
+                const updated = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
                 if (updated) this.articulos = updated;
             }
             if (key === VENTAS_KEY) {
@@ -808,6 +824,7 @@ export default {
             return "";
         },
         fetchUltimaFacturacion() {
+            this.loading = true;
             // Hacer una solicitud al backend para obtener la última facturación
             axios
                 .get("/api/facturaciones/ultima")
@@ -837,10 +854,12 @@ export default {
                             this.ultimaFacturacion = null;
                         }
                     }
+                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error("Error fetching última facturación", error);
                     this.ultimaFacturacion = null;
+                    this.loading = false;
                 });
         },
 
@@ -858,6 +877,7 @@ export default {
             this.dialogCambioBombacha = true;
         },
         confirmarCambioBombacha() {
+            this.loading = true;
             if (
                 !this.cambioBombacha.articulo_id ||
                 this.cambioBombacha.talle === null ||
@@ -867,13 +887,6 @@ export default {
                 this.snackbar = true;
                 return;
             }
-
-            // Lógica para reponer la bombacha vendida
-            const original = {
-                articulo_id: this.selectedVenta.articulo.id,
-                talle: this.selectedVenta.talle,
-                color: this.selectedVenta.color,
-            };
 
             axios
                 .post("/api/ventas/cambiar-bombachas", {
@@ -889,35 +902,51 @@ export default {
                     fecha: this.selectedVenta.fecha,
                     forma_pago: this.selectedVenta.forma_pago,
                 })
-                .then(() => {
-                    // Reponer stock de la bombacha vieja
+                .then((res) => {
+                    const ventaActualizada = res.data;
+
+                    // Reemplazar venta actualizada en cache
+                    this.ventas = modifyInCache(VENTAS_KEY, (ventas) =>
+                        ventas.map((v) =>
+                            v.id === ventaActualizada.id ? ventaActualizada : v
+                        )
+                    );
+                    notifyCacheChange(VENTAS_KEY);
+                    this.ventas = getMemoryCache(VENTAS_KEY, 86400);
+                    this.ventasFiltradas = [...this.ventas];
+
+                    // Ajustar stock de artículos (esto ya lo hiciste correctamente)
                     applyStockDelta(
                         this.selectedVenta.articulo.id,
                         this.selectedVenta.talle,
                         this.selectedVenta.color,
                         1,
-                        ARTICULOS_KEY
+                        ARTICULOS_TALLES_KEY
                     );
-
-                    // Descontar stock de la nueva
                     applyStockDelta(
                         this.cambioBombacha.articulo_id,
                         this.cambioBombacha.talle,
                         this.cambioBombacha.color,
                         -1,
-                        ARTICULOS_KEY
+                        ARTICULOS_TALLES_KEY
                     );
-                    notifyCacheChange(ARTICULOS_KEY);
-                    this.articulos = getMemoryCache(ARTICULOS_KEY, 86400);
+                    notifyCacheChange(ARTICULOS_TALLES_KEY);
+                    this.articulos = getMemoryCache(
+                        ARTICULOS_TALLES_KEY,
+                        86400
+                    );
+
                     this.dialogCambioBombacha = false;
                     this.snackbarText =
                         "Cambio de bombacha realizado con éxito.";
                     this.snackbar = true;
+                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
                     this.snackbarText = "Error al cambiar la bombacha.";
                     this.snackbar = true;
+                    this.loading = false;
                 });
         },
         cancelarFiltro() {
@@ -953,6 +982,7 @@ export default {
         },
 
         descargarArchivo(texto, nombreArchivo) {
+            this.loading = true;
             const blob = new Blob([texto], { type: "text/plain" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
@@ -960,9 +990,11 @@ export default {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            this.loading = false;
         },
 
         generarFacturacion() {
+            this.loading = true;
             if (!this.fechaDesdeFacturar) {
                 this.snackbarText = "Por favor selecciona una fecha desde.";
                 this.snackbar = true;
@@ -1071,6 +1103,7 @@ export default {
                 });
 
             this.dialogFacturacion = false; // Cerrar el diálogo después de generar
+            this.loading = false;
         },
 
         filtrarVentasPorFecha() {
@@ -1200,6 +1233,7 @@ export default {
         },
         // Actualizar el precio de la venta
         updateVenta() {
+            this.loading = true;
             const ventaAnterior = this.ventas.find(
                 (v) => v.id === this.selectedVenta.id
             );
@@ -1213,38 +1247,33 @@ export default {
                     ),
                     forma_pago: this.selectedVenta.forma_pago,
                 })
-                .then(() => {
-                    // 🧠 1. Actualizar la venta en cache
+                .then((res) => {
+                    const ventaActualizada = res.data;
+
+                    // Reemplazar en cache
                     this.ventas = modifyInCache(VENTAS_KEY, (ventas) =>
                         ventas.map((v) =>
-                            v.id === this.selectedVenta.id
-                                ? {
-                                      ...v,
-                                      precio: this.selectedVenta.precio,
-                                      costo_original:
-                                          this.selectedVenta.costo_original,
-                                      fecha: moment(
-                                          this.selectedVenta.fecha
-                                      ).format("YYYY-MM-DD"),
-                                      forma_pago: this.selectedVenta.forma_pago,
-                                  }
-                                : v
+                            v.id === ventaActualizada.id ? ventaActualizada : v
                         )
                     );
                     notifyCacheChange(VENTAS_KEY);
-                    this.ventasFiltradas = this.ventas;
+
+                    // Reemplazar en vista local
+                    this.ventas = getMemoryCache(VENTAS_KEY, 86400);
+                    this.ventasFiltradas = [...this.ventas];
 
                     this.snackbarText = "Venta actualizada correctamente.";
                     this.snackbar = true;
                     this.editDialog = false;
+                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
                     this.snackbarText = "Error al actualizar la venta.";
                     this.snackbar = true;
+                    this.loading = false;
                 });
         },
-
         // Abrir el diálogo de confirmación para eliminar la venta
         openDeleteConfirm(item) {
             this.selectedVenta = { ...item };
@@ -1252,6 +1281,7 @@ export default {
         },
         // Eliminar la venta
         deleteVenta() {
+            this.loading = true;
             axios
                 .delete(`/api/ventas/${this.selectedVenta.id}`)
                 .then(() => {
@@ -1261,11 +1291,13 @@ export default {
                         (venta) => venta.id === this.selectedVenta.id
                     );
                     notifyCacheChange(VENTAS_KEY);
-                    this.ventasFiltradas = this.ventas;
+
+                    this.ventas = getMemoryCache(VENTAS_KEY, 86400);
+                    this.ventasFiltradas = [...this.ventas];
 
                     // 🧠 2. Restaurar el stock del artículo vendido
                     this.articulos = modifyInCache(
-                        ARTICULOS_KEY,
+                        ARTICULOS_TALLES_KEY,
                         (articulos) => {
                             return articulos.map((art) => {
                                 if (art.id === this.selectedVenta.articulo.id) {
@@ -1296,15 +1328,18 @@ export default {
                             });
                         }
                     );
-                    notifyCacheChange(ARTICULOS_KEY);
+                    notifyCacheChange(ARTICULOS_TALLES_KEY);
+
                     this.confirmDeleteDialog = false;
                     this.snackbarText = "Venta eliminada y stock restaurado.";
                     this.snackbar = true;
+                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
                     this.snackbarText = "Error al eliminar la venta.";
                     this.snackbar = true;
+                    this.loading = false;
                 });
         },
 
@@ -1358,7 +1393,7 @@ export default {
 
         async fetchArticulos() {
             const data = await cachedFetch(
-                ARTICULOS_KEY,
+                ARTICULOS_TALLES_KEY,
                 () =>
                     axios
                         .get("/api/articulo/listar/talles")
@@ -1452,6 +1487,7 @@ export default {
             if (articuloSeleccionado) {
                 // Solo actualizar si el artículo seleccionado es diferente al actual
                 this.articuloActual = articuloSeleccionado;
+                console.log(this.articuloActual);
                 this.tallesDisponibles = [...this.articuloActual.talles].sort(
                     (a, b) => a.talle - b.talle
                 );
@@ -1583,6 +1619,7 @@ export default {
         },
         // Registrar venta
         async registrarVenta() {
+            this.loading = true;
             this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
             this.form.cliente_nombre = this.capitalizarPalabras(
                 this.form.cliente_nombre
@@ -1615,32 +1652,21 @@ export default {
             };
 
             try {
-                await axios.post("/api/ventas", ventaData);
+                const res = await axios.post("/api/ventas", ventaData);
 
-                // Armar las ventas como si fueran separadas
-                const nuevasVentas = this.productos.map((producto) => ({
-                    articulo: producto.articulo,
-                    talle: producto.talle,
-                    color: producto.color,
-                    cliente: {
-                        nombre: ventaData.cliente_nombre,
-                        apellido: ventaData.cliente_apellido,
-                        cuit: ventaData.cliente_cuit,
-                        cbu: ventaData.cliente_cbu,
-                    },
-                    forma_pago: ventaData.forma_pago,
-                    fecha: ventaData.fecha,
-                    precio: producto.precio,
-                    costo_original: producto.costo_original,
-                }));
+                // Las ventas que devuelve el backend ya vienen con articulo, cliente, id, etc.
+                const nuevasVentas = res.data;
 
-                // Cachear las nuevas ventas y actualizar local
+                // Guardarlas en cache
                 nuevasVentas.forEach((v) => appendToCache(VENTAS_KEY, v));
                 notifyCacheChange(VENTAS_KEY);
+
+                // Actualizar tabla local
                 this.ventas.push(...nuevasVentas);
                 this.ventas.sort(
                     (a, b) => new Date(b.fecha) - new Date(a.fecha)
                 );
+                this.ventas = getMemoryCache(VENTAS_KEY, 86400);
                 this.ventasFiltradas = [...this.ventas];
 
                 // Restar stock en cache y local
@@ -1650,11 +1676,11 @@ export default {
                         p.talle,
                         p.color,
                         -1,
-                        ARTICULOS_KEY
+                        ARTICULOS_TALLES_KEY
                     );
                 });
-                notifyCacheChange(ARTICULOS_KEY);
-                this.articulos = getMemoryCache(ARTICULOS_KEY, 86400); // refrescar desde memoria
+                notifyCacheChange(ARTICULOS_TALLES_KEY);
+                this.articulos = getMemoryCache(ARTICULOS_TALLES_KEY, 86400); // refrescar desde memoria
 
                 this.dialogVenta = false;
                 this.form = {
@@ -1673,6 +1699,8 @@ export default {
                 this.fetchUltimaFacturacion();
             } catch (error) {
                 console.error(error);
+            } finally {
+                this.loading = false;
             }
         },
         calcularPrecioTotal() {

@@ -413,7 +413,7 @@ import {
     applyStockDelta,
     getMemoryCache,
 } from "@/utils/cacheFetch";
-import { ARTICULOS_KEY } from "@/utils/cacheKeys";
+import { ARTICULOS_KEY, ARTICULOS_TALLES_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 
 export default {
@@ -575,7 +575,7 @@ export default {
     methods: {
         handleCacheSync(e) {
             const key = e.detail;
-            if (key === ARTICULOS_KEY) {
+            if (key === ARTICULOS_TALLES_KEY) {
                 console.log(
                     "🔁 Recargando artículos en Home.vue por cambio externo"
                 );
@@ -714,7 +714,7 @@ export default {
                 )
                 .then(() => {
                     // Actualizar el cache con los nuevos valores absolutos
-                    modifyInCache(ARTICULOS_KEY, (articulos) => {
+                    modifyInCache(ARTICULOS_TALLES_KEY, (articulos) => {
                         return articulos.map((articulo) => {
                             if (articulo.id !== this.selectedArticulo)
                                 return articulo;
@@ -728,7 +728,7 @@ export default {
                             };
                         });
                     });
-                    notifyCacheChange(ARTICULOS_KEY);
+                    notifyCacheChange(ARTICULOS_TALLES_KEY);
                     this.editDialog = false;
                     this.fetchTalles();
                 });
@@ -744,6 +744,7 @@ export default {
 
             const fetchArticulos = () =>
                 axios.get("/api/articulos/listar").then((res) => res.data);
+
             const fetchArticulosTalles = () =>
                 axios
                     .get("/api/articulo/listar/talles")
@@ -756,11 +757,10 @@ export default {
                     { ttl }
                 );
                 const articulosCompletos = await cachedFetch(
-                    ARTICULOS_KEY,
+                    ARTICULOS_TALLES_KEY,
                     fetchArticulosTalles,
                     { ttl }
                 );
-                notifyCacheChange(ARTICULOS_KEY);
 
                 this.articulos = articulos;
                 this.articulosCompletos = articulosCompletos;
@@ -781,19 +781,19 @@ export default {
             }
 
             const ttl = 86400;
-            let articulosCompletos = getMemoryCache(ARTICULOS_KEY, ttl);
+            let articulosCompletos = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
 
             if (!articulosCompletos) {
                 try {
                     articulosCompletos = await cachedFetch(
-                        ARTICULOS_KEY,
+                        ARTICULOS_TALLES_KEY,
                         () =>
                             axios
                                 .get("/api/articulo/listar/talles")
                                 .then((res) => res.data),
                         { ttl }
                     );
-                    notifyCacheChange(ARTICULOS_KEY);
+                    notifyCacheChange(ARTICULOS_TALLES_KEY);
                 } catch (error) {
                     console.error(
                         "Error al traer talles desde el backend:",
@@ -809,20 +809,16 @@ export default {
             const articulo = articulosCompletos.find((a) => a.id === id);
 
             if (!articulo) {
-                console.error(
-                    "No se encontró el artículo seleccionado en los datos",
-                    {
-                        id,
-                        keys: articulosCompletos.map((a) => a.id),
-                        data: articulosCompletos,
-                    }
-                );
+                console.error("Artículo no encontrado en memoria", { id });
                 return;
             }
 
-            this.talles = [...articulo.talles].sort(
-                (a, b) => a.talle - b.talle
-            );
+            // Asegurarse de que `talles` siempre sea un array
+            const tallesArray = Array.isArray(articulo.talles)
+                ? articulo.talles
+                : [];
+
+            this.talles = [...tallesArray].sort((a, b) => a.talle - b.talle);
         },
         getTotalBombachas(talle) {
             return (
@@ -834,88 +830,91 @@ export default {
                 talle.blancobeige
             );
         },
-        addQuantities() {
+        async addQuantities() {
             this.loading = true;
-            this.selectedTalles.forEach((talle) => {
-                axios
-                    .post(
-                        `/api/articulo/${this.selectedArticuloDialog}/agregar-bombachas`,
-                        {
-                            cantidades: this.newQuantities,
-                            talle: talle,
-                        }
-                    )
-                    .then((response) => {
-                        console.log(response.data.message);
-
-                        Object.keys(this.newQuantities).forEach((color) => {
-                            const cantidad =
-                                parseInt(this.newQuantities[color]) || 0;
-                            if (cantidad > 0) {
-                                applyStockDelta(
-                                    this.selectedArticuloDialog,
-                                    talle,
-                                    color,
-                                    cantidad,
-                                    ARTICULOS_KEY
+            try {
+                await Promise.all(
+                    this.selectedTalles.map((talle) =>
+                        axios
+                            .post(
+                                `/api/articulo/${this.selectedArticuloDialog}/agregar-bombachas`,
+                                {
+                                    cantidades: this.newQuantities,
+                                    talle: talle,
+                                }
+                            )
+                            .then(() => {
+                                Object.entries(this.newQuantities).forEach(
+                                    ([color, cantidad]) => {
+                                        cantidad = parseInt(cantidad) || 0;
+                                        if (cantidad > 0) {
+                                            applyStockDelta(
+                                                this.selectedArticuloDialog,
+                                                talle,
+                                                color,
+                                                cantidad,
+                                                ARTICULOS_TALLES_KEY
+                                            );
+                                        }
+                                    }
                                 );
-                                notifyCacheChange(ARTICULOS_KEY);
-                            }
-                        });
+                            })
+                    )
+                );
 
-                        this.dialog = false;
-                        this.confirmAddDialog = false;
-                        this.fetchTalles(this.selectedArticuloDialog);
-                        this.resetQuantities();
-                        this.loading = false;
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        this.loading = false;
-                    });
-            });
+                notifyCacheChange(ARTICULOS_TALLES_KEY);
+                this.dialog = false;
+                this.confirmAddDialog = false;
+                this.fetchTalles(this.selectedArticuloDialog);
+                this.resetQuantities();
+            } catch (err) {
+                console.error("Error agregando bombachas:", err);
+            } finally {
+                this.loading = false;
+            }
         },
-
-        removeQuantities() {
+        async removeQuantities() {
             this.loading = true;
-            this.selectedTalles.forEach((talle) => {
-                axios
-                    .post(
-                        `/api/articulo/${this.selectedArticuloDialog}/eliminar-bombachas`,
-                        {
-                            cantidades: this.newQuantities,
-                            talle: talle,
-                        }
-                    )
-                    .then((response) => {
-                        console.log(response.data.message);
-
-                        Object.keys(this.newQuantities).forEach((color) => {
-                            const cantidad =
-                                parseInt(this.newQuantities[color]) || 0;
-                            if (cantidad > 0) {
-                                applyStockDelta(
-                                    this.selectedArticuloDialog,
-                                    talle,
-                                    color,
-                                    -cantidad,
-                                    ARTICULOS_KEY
+            try {
+                await Promise.all(
+                    this.selectedTalles.map((talle) =>
+                        axios
+                            .post(
+                                `/api/articulo/${this.selectedArticuloDialog}/eliminar-bombachas`,
+                                {
+                                    cantidades: this.newQuantities,
+                                    talle: talle,
+                                }
+                            )
+                            .then(() => {
+                                Object.entries(this.newQuantities).forEach(
+                                    ([color, cantidad]) => {
+                                        cantidad = parseInt(cantidad) || 0;
+                                        if (cantidad > 0) {
+                                            applyStockDelta(
+                                                this.selectedArticuloDialog,
+                                                talle,
+                                                color,
+                                                -cantidad,
+                                                ARTICULOS_TALLES_KEY
+                                            );
+                                        }
+                                    }
                                 );
-                                notifyCacheChange(ARTICULOS_KEY);
-                            }
-                        });
+                            })
+                    )
+                );
 
-                        this.dialog = false;
-                        this.confirmDeleteDialog = false;
-                        this.fetchTalles(this.selectedArticuloDialog);
-                        this.resetQuantities();
-                        this.loading = false;
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        this.loading = false;
-                    });
-            });
+                notifyCacheChange(ARTICULOS_TALLES_KEY);
+                this.dialog = false;
+                this.confirmDeleteDialog = false;
+                this.fetchTalles(this.selectedArticuloDialog);
+                this.resetQuantities();
+            } catch (err) {
+                console.error("Error eliminando bombachas:", err);
+            } finally {
+                this.loading = false;
+            }
         },
 
         resetQuantities() {

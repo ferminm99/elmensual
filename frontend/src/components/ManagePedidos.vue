@@ -66,12 +66,20 @@
             <div style="padding-bottom: 120px"></div>
         </v-row>
 
-        <v-data-table :headers="headers" :items="pedidos" class="elevation-1">
+        <v-data-table
+            :headers="headers"
+            :items="pedidos"
+            class="elevation-1"
+            v-model:options="options"
+        >
             <template #item.colores="{ item }">
                 {{ item.colores.join(" / ") }}
             </template>
             <template #item.actions="{ item, index }">
-                <v-btn icon @click="eliminarPedido(index)">
+                <v-btn icon @click="editarPedido(obtenerIndiceGlobal(index))">
+                    <v-icon color="blue">mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon @click="eliminarPedido(obtenerIndiceGlobal(index))">
                     <v-icon color="red">mdi-delete</v-icon>
                 </v-btn>
             </template>
@@ -110,22 +118,80 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+        <v-dialog v-model="dialogEditar" max-width="600px">
+            <v-card>
+                <v-card-title>Editar Pedido</v-card-title>
+                <v-card-text>
+                    <v-form>
+                        <v-text-field
+                            v-model="form.nombre"
+                            label="Nombre y Apellido"
+                            dense
+                            outlined
+                        />
+                        <v-autocomplete
+                            v-model="form.articulo_id"
+                            :items="articulos"
+                            :item-title="
+                                (item) => `${item.numero} - ${item.nombre}`
+                            "
+                            item-value="id"
+                            label="Artículo"
+                            @update:modelValue="cargarTalles"
+                            dense
+                            outlined
+                        />
+                        <v-select
+                            v-model="form.talle"
+                            :items="talles"
+                            label="Talle"
+                            dense
+                            outlined
+                        />
+                        <v-select
+                            v-model="form.colores"
+                            :items="colores"
+                            label="Colores"
+                            multiple
+                            chips
+                            dense
+                            outlined
+                        />
+                    </v-form>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn text @click="dialogEditar = false">Cancelar</v-btn>
+                    <v-btn color="primary" text @click="guardarEdicionPedido"
+                        >Guardar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
-
 <script>
 import ExcelJS from "exceljs";
 import axios from "axios";
+import { getMemoryCache, updateCache } from "@/utils/cacheFetch";
+import { PEDIDOS_KEY, ARTICULOS_KEY } from "@/utils/cacheKeys";
+import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 
 export default {
     data() {
         return {
+            page: 1,
+            itemsPerPage: 10,
+            dialogEditar: false,
+            pedidoEditIndex: null,
+
             form: {
                 nombre: "",
                 articulo_id: null,
                 talle: null,
                 colores: [],
             },
+            pedidoEditIndex: null, // Nuevo: índice si estamos editando
             articulos: [],
             talles: [],
             colores: [
@@ -136,7 +202,7 @@ export default {
                 "celeste",
                 "blanco/beige",
             ],
-            pedidos: JSON.parse(localStorage.getItem("pedidos")) || [],
+            pedidos: [],
             dialogReinicio: false,
             headers: [
                 { title: "Nombre", key: "nombre" },
@@ -147,12 +213,37 @@ export default {
             ],
         };
     },
-    mounted() {
-        axios.get("/api/articulos/listar").then((res) => {
-            this.articulos = res.data;
+    created() {
+        const pedidosCache = getMemoryCache(PEDIDOS_KEY);
+        this.pedidos =
+            pedidosCache ?? JSON.parse(localStorage.getItem("pedidos") || "[]");
+
+        const articulosCache = getMemoryCache(ARTICULOS_KEY);
+        if (articulosCache) {
+            this.articulos = articulosCache;
+        } else {
+            axios.get("/api/articulos/listar").then((res) => {
+                this.articulos = res.data;
+            });
+        }
+
+        onCacheChange((key) => {
+            if (key === PEDIDOS_KEY) {
+                const nueva = getMemoryCache(PEDIDOS_KEY);
+                if (nueva) {
+                    this.pedidos = nueva;
+                }
+            }
         });
     },
+    beforeUnmount() {
+        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
+    },
     methods: {
+        obtenerIndiceGlobal(indexLocal) {
+            const { page, itemsPerPage } = this.options;
+            return indexLocal + (page - 1) * itemsPerPage;
+        },
         cargarTalles() {
             const art = this.articulos.find(
                 (a) => a.id === this.form.articulo_id
@@ -179,16 +270,73 @@ export default {
                 !this.form.colores.length
             )
                 return;
+
             const articulo = this.articulos.find(
                 (a) => a.id === this.form.articulo_id
             );
-            this.pedidos.push({
+
+            const nuevoPedido = {
                 nombre: this.form.nombre,
                 articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
                 talle: this.form.talle,
                 colores: [...this.form.colores],
-            });
+            };
+
+            if (this.pedidoEditIndex !== null) {
+                // Modo edición
+                this.pedidos.splice(this.pedidoEditIndex, 1, nuevoPedido);
+                this.pedidoEditIndex = null;
+            } else {
+                // Modo creación
+                this.pedidos.push(nuevoPedido);
+            }
+
+            updateCache(PEDIDOS_KEY, this.pedidos);
             localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
+            notifyCacheChange(PEDIDOS_KEY);
+
+            this.form = {
+                nombre: "",
+                articulo_id: null,
+                talle: null,
+                colores: [],
+            };
+        },
+        editarPedido(index) {
+            const pedido = this.pedidos[index];
+            const articulo = this.articulos.find(
+                (a) => `${a.numero} - ${a.nombre}` === pedido.articulo_nombre
+            );
+
+            this.form = {
+                nombre: pedido.nombre,
+                articulo_id: articulo ? articulo.id : null,
+                talle: pedido.talle,
+                colores: [...pedido.colores],
+            };
+            this.cargarTalles();
+            this.pedidoEditIndex = index;
+            this.dialogEditar = true;
+        },
+        guardarEdicionPedido() {
+            const articulo = this.articulos.find(
+                (a) => a.id === this.form.articulo_id
+            );
+
+            const actualizado = {
+                nombre: this.form.nombre,
+                articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
+                talle: this.form.talle,
+                colores: [...this.form.colores],
+            };
+
+            this.pedidos.splice(this.pedidoEditIndex, 1, actualizado);
+            updateCache(PEDIDOS_KEY, this.pedidos);
+            localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
+            notifyCacheChange(PEDIDOS_KEY);
+
+            this.dialogEditar = false;
+            this.pedidoEditIndex = null;
             this.form = {
                 nombre: "",
                 articulo_id: null,
@@ -198,23 +346,25 @@ export default {
         },
         eliminarPedido(index) {
             this.pedidos.splice(index, 1);
+            updateCache(PEDIDOS_KEY, this.pedidos);
             localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
+            notifyCacheChange(PEDIDOS_KEY);
         },
         confirmarReinicio() {
             this.dialogReinicio = true;
         },
         reiniciarPedidos() {
             this.pedidos = [];
+            updateCache(PEDIDOS_KEY, []);
             localStorage.removeItem("pedidos");
+            notifyCacheChange(PEDIDOS_KEY);
             this.dialogReinicio = false;
         },
         copiarComoTexto() {
             const pedidosOrdenados = [...this.pedidos].sort((a, b) => {
                 const codA = parseInt(a.articulo_nombre.split(" - ")[0]);
                 const codB = parseInt(b.articulo_nombre.split(" - ")[0]);
-
-                if (codA !== codB) return codB - codA; // Mayor a menor
-                return a.nombre.localeCompare(b.nombre); // Orden alfabético
+                return codB - codA || a.nombre.localeCompare(b.nombre);
             });
 
             const texto = pedidosOrdenados
@@ -234,18 +384,19 @@ export default {
         async exportarExcel() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet("Pedidos");
+
             sheet.columns = [
                 { header: "Nombre", key: "nombre", width: 35 },
                 { header: "Artículo", key: "articulo", width: 50 },
                 { header: "Talle", key: "talle", width: 10 },
                 { header: "Colores", key: "colores", width: 25 },
             ];
+
             [...this.pedidos]
                 .sort((a, b) => {
                     const codA = parseInt(a.articulo_nombre.split(" - ")[0]);
                     const codB = parseInt(b.articulo_nombre.split(" - ")[0]);
-                    if (codA !== codB) return codB - codA;
-                    return a.nombre.localeCompare(b.nombre);
+                    return codB - codA || a.nombre.localeCompare(b.nombre);
                 })
                 .forEach((p) => {
                     sheet.addRow({
@@ -255,6 +406,7 @@ export default {
                         colores: p.colores.join(" / "),
                     });
                 });
+
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer]);
             const url = URL.createObjectURL(blob);
@@ -270,9 +422,11 @@ export default {
         async procesarArchivoExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
+
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.load(await file.arrayBuffer());
             const sheet = workbook.getWorksheet(1);
+
             const nuevasFilas = [];
             sheet.eachRow((row, idx) => {
                 if (idx === 1) return;
@@ -284,8 +438,11 @@ export default {
                     colores: colores.split(" / "),
                 });
             });
+
             this.pedidos.push(...nuevasFilas);
+            updateCache(PEDIDOS_KEY, this.pedidos);
             localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
+            notifyCacheChange(PEDIDOS_KEY);
         },
     },
 };

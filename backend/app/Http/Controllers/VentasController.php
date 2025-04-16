@@ -69,10 +69,12 @@ class VentasController extends Controller
             ]);
         }
     
+        // Lista para guardar las ventas registradas
+        $ventasRegistradas = [];
         // Registrar cada producto en la venta
         foreach ($request->productos as $producto) {
             // Crear una venta por cada producto
-            Venta::create([
+            $venta = Venta::create([
                 'articulo_id' => $producto['articulo']['id'],
                 'cliente_id' => $cliente->id,
                 'talle' => $producto['talle'],
@@ -82,13 +84,18 @@ class VentasController extends Controller
                 'forma_pago' => $request->forma_pago,
                 'costo_original' => $producto['costo_original'],
             ]);
-    
-            // Actualizar el stock del artículo
+            
             $articulo = Articulo::find($producto['articulo']['id']);
             $articulo->talles()->where('talle', $producto['talle'])->decrement($producto['color'], 1);
+            
+            // Cargar relaciones
+            $venta->load('articulo', 'cliente');
+            
+            $ventasRegistradas[] = $venta;
+            
         }
     
-        return response()->json(['message' => 'Venta registrada exitosamente']);
+        return response()->json($ventasRegistradas, 201);
     }
 
     //Obtiene la ultima facturacion
@@ -125,28 +132,28 @@ class VentasController extends Controller
      // Actualizar el precio de una venta
      public function update(Request $request, $id)
     {
-        // Validar la entrada
         $request->validate([
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
-            'fecha' => 'required|date', // Validar que la fecha sea una fecha válida
-            'forma_pago' => 'required|in:efectivo,transferencia', // Validar que la forma de pago sea una de las opciones permitidas
+            'fecha' => 'required|date',
+            'forma_pago' => 'required|in:efectivo,transferencia',
         ]);
 
-        // Buscar la venta por ID
         $venta = Venta::findOrFail($id);
 
-        // Actualizar los campos
-        $venta->precio = $request->precio;
-        $venta->fecha = $request->fecha;
-        $venta->forma_pago = $request->forma_pago;
-        $venta->costo_original = $request->costo_original;
+        $venta->update([
+            'precio' => $request->precio,
+            'fecha' => $request->fecha,
+            'forma_pago' => $request->forma_pago,
+            'costo_original' => $request->costo_original,
+        ]);
 
-        // Guardar los cambios en la base de datos
-        $venta->save();
+        // Cargar relaciones para que el frontend reciba la venta completa
+        $venta->load('articulo', 'cliente');
 
-        return response()->json(['message' => 'Venta actualizada exitosamente']);
+        return response()->json($venta);
     }
+
 
  
      // Eliminar una venta
@@ -177,8 +184,6 @@ class VentasController extends Controller
 
     public function cambiarBombacha(Request $request)
     {
-        
-        // Obtener la venta
         $venta = Venta::findOrFail($request->venta_id);
 
         if (!$venta) {
@@ -190,25 +195,30 @@ class VentasController extends Controller
         $talleOriginal = $articuloOriginal->talles()->where('talle', $request->original['talle'])->first();
         $talleOriginal->increment($request->original['color'], 1);
 
-        // Restar la nueva bombacha seleccionada
+        // Descontar la nueva bombacha
         $articuloNuevo = Articulo::find($request->nueva['articulo_id']);
         $talleNuevo = $articuloNuevo->talles()->where('talle', $request->nueva['talle'])->first();
         $talleNuevo->decrement($request->nueva['color'], 1);
 
-        // Mantener los valores existentes si no se proporcionan en la solicitud
+        // Actualizar la venta con los nuevos valores
         $venta->update([
-            'articulo_id' => $request->nueva['articulo_id'] ?? $venta->articulo_id,
-            'talle' => $request->nueva['talle'] ?? $venta->talle,
-            'color' => $request->nueva['color'] ?? $venta->color,
-            'precio' => $venta->precio, // Mantén el precio si no cambias
-            'costo_original' => $venta->costo_original, // Mantén el costo original si no cambias
-            'fecha' => $venta->fecha, // Mantén la fecha si no cambias
-            'forma_pago' => $venta->forma_pago, // Mantén la forma de pago si no cambias
+            'articulo_id' => $request->nueva['articulo_id'],
+            'talle' => $request->nueva['talle'],
+            'color' => $request->nueva['color'],
+            'precio' => $request->precio,
+            'costo_original' => $request->costo_original,
+            'fecha' => $request->fecha,
+            'forma_pago' => $request->forma_pago,
         ]);
 
-        return response()->json(['message' => 'Cambio de bombacha realizado con éxito.']);
+        // Recargar relaciones para devolver todo completo
+        $venta->load('articulo', 'cliente');
+
+        return response()->json($venta);
     }
 
-    
+
+
+        
 
 }
