@@ -29,7 +29,7 @@ class LocalidadController extends Controller
     {
         $localidad = Localidad::findOrFail($id);
         $localidad->update($request->only(['nombre', 'disponibilidad']));
-        return response()->json(['message' => 'Localidad actualizada']);
+        return response()->json(['message' => 'Localidad actualizada', 'localidad' => $localidad]);
     }
 
     public function destroy($id)

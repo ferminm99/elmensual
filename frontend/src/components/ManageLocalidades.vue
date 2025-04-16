@@ -35,13 +35,11 @@
                             : 'red lighten-4'
                     "
                 >
-                    <v-icon left>
-                        {{
-                            item.disponibilidad
-                                ? "mdi-check-circle"
-                                : "mdi-close-circle"
-                        }}
-                    </v-icon>
+                    <v-icon left>{{
+                        item.disponibilidad
+                            ? "mdi-check-circle"
+                            : "mdi-close-circle"
+                    }}</v-icon>
                     {{ item.disponibilidad ? "Disponible" : "No disponible" }}
                 </v-chip>
             </template>
@@ -50,13 +48,12 @@
                 <v-btn icon @click="editLocalidad(item)">
                     <v-icon>mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon @click="deleteLocalidad(item.id)">
+                <v-btn icon @click="openDeleteConfirm(item)">
                     <v-icon color="red">mdi-delete</v-icon>
                 </v-btn>
             </template>
         </ResponsiveTable>
 
-        <!-- Diálogo para agregar/editar -->
         <v-dialog v-model="dialog" max-width="500px">
             <v-card>
                 <v-card-title
@@ -80,7 +77,36 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
+        <v-dialog v-model="confirmDeleteDialog" max-width="400">
+            <v-card>
+                <v-card-title class="text-h6"
+                    >¿Eliminar Localidad?</v-card-title
+                >
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn text @click="confirmDeleteDialog = false"
+                        >Cancelar</v-btn
+                    >
+                    <v-btn color="red" text @click="confirmarEliminacion"
+                        >Eliminar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
+    <v-overlay
+        :model-value="loading"
+        class="d-flex align-center justify-center"
+        persistent
+    >
+        <v-progress-circular
+            indeterminate
+            size="64"
+            width="6"
+            color="primary"
+        />
+    </v-overlay>
 </template>
 
 <script>
@@ -91,9 +117,13 @@ import {
     removeFromCache,
     getMemoryCache,
 } from "@/utils/cacheFetch";
+import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import { LOCALIDADES_KEY } from "@/utils/cacheKeys";
 import ExcelJS from "exceljs";
 
 function normalize(text) {
+    // text = text.toString();
+    if (!text) return "";
     return text
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -103,8 +133,11 @@ function normalize(text) {
 export default {
     data() {
         return {
+            loading: false,
             dialog: false,
+            confirmDeleteDialog: false,
             isEdit: false,
+            localidadAEliminar: null,
             localidades: [],
             search: "",
             form: {
@@ -133,17 +166,27 @@ export default {
         },
     },
     created() {
-        const mem = getMemoryCache("localidades", 86400);
+        const mem = getMemoryCache(LOCALIDADES_KEY, 86400);
         if (mem) {
             this.localidades = mem;
         } else {
             this.fetchLocalidades();
         }
+
+        onCacheChange((key) => {
+            if (key === LOCALIDADES_KEY) {
+                console.log("🔁 Recargando localidades desde otro componente");
+                this.fetchLocalidades();
+            }
+        });
+    },
+    beforeUnmount() {
+        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
     methods: {
         async fetchLocalidades() {
             this.localidades = await cachedFetch(
-                "localidades",
+                LOCALIDADES_KEY,
                 () => axios.get("/api/localidades").then((r) => r.data),
                 { ttl: 86400 }
             );
@@ -158,34 +201,48 @@ export default {
             this.form = { ...item };
             this.dialog = true;
         },
+        openDeleteConfirm(item) {
+            this.localidadAEliminar = item;
+            this.confirmDeleteDialog = true;
+        },
         saveLocalidad() {
+            this.loading = true;
             const req = this.isEdit
                 ? axios.put(`/api/localidad/${this.form.id}`, this.form)
                 : axios.post("/api/localidad", this.form);
 
             req.then((res) => {
-                const nueva = this.isEdit ? this.form : res.data;
+                const nueva = this.isEdit ? this.form : res.data.localidad;
+
                 if (this.isEdit) {
-                    this.localidades = modifyInCache("localidades", (list) =>
+                    this.localidades = modifyInCache(LOCALIDADES_KEY, (list) =>
                         list.map((l) => (l.id === nueva.id ? nueva : l))
                     );
                 } else {
-                    this.localidades = appendToCache("localidades", nueva);
+                    this.localidades = appendToCache(LOCALIDADES_KEY, nueva);
                 }
+                notifyCacheChange(LOCALIDADES_KEY);
                 this.dialog = false;
+                this.loading = false;
             });
         },
-        deleteLocalidad(id) {
-            if (confirm("¿Eliminar esta localidad?")) {
-                axios.delete(`/api/localidad/${id}`).then(() => {
+
+        confirmarEliminacion() {
+            this.loading = true;
+            axios
+                .delete(`/api/localidad/${this.localidadAEliminar.id}`)
+                .then(() => {
                     this.localidades = removeFromCache(
-                        "localidades",
-                        (l) => l.id === id
+                        LOCALIDADES_KEY,
+                        (l) => l.id === this.localidadAEliminar.id
                     );
+                    notifyCacheChange(LOCALIDADES_KEY);
+                    this.confirmDeleteDialog = false;
+                    this.loading = false;
                 });
-            }
         },
         async exportarExcel() {
+            this.loading = true;
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet("Localidades");
             sheet.columns = [
@@ -204,6 +261,7 @@ export default {
             const blob = new Blob([buffer], {
                 type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             });
+            this.loading = false;
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = "localidades.xlsx";

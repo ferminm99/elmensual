@@ -77,11 +77,20 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
-        <v-overlay :value="loading" opacity="0.1" absolute>
-            <v-progress-circular indeterminate color="primary" size="64" />
-        </v-overlay>
     </div>
+    <!-- Overlay de carga -->
+    <v-overlay
+        :model-value="loading"
+        class="d-flex align-center justify-center"
+        persistent
+    >
+        <v-progress-circular
+            indeterminate
+            size="64"
+            width="6"
+            color="primary"
+        />
+    </v-overlay>
 </template>
 
 <script>
@@ -301,8 +310,11 @@ export default {
                     );
                 }
 
+                if (!Array.isArray(compras))
+                    throw new Error("Datos inválidos en cache");
+
                 const eventos = compras.map((compra) => ({
-                    id: Number(compra.id),
+                    id: compra.id.toString(),
                     title: `${compra.nombre_persona} - ${
                         compra.descripcion
                     } - de ${moment(compra.hora_inicio, "HH:mm:ss").format(
@@ -322,7 +334,7 @@ export default {
                         descripcion: compra.descripcion,
                         hora_inicio: compra.hora_inicio,
                         hora_fin: compra.hora_fin,
-                        compraId: Number(compra.id),
+                        compraId: compra.id.toString(),
                     },
                 }));
 
@@ -449,7 +461,20 @@ export default {
 }
 :deep(.v-overlay) {
     z-index: 9999 !important;
+    position: fixed !important;
 }
+
+:deep(.v-overlay__scrim) {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    position: fixed !important;
+    z-index: 9999 !important;
+}
+
+:deep(.v-overlay__content) {
+    z-index: 10000 !important;
+    position: fixed !important;
+}
+
 :deep(.fc-daygrid-event) {
     display: block;
     padding: 5px;

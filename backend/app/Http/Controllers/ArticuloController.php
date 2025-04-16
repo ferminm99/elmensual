@@ -18,6 +18,14 @@ class ArticuloController extends Controller
 
         $precios = $this->calcularPrecios($request->input('costo_original'));
 
+        $request->validate([
+            'numero' => 'required|integer|unique:articulos,numero',
+            'nombre' => 'required|string|max:255',
+            'precio' => 'required|numeric|min:0',
+            'costo_original' => 'required|numeric|min:0',
+        ]);
+
+        
         $articulo = Articulo::create([
             'numero' => $request->input('numero'),
             'nombre' => $request->input('nombre'),
@@ -56,7 +64,10 @@ class ArticuloController extends Controller
             'precio_transferencia' => $precios['precio_transferencia'],
         ]);
     
-        return response()->json(['message' => 'Artículo actualizado correctamente']);
+        return response()->json([
+            'message' => 'Artículo creado correctamente',
+            'articulo' => $articulo
+        ]);
     }
 
     // Método para eliminar un artículo

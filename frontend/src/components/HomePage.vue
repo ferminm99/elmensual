@@ -386,6 +386,19 @@
             </v-card>
         </v-dialog>
     </div>
+
+    <v-overlay
+        :model-value="loading"
+        class="d-flex align-center justify-center"
+        persistent
+    >
+        <v-progress-circular
+            indeterminate
+            size="64"
+            width="6"
+            color="primary"
+        />
+    </v-overlay>
 </template>
 
 <script>
@@ -396,13 +409,17 @@ import {
     cachedFetch,
     updateCache,
     modifyInCache,
+    getCacheLastUpdate,
     applyStockDelta,
     getMemoryCache,
 } from "@/utils/cacheFetch";
+import { ARTICULOS_KEY } from "@/utils/cacheKeys";
+import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 
 export default {
     data() {
         return {
+            loading: false,
             //dialogs confirmar
             confirmDeleteDialog: false,
             confirmAddDialog: false,
@@ -471,7 +488,26 @@ export default {
         };
     },
     created() {
+        const ttl = 86400;
+        const lastUpdate = getCacheLastUpdate(ARTICULOS_KEY);
+        const localTime = parseInt(
+            localStorage.getItem(`${ARTICULOS_KEY}_time`) || "0"
+        );
+
+        if (lastUpdate > localTime) {
+            console.warn(
+                "🟡 Cambios detectados desde otro dispositivo. Refrescando cache..."
+            );
+            localStorage.removeItem(ARTICULOS_KEY);
+            localStorage.removeItem(`${ARTICULOS_KEY}_time`);
+        }
+
         this.fetchArticulos();
+        window.addEventListener("notifyCacheChange", this.handleCacheSync); // <- escucha el evento global
+    },
+
+    beforeUnmount() {
+        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
 
     computed: {
@@ -537,6 +573,16 @@ export default {
         },
     },
     methods: {
+        handleCacheSync(e) {
+            const key = e.detail;
+            if (key === ARTICULOS_KEY) {
+                console.log(
+                    "🔁 Recargando artículos en Home.vue por cambio externo"
+                );
+                this.fetchArticulos();
+            }
+        },
+
         exportarAExcel() {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet("Bombachas");
@@ -668,7 +714,7 @@ export default {
                 )
                 .then(() => {
                     // Actualizar el cache con los nuevos valores absolutos
-                    modifyInCache("articulos_completos", (articulos) => {
+                    modifyInCache(ARTICULOS_KEY, (articulos) => {
                         return articulos.map((articulo) => {
                             if (articulo.id !== this.selectedArticulo)
                                 return articulo;
@@ -682,6 +728,7 @@ export default {
                             };
                         });
                     });
+                    notifyCacheChange(ARTICULOS_KEY);
                     this.editDialog = false;
                     this.fetchTalles();
                 });
@@ -692,6 +739,7 @@ export default {
         },
 
         async fetchArticulos() {
+            this.loading = true;
             const ttl = 86400;
 
             const fetchArticulos = () =>
@@ -703,47 +751,49 @@ export default {
 
             try {
                 const articulos = await cachedFetch(
-                    "articulos",
+                    ARTICULOS_KEY,
                     fetchArticulos,
                     { ttl }
                 );
                 const articulosCompletos = await cachedFetch(
-                    "articulos_completos",
+                    ARTICULOS_KEY,
                     fetchArticulosTalles,
                     { ttl }
                 );
+                notifyCacheChange(ARTICULOS_KEY);
 
                 this.articulos = articulos;
                 this.articulosCompletos = articulosCompletos;
             } catch (error) {
                 console.error("Error al obtener artículos:", error);
+            } finally {
+                this.loading = false;
             }
         },
         onArticuloChange() {
             this.fetchTalles();
         },
-        async fetchTalles() {
-            if (!this.selectedArticulo) {
+        async fetchTalles(articuloId = null) {
+            const id = articuloId || this.selectedArticulo;
+            if (!id) {
                 console.error("No hay artículo seleccionado");
                 return;
             }
 
             const ttl = 86400;
+            let articulosCompletos = getMemoryCache(ARTICULOS_KEY, ttl);
 
-            // Buscar en memoria
-            let articulosCompletos = getMemoryCache("articulos_completos", ttl);
-
-            // Si no hay en memoria, intentar en localStorage o backend
             if (!articulosCompletos) {
                 try {
                     articulosCompletos = await cachedFetch(
-                        "articulos_completos",
+                        ARTICULOS_KEY,
                         () =>
                             axios
                                 .get("/api/articulo/listar/talles")
                                 .then((res) => res.data),
                         { ttl }
                     );
+                    notifyCacheChange(ARTICULOS_KEY);
                 } catch (error) {
                     console.error(
                         "Error al traer talles desde el backend:",
@@ -753,12 +803,19 @@ export default {
                 }
             }
 
-            const articulo = articulosCompletos.find(
-                (a) => a.id === this.selectedArticulo
-            );
+            console.log("🧠 Artículo ID buscado:", id);
+            console.log("🧠 Cache en memoria completa:", articulosCompletos);
+
+            const articulo = articulosCompletos.find((a) => a.id === id);
+
             if (!articulo) {
                 console.error(
-                    "No se encontró el artículo seleccionado en los datos"
+                    "No se encontró el artículo seleccionado en los datos",
+                    {
+                        id,
+                        keys: articulosCompletos.map((a) => a.id),
+                        data: articulosCompletos,
+                    }
                 );
                 return;
             }
@@ -778,17 +835,19 @@ export default {
             );
         },
         addQuantities() {
+            this.loading = true;
             this.selectedTalles.forEach((talle) => {
                 axios
                     .post(
                         `/api/articulo/${this.selectedArticuloDialog}/agregar-bombachas`,
                         {
                             cantidades: this.newQuantities,
-                            talle: talle, // Talle actual en la iteración
+                            talle: talle,
                         }
                     )
                     .then((response) => {
                         console.log(response.data.message);
+
                         Object.keys(this.newQuantities).forEach((color) => {
                             const cantidad =
                                 parseInt(this.newQuantities[color]) || 0;
@@ -797,34 +856,41 @@ export default {
                                     this.selectedArticuloDialog,
                                     talle,
                                     color,
-                                    cantidad
+                                    cantidad,
+                                    ARTICULOS_KEY
                                 );
+                                notifyCacheChange(ARTICULOS_KEY);
                             }
                         });
+
                         this.dialog = false;
                         this.confirmAddDialog = false;
-                        this.fetchTalles(); // Actualiza la tabla
+                        this.fetchTalles(this.selectedArticuloDialog);
                         this.resetQuantities();
+                        this.loading = false;
                     })
                     .catch((error) => {
                         console.error(error);
+                        this.loading = false;
                     });
             });
         },
+
         removeQuantities() {
+            this.loading = true;
             this.selectedTalles.forEach((talle) => {
                 axios
                     .post(
                         `/api/articulo/${this.selectedArticuloDialog}/eliminar-bombachas`,
                         {
                             cantidades: this.newQuantities,
-                            talle: talle, // Talle actual en la iteración
+                            talle: talle,
                         }
                     )
                     .then((response) => {
                         console.log(response.data.message);
-                        // Actualizar el cache con delta negativo
-                        for (const color in this.newQuantities) {
+
+                        Object.keys(this.newQuantities).forEach((color) => {
                             const cantidad =
                                 parseInt(this.newQuantities[color]) || 0;
                             if (cantidad > 0) {
@@ -832,17 +898,22 @@ export default {
                                     this.selectedArticuloDialog,
                                     talle,
                                     color,
-                                    -cantidad
+                                    -cantidad,
+                                    ARTICULOS_KEY
                                 );
+                                notifyCacheChange(ARTICULOS_KEY);
                             }
-                        }
+                        });
+
                         this.dialog = false;
                         this.confirmDeleteDialog = false;
-                        this.fetchTalles(); // Actualiza la tabla
+                        this.fetchTalles(this.selectedArticuloDialog);
                         this.resetQuantities();
+                        this.loading = false;
                     })
                     .catch((error) => {
                         console.error(error);
+                        this.loading = false;
                     });
             });
         },
@@ -861,6 +932,7 @@ export default {
         },
 
         deleteCompleteTalle() {
+            this.loading = true;
             axios
                 .post(
                     `/api/articulo/${this.selectedArticulo}/eliminar-talle-completo`,
@@ -871,7 +943,7 @@ export default {
                 .then((response) => {
                     console.log(response.data.message);
                     // Eliminar el talle del cache
-                    modifyInCache("articulos_completos", (articulos) => {
+                    modifyInCache(ARTICULOS_KEY, (articulos) => {
                         return articulos.map((articulo) => {
                             if (articulo.id !== this.selectedArticulo)
                                 return articulo;
@@ -883,11 +955,14 @@ export default {
                             };
                         });
                     });
+                    notifyCacheChange(ARTICULOS_KEY);
                     this.confirmFullDeleteDialog = false;
                     this.fetchTalles(); // Actualiza la tabla después de eliminar
+                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
+                    this.loading = false;
                 });
         },
         getRangoTalles(nombre) {
@@ -948,7 +1023,7 @@ export default {
             // if (someCondition) {
             //     // Alguna lógica aquí
             // }
-
+            this.loading = true;
             axios
                 .get("/api/google/callback")
                 .then((response) => {
@@ -962,6 +1037,7 @@ export default {
                 })
                 .then((response) => {
                     console.log(response.data.message);
+                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);

@@ -583,7 +583,10 @@ import {
     removeFromCache,
     modifyInCache,
     getMemoryCache,
+    getCacheLastUpdate,
+    applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
+import { ARTICULOS_KEY, VENTAS_KEY } from "@/utils/cacheKeys";
 
 export default {
     components: {
@@ -666,13 +669,39 @@ export default {
         };
     },
     created() {
-        const articulosMem = getMemoryCache("articulos", 86400);
-        const ventasMem = getMemoryCache("ventas", 86400);
+        const ttl = 86400;
+
+        const lastUpdate = getCacheLastUpdate(ARTICULOS_KEY);
+        const localTime = parseInt(
+            localStorage.getItem(`${ARTICULOS_KEY}_time`) || "0"
+        );
+        if (lastUpdate > localTime) {
+            console.warn(
+                "🟡 Cambios detectados en ARTICULOS desde otro dispositivo. Limpiando..."
+            );
+            localStorage.removeItem(ARTICULOS_KEY);
+            localStorage.removeItem(`${ARTICULOS_KEY}_time`);
+        }
+
+        const lastVentasUpdate = getCacheLastUpdate(VENTAS_KEY);
+        const localVentasTime = parseInt(
+            localStorage.getItem(`${VENTAS_KEY}_time`) || "0"
+        );
+        if (lastVentasUpdate > localVentasTime) {
+            console.warn(
+                "🟡 Cambios detectados en VENTAS desde otro dispositivo. Limpiando..."
+            );
+            localStorage.removeItem(VENTAS_KEY);
+            localStorage.removeItem(`${VENTAS_KEY}_time`);
+        }
+
+        const articulosMem = getMemoryCache(ARTICULOS_KEY, ttl);
+        const ventasMem = getMemoryCache(VENTAS_KEY, ttl);
 
         if (articulosMem) {
             this.articulos = articulosMem;
         } else {
-            this.fetchArticulos(); // usa cachedFetch y guarda en memory
+            this.fetchArticulos();
         }
 
         if (ventasMem) {
@@ -681,11 +710,14 @@ export default {
             );
             this.ventasFiltradas = this.ventas;
         } else {
-            this.fetchVentas(); // idem
+            this.fetchVentas();
         }
 
-        this.fetchUltimaFacturacion(); // también usa ventas así que se llama siempre después
+        this.fetchUltimaFacturacion();
+
+        window.addEventListener("notifyCacheChange", this.handleCacheSync);
     },
+
     computed: {
         snackbarStyle() {
             return {
@@ -744,8 +776,29 @@ export default {
             });
         },
     },
+    beforeUnmount() {
+        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
+    },
 
     methods: {
+        handleCacheSync(e) {
+            const key = e.detail;
+            const ttl = 86400;
+            if (key === ARTICULOS_KEY) {
+                const updated = getMemoryCache(ARTICULOS_KEY, ttl);
+                if (updated) this.articulos = updated;
+            }
+            if (key === VENTAS_KEY) {
+                const updated = getMemoryCache(VENTAS_KEY, ttl);
+                if (updated) {
+                    this.ventas = updated.sort(
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                    );
+                    this.ventasFiltradas = this.ventas;
+                }
+            }
+        },
+
         getItemClass(item) {
             if (item.id === this.ventaUltimaFacturada) {
                 return "ultima-facturada"; // Clase para la última facturada
@@ -778,6 +831,7 @@ export default {
                                 "ultimaFacturacion",
                                 this.ultimaFacturacion
                             );
+                            notifyCacheChange("ultimaFacturacion");
                         } else {
                             // Si no se encuentra la venta
                             this.ultimaFacturacion = null;
@@ -841,7 +895,8 @@ export default {
                         this.selectedVenta.articulo.id,
                         this.selectedVenta.talle,
                         this.selectedVenta.color,
-                        1
+                        1,
+                        ARTICULOS_KEY
                     );
 
                     // Descontar stock de la nueva
@@ -849,10 +904,11 @@ export default {
                         this.cambioBombacha.articulo_id,
                         this.cambioBombacha.talle,
                         this.cambioBombacha.color,
-                        -1
+                        -1,
+                        ARTICULOS_KEY
                     );
-
-                    this.articulos = getMemoryCache("articulos", 86400);
+                    notifyCacheChange(ARTICULOS_KEY);
+                    this.articulos = getMemoryCache(ARTICULOS_KEY, 86400);
                     this.dialogCambioBombacha = false;
                     this.snackbarText =
                         "Cambio de bombacha realizado con éxito.";
@@ -1159,7 +1215,7 @@ export default {
                 })
                 .then(() => {
                     // 🧠 1. Actualizar la venta en cache
-                    this.ventas = modifyInCache("ventas", (ventas) =>
+                    this.ventas = modifyInCache(VENTAS_KEY, (ventas) =>
                         ventas.map((v) =>
                             v.id === this.selectedVenta.id
                                 ? {
@@ -1175,6 +1231,7 @@ export default {
                                 : v
                         )
                     );
+                    notifyCacheChange(VENTAS_KEY);
                     this.ventasFiltradas = this.ventas;
 
                     this.snackbarText = "Venta actualizada correctamente.";
@@ -1200,41 +1257,46 @@ export default {
                 .then(() => {
                     // 🧠 1. Eliminar la venta del cache
                     this.ventas = removeFromCache(
-                        "ventas",
+                        VENTAS_KEY,
                         (venta) => venta.id === this.selectedVenta.id
                     );
+                    notifyCacheChange(VENTAS_KEY);
                     this.ventasFiltradas = this.ventas;
 
                     // 🧠 2. Restaurar el stock del artículo vendido
-                    this.articulos = modifyInCache("articulos", (articulos) => {
-                        return articulos.map((art) => {
-                            if (art.id === this.selectedVenta.articulo.id) {
-                                return {
-                                    ...art,
-                                    talles: art.talles.map((talle) => {
-                                        if (
-                                            talle.talle ===
-                                            this.selectedVenta.talle
-                                        ) {
-                                            return {
-                                                ...talle,
-                                                [this.selectedVenta.color]:
-                                                    (parseInt(
-                                                        talle[
-                                                            this.selectedVenta
-                                                                .color
-                                                        ]
-                                                    ) || 0) + 1,
-                                            };
-                                        }
-                                        return talle;
-                                    }),
-                                };
-                            }
-                            return art;
-                        });
-                    });
-
+                    this.articulos = modifyInCache(
+                        ARTICULOS_KEY,
+                        (articulos) => {
+                            return articulos.map((art) => {
+                                if (art.id === this.selectedVenta.articulo.id) {
+                                    return {
+                                        ...art,
+                                        talles: art.talles.map((talle) => {
+                                            if (
+                                                talle.talle ===
+                                                this.selectedVenta.talle
+                                            ) {
+                                                return {
+                                                    ...talle,
+                                                    [this.selectedVenta.color]:
+                                                        (parseInt(
+                                                            talle[
+                                                                this
+                                                                    .selectedVenta
+                                                                    .color
+                                                            ]
+                                                        ) || 0) + 1,
+                                                };
+                                            }
+                                            return talle;
+                                        }),
+                                    };
+                                }
+                                return art;
+                            });
+                        }
+                    );
+                    notifyCacheChange(ARTICULOS_KEY);
                     this.confirmDeleteDialog = false;
                     this.snackbarText = "Venta eliminada y stock restaurado.";
                     this.snackbar = true;
@@ -1296,19 +1358,20 @@ export default {
 
         async fetchArticulos() {
             const data = await cachedFetch(
-                "articulos",
+                ARTICULOS_KEY,
                 () =>
                     axios
                         .get("/api/articulo/listar/talles")
                         .then((r) => r.data),
-                { ttl: 60 * 60 * 24 } // 1 día
+                { ttl: 86400 }
             );
             this.articulos = data;
         },
+
         // Cargar ventas para mostrar en la tabla
         async fetchVentas() {
             const data = await cachedFetch(
-                "ventas",
+                VENTAS_KEY,
                 () => axios.get("/api/ventas/listar").then((r) => r.data),
                 { ttl: 1000 * 60 * 60 * 24 } // 1 dia
             );
@@ -1572,7 +1635,8 @@ export default {
                 }));
 
                 // Cachear las nuevas ventas y actualizar local
-                nuevasVentas.forEach((v) => appendToCache("ventas", v));
+                nuevasVentas.forEach((v) => appendToCache(VENTAS_KEY, v));
+                notifyCacheChange(VENTAS_KEY);
                 this.ventas.push(...nuevasVentas);
                 this.ventas.sort(
                     (a, b) => new Date(b.fecha) - new Date(a.fecha)
@@ -1581,9 +1645,16 @@ export default {
 
                 // Restar stock en cache y local
                 this.productos.forEach((p) => {
-                    applyStockDelta(p.articulo.id, p.talle, p.color, -1);
+                    applyStockDelta(
+                        p.articulo.id,
+                        p.talle,
+                        p.color,
+                        -1,
+                        ARTICULOS_KEY
+                    );
                 });
-                this.articulos = getMemoryCache("articulos", 86400); // refrescar desde memoria
+                notifyCacheChange(ARTICULOS_KEY);
+                this.articulos = getMemoryCache(ARTICULOS_KEY, 86400); // refrescar desde memoria
 
                 this.dialogVenta = false;
                 this.form = {

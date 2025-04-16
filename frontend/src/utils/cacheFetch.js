@@ -1,39 +1,62 @@
+const memoryCache = {}; // clave: { data, time }
+
+export function getMemoryCache(key, ttl) {
+    const entry = memoryCache[key];
+    const now = Date.now();
+    if (entry && now - entry.time < ttl * 1000) {
+        return entry.data;
+    }
+    return null;
+}
+
+export function getCacheLastUpdate(key) {
+    return Number(localStorage.getItem(`${key}_last_update`) || 0);
+}
+
+function setCacheLastUpdate(key) {
+    const now = Date.now();
+    localStorage.setItem(`${key}_last_update`, now.toString());
+}
+
 export async function cachedFetch(key, fetchFn, options = { ttl: 3600 }) {
     const { ttl } = options;
     const now = Date.now();
 
-    // Revisar memoria primero
+    // Memoria
     const memory = memoryCache[key];
     if (memory && now - memory.time < ttl * 1000) {
         return memory.data;
     }
 
-    // Revisar localStorage si no hay en memoria o expiró
-    // Revisar localStorage si no hay en memoria o expiró
+    // localStorage
     const cached = localStorage.getItem(key);
     const cachedTime = localStorage.getItem(key + "_time");
 
-    if (cached && cachedTime) {
-        let parsed = null;
+    if (
+        cached &&
+        cached !== "undefined" &&
+        cached !== "" &&
+        cachedTime &&
+        now - cachedTime < ttl * 1000
+    ) {
         try {
-            parsed = JSON.parse(cached);
-        } catch (e) {
-            console.warn("Cache JSON inválido para", key, e);
-        }
-
-        if (parsed && now - cachedTime < ttl * 1000) {
+            const parsed = JSON.parse(cached);
             memoryCache[key] = { data: parsed, time: Number(cachedTime) };
             return parsed;
+        } catch (e) {
+            console.warn(`❌ Error al parsear cache de ${key}:`, e);
+            localStorage.removeItem(key);
+            localStorage.removeItem(key + "_time");
+            localStorage.removeItem(key + "_last_update");
         }
     }
 
-    // Hacer fetch si no hay nada válido
+    // Fetch real si no hay nada válido
     const data = await fetchFn();
-    if (data !== undefined) {
-        localStorage.setItem(key, JSON.stringify(data));
-        localStorage.setItem(key + "_time", now.toString());
-        memoryCache[key] = { data, time: now };
-    }
+    localStorage.setItem(key, JSON.stringify(data));
+    localStorage.setItem(key + "_time", now.toString());
+    localStorage.setItem(key + "_last_update", now.toString()); // NUEVO
+    memoryCache[key] = { data, time: now };
     return data;
 }
 
@@ -47,6 +70,7 @@ export function updateCache(key, newData) {
     }
     localStorage.setItem(key, JSON.stringify(newData));
     localStorage.setItem(key + "_time", now.toString());
+    localStorage.setItem(key + "_last_update", now.toString()); // NUEVO
     memoryCache[key] = { data: newData, time: now };
 }
 
@@ -95,29 +119,81 @@ export function modifyInCache(key, modifyFn) {
     return updated;
 }
 
-export function applyStockDelta(articuloId, talle, color, cantidad) {
-    modifyInCache("articulos", (articulos) => {
-        return articulos.map((articulo) => {
-            if (articulo.id !== articuloId) return articulo;
-            const nuevoTalles = articulo.talles.map((t) => {
-                if (t.talle !== talle) return t;
-                return {
-                    ...t,
-                    [color]: (parseInt(t[color]) || 0) + cantidad,
-                };
-            });
-            return { ...articulo, talles: nuevoTalles };
-        });
-    });
-}
+export function applyStockDelta(
+    articuloId,
+    talle,
+    color,
+    delta,
+    cacheKey = "articulos_completos"
+) {
+    delta = parseInt(delta) || 0;
+    if (delta === 0) return;
 
-const memoryCache = {}; // clave: { data, time }
-
-export function getMemoryCache(key, ttl) {
-    const entry = memoryCache[key];
-    const now = Date.now();
-    if (entry && now - entry.time < ttl * 1000) {
-        return entry.data;
+    // Obtener copia actual del cache (de memoria si existe, o localStorage si no)
+    let cache = memoryCache[cacheKey]?.data;
+    if (!cache) {
+        try {
+            cache = JSON.parse(localStorage.getItem(cacheKey)) || [];
+        } catch {
+            cache = [];
+        }
     }
-    return null;
+
+    const now = Date.now();
+
+    const updatedCache = cache.map((articulo) => {
+        if (articulo.id !== articuloId) return articulo;
+
+        const talles = Array.isArray(articulo.talles)
+            ? [...articulo.talles]
+            : [];
+
+        const existente = talles.find((t) => t.talle === talle);
+
+        if (existente) {
+            existente[color] = Math.max((existente[color] || 0) + delta, 0);
+
+            const sigueVacio = [
+                "marron",
+                "negro",
+                "verde",
+                "azul",
+                "celeste",
+                "blancobeige",
+            ].every((c) => (existente[c] || 0) === 0);
+
+            if (sigueVacio) {
+                return {
+                    ...articulo,
+                    talles: talles.filter((t) => t.talle !== talle),
+                };
+            }
+
+            return { ...articulo, talles };
+        } else if (delta > 0) {
+            // Crear nuevo talle
+            const nuevoTalle = {
+                talle,
+                marron: 0,
+                negro: 0,
+                verde: 0,
+                azul: 0,
+                celeste: 0,
+                blancobeige: 0,
+                [color]: delta,
+            };
+            return {
+                ...articulo,
+                talles: [...talles, nuevoTalle],
+            };
+        }
+
+        return articulo;
+    });
+
+    // Actualizar ambos
+    memoryCache[cacheKey] = { data: updatedCache, time: now };
+    localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+    localStorage.setItem(`${cacheKey}_time`, now.toString());
+    localStorage.setItem(`${cacheKey}_last_update`, now.toString());
 }
