@@ -66,7 +66,7 @@
             <div style="padding-bottom: 120px"></div>
         </v-row>
 
-        <v-data-table
+        <ResponsiveTable
             :headers="headers"
             :items="pedidos"
             class="elevation-1"
@@ -83,7 +83,7 @@
                     <v-icon color="red">mdi-delete</v-icon>
                 </v-btn>
             </template>
-        </v-data-table>
+        </ResponsiveTable>
 
         <v-row class="mt-4">
             <v-col cols="12" class="text-left">
@@ -176,6 +176,7 @@ import axios from "axios";
 import { getMemoryCache, updateCache } from "@/utils/cacheFetch";
 import { PEDIDOS_KEY, ARTICULOS_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import ResponsiveTable from "./components/ResponsiveTable.vue";
 
 export default {
     data() {

@@ -120,6 +120,7 @@ import {
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import { LOCALIDADES_KEY } from "@/utils/cacheKeys";
 import ExcelJS from "exceljs";
+import ResponsiveTable from "./components/ResponsiveTable.vue";
 
 function normalize(text) {
     // text = text.toString();
@@ -131,6 +132,9 @@ function normalize(text) {
 }
 
 export default {
+    components: {
+        ResponsiveTable,
+    },
     data() {
         return {
             loading: false,

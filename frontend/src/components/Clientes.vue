@@ -204,6 +204,7 @@ export default {
                 () => axios.get("/api/clientes/listar").then((r) => r.data),
                 { ttl: 86400 }
             );
+            console.log("🧾 Clientes cargados:", this.clientes); // ← agregalo
             this.datosCargados.clientes = true;
             this.verificarYCalcularTotales();
         },

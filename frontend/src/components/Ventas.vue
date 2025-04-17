@@ -103,7 +103,7 @@
         <!-- <v-card-title class="text-left mb-4"> -->
         <!-- </v-card-title> -->
         <!-- </v-card> -->
-        <v-data-table
+        <ResponsiveTable
             :key="tablaKey"
             :headers="headers"
             :items="ventasFiltradas"
@@ -186,7 +186,7 @@
                     <v-icon color="black">mdi-swap-horizontal</v-icon>
                 </v-btn>
             </template>
-        </v-data-table>
+        </ResponsiveTable>
 
         <!-- Diálogo para registrar ventas -->
         <v-dialog v-model="dialogVenta" max-width="600px">
