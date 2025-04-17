@@ -74,11 +74,11 @@
             <template #item.colores="{ item }">
                 {{ item.colores.join(" / ") }}
             </template>
-            <template #item.actions="{ item, index }">
-                <v-btn icon @click="editarPedido(obtenerIndiceGlobal(index))">
+            <template #item.actions="{ item }">
+                <v-btn icon @click="editarPedido(item)">
                     <v-icon color="blue">mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn icon @click="eliminarPedido(obtenerIndiceGlobal(index))">
+                <v-btn icon @click="eliminarPedido(item)">
                     <v-icon color="red">mdi-delete</v-icon>
                 </v-btn>
             </template>
@@ -184,7 +184,10 @@ export default {
             itemsPerPage: 10,
             dialogEditar: false,
             pedidoEditIndex: null,
-
+            options: {
+                page: 1,
+                itemsPerPage: 10,
+            },
             form: {
                 nombre: "",
                 articulo_id: null,
@@ -302,8 +305,19 @@ export default {
                 colores: [],
             };
         },
-        editarPedido(index) {
-            const pedido = this.pedidos[index];
+        editarPedido(pedido) {
+            const index = this.pedidos.findIndex(
+                (p) =>
+                    p.nombre === pedido.nombre &&
+                    p.articulo_nombre === pedido.articulo_nombre &&
+                    p.talle === pedido.talle
+            );
+
+            if (index === -1) {
+                console.warn("❌ Pedido no encontrado");
+                return;
+            }
+
             const articulo = this.articulos.find(
                 (a) => `${a.numero} - ${a.nombre}` === pedido.articulo_nombre
             );
@@ -314,6 +328,7 @@ export default {
                 talle: pedido.talle,
                 colores: [...pedido.colores],
             };
+
             this.cargarTalles();
             this.pedidoEditIndex = index;
             this.dialogEditar = true;
@@ -344,11 +359,19 @@ export default {
                 colores: [],
             };
         },
-        eliminarPedido(index) {
-            this.pedidos.splice(index, 1);
-            updateCache(PEDIDOS_KEY, this.pedidos);
-            localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
-            notifyCacheChange(PEDIDOS_KEY);
+        eliminarPedido(pedido) {
+            const index = this.pedidos.findIndex(
+                (p) =>
+                    p.nombre === pedido.nombre &&
+                    p.articulo_nombre === pedido.articulo_nombre &&
+                    p.talle === pedido.talle
+            );
+            if (index !== -1) {
+                this.pedidos.splice(index, 1);
+                updateCache(PEDIDOS_KEY, this.pedidos);
+                localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
+                notifyCacheChange(PEDIDOS_KEY);
+            }
         },
         confirmarReinicio() {
             this.dialogReinicio = true;
