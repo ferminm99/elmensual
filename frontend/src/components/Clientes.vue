@@ -22,10 +22,12 @@
         </v-row>
 
         <!-- Botón para agregar clientes -->
-        <v-row class="d-flex align-center mb-4">
-            <v-btn color="black" class="ml-3" @click="openAddDialog">
-                <v-icon left>mdi-plus-box</v-icon> Agregar Cliente
-            </v-btn>
+        <v-row class="d-flex align-center mb-4 botones-clientes">
+            <v-col cols="12" sm="auto">
+                <v-btn color="black" block @click="openAddDialog">
+                    <v-icon left>mdi-plus-box</v-icon> Agregar Cliente
+                </v-btn>
+            </v-col>
         </v-row>
 
         <!-- Tabla para listar clientes -->
@@ -204,7 +206,6 @@ export default {
                 () => axios.get("/api/clientes/listar").then((r) => r.data),
                 { ttl: 86400 }
             );
-            console.log("🧾 Clientes cargados:", this.clientes); // ← agregalo
             this.datosCargados.clientes = true;
             this.verificarYCalcularTotales();
         },
@@ -376,5 +377,40 @@ export default {
 
 .v-card-title {
     font-size: 24px;
+}
+@media (max-width: 768px) {
+    h1.title {
+        font-size: 24px !important;
+        margin-bottom: 16px;
+    }
+
+    .v-text-field {
+        font-size: 18px;
+    }
+
+    .v-btn {
+        font-size: 18px;
+        min-height: 44px;
+        width: 100% !important;
+        justify-content: center;
+    }
+
+    .botones-clientes .v-col {
+        width: 100% !important;
+        margin-bottom: 12px;
+    }
+
+    .v-dialog .v-card-title {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .v-dialog .v-text-field {
+        font-size: 18px;
+    }
+
+    .v-card-actions .v-btn {
+        font-size: 18px;
+    }
 }
 </style>

@@ -47,23 +47,22 @@
             </v-col>
         </v-row>
 
-        <v-row>
-            <v-col cols="auto">
-                <v-btn color="success" @click="exportarExcel">
+        <v-row class="botones-pedido mb-4">
+            <v-col cols="12" md="auto">
+                <v-btn color="success" block @click="exportarExcel">
                     <v-icon left>mdi-file-excel</v-icon> Exportar Excel
                 </v-btn>
             </v-col>
-            <v-col cols="auto">
-                <v-btn color="grey" @click="copiarComoTexto">
+            <v-col cols="12" md="auto">
+                <v-btn color="grey" block @click="copiarComoTexto">
                     <v-icon left>mdi-content-copy</v-icon> Copiar como texto
                 </v-btn>
             </v-col>
-            <v-col cols="auto">
-                <v-btn color="primary" @click="agregarPedido">
+            <v-col cols="12" md="auto">
+                <v-btn color="primary" block @click="agregarPedido">
                     <v-icon left>mdi-plus</v-icon> Agregar Pedido
                 </v-btn>
             </v-col>
-            <div style="padding-bottom: 120px"></div>
         </v-row>
 
         <ResponsiveTable
@@ -457,5 +456,57 @@ export default {
 }
 .formulario-pedido {
     margin-bottom: 16px;
+}
+@media (max-width: 768px) {
+    .pedido-container {
+        padding: 12px;
+    }
+
+    h2.text-h5 {
+        font-size: 24px !important;
+        margin-bottom: 16px;
+    }
+
+    .formulario-pedido .v-col {
+        padding-bottom: 12px;
+    }
+
+    .formulario-pedido .v-text-field,
+    .formulario-pedido .v-select,
+    .formulario-pedido .v-autocomplete {
+        font-size: 18px;
+    }
+
+    .v-btn {
+        font-size: 18px;
+        min-height: 44px;
+    }
+
+    .v-btn .v-icon {
+        font-size: 20px;
+    }
+
+    .v-row > .v-col[cols="auto"] {
+        width: 100% !important;
+        padding-bottom: 12px;
+    }
+
+    .v-row > .v-col[cols="auto"] .v-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mt-4 {
+        margin-top: 16px !important;
+    }
+
+    .v-row .ml-4 {
+        margin-left: 0 !important;
+        margin-top: 12px;
+    }
+
+    .v-row .v-btn {
+        width: 100%;
+    }
 }
 </style>

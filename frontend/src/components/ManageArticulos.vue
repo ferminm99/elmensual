@@ -411,3 +411,55 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+@media (max-width: 768px) {
+    h1.title {
+        font-size: 24px !important;
+        margin-bottom: 16px;
+    }
+
+    .v-text-field,
+    .v-select {
+        font-size: 18px;
+    }
+
+    .v-btn {
+        font-size: 18px;
+        min-height: 44px;
+    }
+
+    .v-btn .v-icon {
+        font-size: 20px;
+    }
+
+    .mb-4 .v-col[cols="auto"] {
+        width: 100% !important;
+        margin-bottom: 12px;
+    }
+
+    .mb-4 .v-col,
+    .mb-4 .v-col-auto {
+        width: 100% !important;
+        margin-bottom: 12px;
+    }
+
+    .mb-4 .v-btn {
+        width: 100% !important;
+        justify-content: center;
+    }
+
+    .v-dialog .v-card-title {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .v-dialog .v-text-field {
+        font-size: 18px;
+    }
+
+    .v-card-actions .v-btn {
+        font-size: 18px;
+    }
+}
+</style>

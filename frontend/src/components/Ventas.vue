@@ -1,75 +1,80 @@
 <template>
-    <div>
-        <!-- v-card para agrupar toda la interfaz de ventas -->
-        <v-row>
+    <div class="mobile-root">
+        <!-- TÍTULO -->
+        <v-row class="acciones-top">
             <v-col>
-                <h1 class="title font-weight-bold">Gestión de Ventas</h1>
+                <h1 class="title font-weight-bold mb-3">Gestión de Ventas</h1>
             </v-col>
         </v-row>
 
-        <!-- Botones en una sola línea -->
-        <v-row justify="start" class="d-flex align-center mb-2">
-            <v-btn color="black" class="ml-3 mr-4" @click="openVentaDialog">
-                <v-icon left color="white">mdi-cash</v-icon> Registrar Venta
-            </v-btn>
-
-            <v-btn
-                color="white"
-                outlined
-                class="mr-4"
-                @click="openFacturarDialog"
-            >
-                <v-icon left>mdi-file-document</v-icon> Facturar
-            </v-btn>
-
-            <v-btn color="white" outlined class="mr-4" @click="openFechaDialog">
-                <v-icon left>mdi-calendar</v-icon> Filtrar por Fecha
-            </v-btn>
-
-            <!-- Mostrar la última facturación -->
-            <div class="ml-4">
-                Última Facturación:
-                <strong v-if="ultimaFacturacion">
-                    {{
-                        formatFechaMoment(ultimaFacturacion.fecha) +
-                        " de " +
-                        ultimaFacturacion.cliente.nombre
-                    }}
-                </strong>
-                <span v-else class="gray--text"
-                    >Sin facturación registrada</span
-                >
-            </div>
-        </v-row>
-
-        <v-row>
-            <v-col cols="12">
-                <v-row no-gutters>
-                    <v-col cols="12" md="3">
-                        <v-select
+        <!-- BOTONES -->
+        <v-row class="acciones-top">
+            <v-col>
+                <div class="botones-container">
+                    <v-row
+                        justify="start"
+                        class="acciones-top d-flex align-center mb-2"
+                    >
+                        <v-btn
+                            color="black"
                             class="mr-2"
-                            v-model="tipoBusqueda"
-                            :items="['General', 'Producto', 'Otros datos']"
-                            label="Buscar por"
-                            dense
-                            variant="solo"
-                        ></v-select>
-                    </v-col>
-                    <v-col cols="12" md="9">
-                        <v-text-field
-                            v-model="search"
-                            label="Buscar"
-                            append-inner-icon="mdi-magnify"
-                            dense
-                            variant="solo"
-                        ></v-text-field>
-                    </v-col>
-                </v-row>
+                            @click="openVentaDialog"
+                        >
+                            <v-icon left color="white">mdi-cash</v-icon>
+                            Registrar Venta
+                        </v-btn>
+
+                        <v-btn
+                            outlined
+                            class="mr-2"
+                            @click="openFacturarDialog"
+                        >
+                            <v-icon left>mdi-file-document</v-icon> Facturar
+                        </v-btn>
+
+                        <v-btn outlined @click="openFechaDialog">
+                            <v-icon left>mdi-calendar</v-icon> Filtrar por Fecha
+                        </v-btn>
+                    </v-row>
+                </div>
+                <div class="facturacion-text mt-2">
+                    Última Facturación:
+                    <strong v-if="ultimaFacturacion">
+                        {{ formatFechaMoment(ultimaFacturacion.fecha) }} de
+                        {{ ultimaFacturacion.cliente.nombre }}
+                    </strong>
+                    <span v-else class="gray--text"
+                        >Sin facturación registrada</span
+                    >
+                </div>
             </v-col>
         </v-row>
 
-        <v-row class="mt-0">
-            <v-col cols="12" class="total-text">
+        <!-- BÚSQUEDA -->
+        <v-row class="busqueda-top">
+            <v-col cols="12" md="3">
+                <v-select
+                    v-model="tipoBusqueda"
+                    :items="['General', 'Producto', 'Otros datos']"
+                    label="Buscar por"
+                    dense
+                    variant="solo"
+                ></v-select>
+            </v-col>
+            <v-col cols="12" md="9">
+                <v-text-field
+                    v-model="search"
+                    label="Buscar"
+                    append-inner-icon="mdi-magnify"
+                    dense
+                    variant="solo"
+                ></v-text-field>
+            </v-col>
+        </v-row>
+
+        <!-- TOTALES -->
+        <v-row class="totales-top">
+            <v-col cols="12">
                 <h4>
                     Total de Ventas:
                     <span class="black--text">${{ totalVentas }}</span>
@@ -1846,5 +1851,81 @@ export default {
 
 .facturada-general {
     background-color: #f0e68c; /* Color para las demás ventas facturadas */
+}
+
+/* Escala general para evitar "todo mini" */
+@media (max-width: 768px) {
+    .mobile-root {
+        font-size: 18px;
+        padding: 12px;
+    }
+
+    h1.title {
+        font-size: 26px !important;
+        margin-bottom: 16px;
+    }
+
+    .acciones-top {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px;
+    }
+
+    .acciones-top .v-btn {
+        font-size: 18px !important;
+        min-height: 44px !important;
+        justify-content: center;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+        font-size: 24px !important;
+    }
+
+    .v-btn {
+        font-size: 18px !important;
+        padding: 10px 16px !important;
+        min-height: 44px !important;
+    }
+
+    .v-text-field,
+    .v-select {
+        font-size: 18px !important;
+    }
+
+    .v-label {
+        font-size: 17px !important;
+    }
+
+    .v-input__control {
+        min-height: 48px !important;
+    }
+
+    .v-card {
+        font-size: 18px;
+    }
+
+    .v-icon {
+        font-size: 24px !important;
+    }
+
+    .total-text {
+        font-size: 20px !important;
+    }
+
+    .label {
+        font-size: 18px !important;
+    }
+
+    .value {
+        font-size: 19px !important;
+    }
+
+    .v-card-actions .v-btn {
+        font-size: 17px !important;
+    }
 }
 </style>

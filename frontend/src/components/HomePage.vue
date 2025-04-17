@@ -43,17 +43,24 @@
         </v-row>
 
         <!-- Botón para agregar y eliminar bombachas -->
-        <v-row class="mt-4">
-            <v-col cols="12">
-                <v-btn color="#4A4A4A" @click="openDialog('agregar')" outlined>
+        <v-row class="mt-4 botones-home">
+            <v-col cols="12" sm="6">
+                <v-btn
+                    color="#4A4A4A"
+                    @click="openDialog('agregar')"
+                    outlined
+                    block
+                >
                     <v-icon left>mdi-plus</v-icon>
                     Agregar Bombachas
                 </v-btn>
+            </v-col>
+            <v-col cols="12" sm="6" class="mb-4">
                 <v-btn
                     color="#E57373"
                     @click="openDialog('eliminar')"
-                    class="ml-2"
                     outlined
+                    block
                 >
                     <v-icon left>mdi-delete</v-icon>
                     Eliminar Bombachas
@@ -1097,5 +1104,43 @@ export default {
 .v-card {
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+@media (max-width: 768px) {
+    h2.text-h4 {
+        font-size: 24px !important;
+        margin-bottom: 16px;
+    }
+
+    .v-text-field,
+    .v-autocomplete,
+    .v-select {
+        font-size: 18px;
+    }
+
+    .v-btn {
+        font-size: 18px;
+        min-height: 44px;
+    }
+
+    .v-btn .v-icon {
+        font-size: 20px;
+    }
+
+    .botones-home .v-col {
+        margin-bottom: 12px;
+    }
+
+    .v-card-title {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .v-dialog .v-text-field {
+        font-size: 18px;
+    }
+
+    .v-card-actions .v-btn {
+        font-size: 18px;
+    }
 }
 </style>

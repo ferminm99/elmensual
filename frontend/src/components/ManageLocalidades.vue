@@ -1,6 +1,6 @@
 <template>
     <div>
-        <v-row class="mb-3">
+        <v-row class="mb-3 acciones-localidad">
             <v-col cols="12" md="4">
                 <v-text-field
                     v-model="search"
@@ -10,13 +10,13 @@
                     clearable
                 ></v-text-field>
             </v-col>
-            <v-col cols="auto">
-                <v-btn color="primary" @click="openDialog"
-                    >Agregar Localidad</v-btn
-                >
+            <v-col cols="12" md="auto">
+                <v-btn color="primary" block @click="openDialog">
+                    Agregar Localidad
+                </v-btn>
             </v-col>
-            <v-col cols="auto">
-                <v-btn color="orange" @click="exportarExcel">
+            <v-col cols="12" md="auto">
+                <v-btn color="orange" block @click="exportarExcel">
                     <v-icon left>mdi-download</v-icon> Exportar Excel
                 </v-btn>
             </v-col>
@@ -279,5 +279,19 @@ export default {
 .v-chip {
     font-weight: 500;
     border-radius: 20px;
+}
+@media (max-width: 768px) {
+    .acciones-localidad .v-col {
+        margin-bottom: 12px;
+    }
+
+    .acciones-localidad .v-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .acciones-localidad .v-icon {
+        font-size: 20px;
+    }
 }
 </style>

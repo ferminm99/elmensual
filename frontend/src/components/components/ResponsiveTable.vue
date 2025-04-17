@@ -15,7 +15,7 @@
         </v-data-table>
 
         <!-- Mobile -->
-        <div v-else v-if="filteredItems.length">
+        <div v-else v-if="filteredItems.length" class="mobile-container">
             <!-- <transition-group name="fade" tag="div"> -->
             <v-card
                 v-for="item in filteredItems"
@@ -57,8 +57,6 @@
             </v-card>
             <!-- </transition-group> -->
         </div>
-        <p>Items: {{ items.length }}</p>
-        <p>Filtered: {{ filteredItems.length }}</p>
     </div>
 </template>
 
@@ -99,19 +97,59 @@ export default {
 
 <style scoped>
 .label {
-    color: #555;
     font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
+
 .value {
-    font-size: 15px;
-    margin-top: 2px;
+    font-size: 16px;
+    color: #222;
+    margin-top: 1px;
+    line-height: 1.4;
+    word-wrap: break-word;
 }
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.4s;
+
+.v-card {
+    border-radius: 10px;
+    margin-left: 4px;
+    margin-right: 4px;
 }
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
+
+/* Responsive refinado */
+@media (max-width: 1024px) {
+    .v-card {
+        padding: 16px 18px;
+    }
+
+    .label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #777;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+    }
+
+    .value {
+        font-size: 17px;
+        font-weight: 600;
+        color: #111;
+        margin-bottom: 12px;
+    }
+
+    .v-icon {
+        font-size: 22px;
+    }
+
+    .v-card-actions {
+        padding-top: 8px;
+        padding-bottom: 4px;
+    }
+}
+.label + .value {
+    margin-bottom: 12px;
 }
 </style>
