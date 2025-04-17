@@ -496,18 +496,22 @@ export default {
     },
     created() {
         const ttl = 86400;
-        const lastUpdate = getCacheLastUpdate(ARTICULOS_KEY);
-        const localTime = parseInt(
-            localStorage.getItem(`${ARTICULOS_KEY}_time`) || "0"
-        );
+        const keys = [ARTICULOS_KEY, ARTICULOS_TALLES_KEY];
 
-        if (lastUpdate > localTime) {
-            console.warn(
-                "🟡 Cambios detectados desde otro dispositivo. Refrescando cache..."
+        keys.forEach((key) => {
+            const lastUpdate = getCacheLastUpdate(key);
+            const localTime = parseInt(
+                localStorage.getItem(`${key}_time`) || "0"
             );
-            localStorage.removeItem(ARTICULOS_KEY);
-            localStorage.removeItem(`${ARTICULOS_KEY}_time`);
-        }
+
+            if (lastUpdate > localTime) {
+                console.warn(
+                    `🟡 ${key}: Cambios desde otro dispositivo. Refrescando cache...`
+                );
+                localStorage.removeItem(key);
+                localStorage.removeItem(`${key}_time`);
+            }
+        });
 
         this.fetchArticulos();
         window.addEventListener("notifyCacheChange", this.handleCacheSync); // <- escucha el evento global
