@@ -606,6 +606,7 @@ import {
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
 import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
 import { ARTICULOS_TALLES_KEY, VENTAS_KEY } from "../utils/cacheKeys";
+import { initCacheSync } from "@/utils/initCacheSync";
 
 export default {
     components: {
@@ -737,7 +738,22 @@ export default {
 
         this.fetchUltimaFacturacion();
 
-        window.addEventListener("notifyCacheChange", this.handleCacheSync);
+        // 📦 Activar escucha cross-device
+        this._stopCacheSync = initCacheSync(
+            [ARTICULOS_TALLES_KEY, VENTAS_KEY],
+            {
+                onUpdate: (key, updated) => {
+                    if (key === ARTICULOS_TALLES_KEY) this.articulos = updated;
+                    if (key === VENTAS_KEY) {
+                        this.ventas = updated.sort(
+                            (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                        );
+                        this.ventasFiltradas = this.ventas;
+                    }
+                },
+            }
+        );
+
         this.loading = false;
     },
 
