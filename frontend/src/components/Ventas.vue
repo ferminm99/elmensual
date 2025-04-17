@@ -104,6 +104,7 @@
         <!-- </v-card-title> -->
         <!-- </v-card> -->
         <v-data-table
+            :key="tablaKey"
             :headers="headers"
             :items="ventasFiltradas"
             :search="search"
@@ -607,6 +608,7 @@ export default {
     },
     data() {
         return {
+            tablaKey: 0,
             loading: false,
             ultimaFacturacion: null, // Para almacenar el último registro de facturación
             ventaUltimaFacturada: null, // Para almacenar el ID de la venta última facturada
@@ -912,8 +914,8 @@ export default {
                         )
                     );
                     notifyCacheChange(VENTAS_KEY);
-                    this.ventas = getMemoryCache(VENTAS_KEY, 86400);
-                    this.ventasFiltradas = [...this.ventas];
+                    this.refreshVentasDesdeCache();
+                    this.tablaKey += 1; // 🔁 fuerza re-render del componente
 
                     // Ajustar stock de artículos (esto ya lo hiciste correctamente)
                     applyStockDelta(
@@ -1259,8 +1261,8 @@ export default {
                     notifyCacheChange(VENTAS_KEY);
 
                     // Reemplazar en vista local
-                    this.ventas = getMemoryCache(VENTAS_KEY, 86400);
-                    this.ventasFiltradas = [...this.ventas];
+                    this.refreshVentasDesdeCache();
+                    this.tablaKey += 1; // 🔁 fuerza re-render del componente
 
                     this.snackbarText = "Venta actualizada correctamente.";
                     this.snackbar = true;
@@ -1292,8 +1294,8 @@ export default {
                     );
                     notifyCacheChange(VENTAS_KEY);
 
-                    this.ventas = getMemoryCache(VENTAS_KEY, 86400);
-                    this.ventasFiltradas = [...this.ventas];
+                    this.refreshVentasDesdeCache();
+                    this.tablaKey += 1; // 🔁 fuerza re-render del componente
 
                     // 🧠 2. Restaurar el stock del artículo vendido
                     this.articulos = modifyInCache(
@@ -1666,8 +1668,8 @@ export default {
                 this.ventas.sort(
                     (a, b) => new Date(b.fecha) - new Date(a.fecha)
                 );
-                this.ventas = getMemoryCache(VENTAS_KEY, 86400);
-                this.ventasFiltradas = [...this.ventas];
+                this.refreshVentasDesdeCache();
+                this.tablaKey += 1; // 🔁 fuerza re-render del componente
 
                 // Restar stock en cache y local
                 this.productos.forEach((p) => {
@@ -1718,6 +1720,13 @@ export default {
                         palabra.charAt(0).toUpperCase() + palabra.slice(1)
                 )
                 .join(" ");
+        },
+        refreshVentasDesdeCache() {
+            const updated = getMemoryCache(VENTAS_KEY, 86400);
+            if (updated) {
+                this.ventas = [...updated]; // fuerza nueva referencia
+                this.ventasFiltradas = [...updated];
+            }
         },
     },
 };
