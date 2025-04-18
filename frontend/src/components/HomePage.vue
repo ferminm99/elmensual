@@ -422,6 +422,7 @@ import {
 } from "@/utils/cacheFetch";
 import { ARTICULOS_KEY, ARTICULOS_TALLES_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import { checkCacheFreshness } from "@/utils/cacheFreshness";
 
 export default {
     data() {
@@ -498,23 +499,28 @@ export default {
         const ttl = 86400;
         const keys = [ARTICULOS_KEY, ARTICULOS_TALLES_KEY];
 
-        keys.forEach((key) => {
-            const lastUpdate = getCacheLastUpdate(key);
-            const localTime = parseInt(
-                localStorage.getItem(`${key}_time`) || "0"
-            );
-
-            if (lastUpdate > localTime) {
+        Promise.all([
+            checkCacheFreshness(
+                ARTICULOS_KEY,
+                "/articulos/ultima-actualizacion"
+            ),
+            checkCacheFreshness(
+                ARTICULOS_TALLES_KEY,
+                "/articulos/talles/ultima-actualizacion"
+            ),
+        ])
+            .then(() => {
+                this.fetchArticulos();
+            })
+            .catch((err) => {
                 console.warn(
-                    `🟡 ${key}: Cambios desde otro dispositivo. Refrescando cache...`
+                    "❌ Error verificando frescura de cache en Inventario.vue",
+                    err
                 );
-                localStorage.removeItem(key);
-                localStorage.removeItem(`${key}_time`);
-            }
-        });
+                this.fetchArticulos();
+            });
 
-        this.fetchArticulos();
-        window.addEventListener("notifyCacheChange", this.handleCacheSync); // <- escucha el evento global
+        window.addEventListener("notifyCacheChange", this.handleCacheSync); // <- escucha evento global
     },
 
     beforeUnmount() {

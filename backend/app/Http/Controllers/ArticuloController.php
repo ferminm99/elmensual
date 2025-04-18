@@ -306,9 +306,11 @@ class ArticuloController extends Controller
 
     public function ultimaActualizacionTallesArticulos() {
         $lastUpdate = DB::table('talles')->max('updated_at');
-        return response()->json(['last_update' => strtotime($lastUpdate)]);
+        return $lastUpdate 
+            ? response()->json(['last_update' => strtotime($lastUpdate)])
+            : response()->json(['last_update' => time()]);
     }
-
+    
 
     
 }

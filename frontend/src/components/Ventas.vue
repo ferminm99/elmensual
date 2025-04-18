@@ -651,6 +651,7 @@ export default {
                 precio: null,
                 costo_original: null,
             },
+            snackbarColor: "success",
             dialogVenta: false,
             articuloActual: null,
             articulos: [], // Lista de artículos
@@ -660,7 +661,6 @@ export default {
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
             confirmDeleteDialog: false, // Control para abrir/cerrar el diálogo de confirmación de eliminación
             productos: [], // Lista de productos agregados en la venta
-            precioTotal: 0, // Precio total calculado
             snackbar: false,
             snackbarText: "",
             form: {
