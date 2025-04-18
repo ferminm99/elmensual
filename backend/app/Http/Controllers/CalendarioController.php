@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CompraCalendario;
 use Illuminate\Http\Request; 
+use Illuminate\Support\Facades\DB;
 
 class CalendarioController extends Controller
 {
@@ -59,5 +60,9 @@ class CalendarioController extends Controller
     }
 
 
+    public function ultimaActualizacionCalendario() {
+        $lastUpdate = DB::table('compras_calendario')->max('updated_at');
+        return response()->json(['last_update' => strtotime($lastUpdate)]);
+    }
 
 }

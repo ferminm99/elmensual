@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ClienteController extends Controller
 {
@@ -53,4 +54,10 @@ class ClienteController extends Controller
         $cliente->delete(); // Eliminar el cliente
         return response()->json(['message' => 'Cliente eliminado exitosamente']);
     }
+
+    public function ultimaActualizacionClientes() {
+        $lastUpdate = DB::table('clientes')->max('updated_at');
+        return response()->json(['last_update' => strtotime($lastUpdate)]);
+    }
+
 }

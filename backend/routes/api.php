@@ -49,6 +49,8 @@ Route::middleware('token-auth')->group(function () {
     Route::post('/articulo/{id}/eliminar-talle-completo', [ArticuloController::class, 'eliminarTalleCompleto']);
     Route::put('/articulos/recalcular-precios', [ArticuloController::class, 'recalcularPreciosMasivamente']);
     Route::put('/articulos/aumentar-costos', [ArticuloController::class, 'aumentarCostoOriginal']);
+    Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
+    Route::get('/articulos/talles/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionTallesArticulos']);
 
     // Ventas
     Route::post('/ventas', [VentasController::class, 'registrarVenta']);
@@ -58,24 +60,28 @@ Route::middleware('token-auth')->group(function () {
     Route::delete('/ventas/{id}', [VentasController::class, 'destroy']);
     Route::post('/facturaciones/guardar', [VentasController::class, 'guardarFacturaciones']);
     Route::get('/facturaciones/ultima', [VentasController::class, 'obtenerUltimaFacturacion']);
+    Route::get('/ventas/ultima-actualizacion', [VentasController::class, 'ultimaActualizacionVentas']);
 
     // Calendario
     Route::get('/comprascalendario/listar', [CalendarioController::class, 'index']);
     Route::post('/comprascalendario', [CalendarioController::class, 'store']);
     Route::put('/comprascalendario/{id}', [CalendarioController::class, 'update']);
-    Route::delete('/comprascalendario/{id}', [CalendarioController::class, 'destroy']);
+    Route::delete('/comprascalendario/{id}', [CalendarioController::class, 'destroy']); 
+    Route::get('/comprascalendario/ultima-actualizacion', [CalendarioController::class, 'ultimaActualizacionVentas']);
 
     // Clientes
     Route::get('/clientes/listar', [ClienteController::class, 'index']);
     Route::post('/cliente', [ClienteController::class, 'store']);
     Route::put('/cliente/{id}', [ClienteController::class, 'update']);
     Route::delete('/cliente/{id}', [ClienteController::class, 'destroy']);
+    Route::get('/clientes/ultima-actualizacion', [ClienteController::class, 'ultimaActualizacionClientes']);
 
     // Localidades
     Route::get('/localidades', [LocalidadController::class, 'index']);
     Route::post('/localidad', [LocalidadController::class, 'store']);
     Route::put('/localidad/{id}', [LocalidadController::class, 'update']);
     Route::delete('/localidad/{id}', [LocalidadController::class, 'destroy']);
+    Route::get('/localidad/ultima-actualizacion', [VentasController::class, 'ultimaActualizacionLocalidades']);
 
     // Google Drive
     Route::get('/google/redirect', [GoogleDriveController::class, 'redirectToGoogle'])->name('google.redirect');

@@ -605,8 +605,13 @@ import {
     applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
 import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
-import { ARTICULOS_TALLES_KEY, VENTAS_KEY } from "../utils/cacheKeys";
-import { initCacheSync } from "@/utils/initCacheSync";
+import {
+    ARTICULOS_TALLES_KEY,
+    VENTAS_KEY,
+    CLIENTES_KEY,
+} from "../utils/cacheKeys";
+
+import { checkCacheFreshness } from "@/utils/cacheFreshness";
 
 export default {
     components: {
@@ -690,42 +695,28 @@ export default {
             ],
         };
     },
-    created() {
+    created: async function () {
         this.loading = true;
-        const ttl = 86400;
 
-        const lastUpdate = getCacheLastUpdate(ARTICULOS_TALLES_KEY);
-        const localTime = parseInt(
-            localStorage.getItem(`${ARTICULOS_TALLES_KEY}_time`) || "0"
-        );
-        if (lastUpdate > localTime) {
-            console.warn(
-                "🟡 Cambios detectados en ARTICULOS desde otro dispositivo. Limpiando..."
-            );
-            localStorage.removeItem(ARTICULOS_TALLES_KEY);
-            localStorage.removeItem(`${ARTICULOS_TALLES_KEY}_time`);
-        }
+        await Promise.all([
+            checkCacheFreshness(VENTAS_KEY, "/ventas/ultima-actualizacion"),
+            checkCacheFreshness(
+                ARTICULOS_TALLES_KEY,
+                "/articulos/talles/ultima-actualizacion"
+            ),
+            checkCacheFreshness(
+                ARTICULOS_TALLES_KEY,
+                "/articulos/ultima-actualizacion"
+            ),
+            checkCacheFreshness(CLIENTES_KEY, "/clientes/ultima-actualizacion"),
+        ]);
 
-        const lastVentasUpdate = getCacheLastUpdate(VENTAS_KEY);
-        const localVentasTime = parseInt(
-            localStorage.getItem(`${VENTAS_KEY}_time`) || "0"
-        );
-        if (lastVentasUpdate > localVentasTime) {
-            console.warn(
-                "🟡 Cambios detectados en VENTAS desde otro dispositivo. Limpiando..."
-            );
-            localStorage.removeItem(VENTAS_KEY);
-            localStorage.removeItem(`${VENTAS_KEY}_time`);
-        }
+        const articulosMem = getMemoryCache(ARTICULOS_TALLES_KEY, 86400);
+        const ventasMem = getMemoryCache(VENTAS_KEY, 86400);
+        const clientesMem = getMemoryCache(CLIENTES_KEY, 86400);
 
-        const articulosMem = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
-        const ventasMem = getMemoryCache(VENTAS_KEY, ttl);
-
-        if (articulosMem) {
-            this.articulos = articulosMem;
-        } else {
-            this.fetchArticulos();
-        }
+        if (articulosMem) this.articulos = articulosMem;
+        else await this.fetchArticulos();
 
         if (ventasMem) {
             this.ventas = ventasMem.sort(
@@ -733,30 +724,15 @@ export default {
             );
             this.ventasFiltradas = this.ventas;
         } else {
-            this.fetchVentas();
+            await this.fetchVentas();
         }
 
-        this.fetchUltimaFacturacion();
+        if (clientesMem) this.clientes = clientesMem;
+        else if (this.fetchClientes) await this.fetchClientes();
 
-        // 📦 Activar escucha cross-device
-        this._stopCacheSync = initCacheSync(
-            [ARTICULOS_TALLES_KEY, VENTAS_KEY],
-            {
-                onUpdate: (key, updated) => {
-                    if (key === ARTICULOS_TALLES_KEY) this.articulos = updated;
-                    if (key === VENTAS_KEY) {
-                        this.ventas = updated.sort(
-                            (a, b) => new Date(b.fecha) - new Date(a.fecha)
-                        );
-                        this.ventasFiltradas = this.ventas;
-                    }
-                },
-            }
-        );
-
+        await this.fetchUltimaFacturacion();
         this.loading = false;
     },
-
     computed: {
         snackbarStyle() {
             return {

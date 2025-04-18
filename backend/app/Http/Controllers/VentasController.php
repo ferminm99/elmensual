@@ -8,6 +8,7 @@ use App\Models\Cliente;
 use App\Models\Talle;
 use Carbon\Carbon;
 use App\Models\Facturacion; // Importamos el modelo Facturacion
+use Illuminate\Support\Facades\DB;
 
 
 use Illuminate\Http\Request; 
@@ -217,6 +218,10 @@ class VentasController extends Controller
         return response()->json($venta);
     }
 
+    public function ultimaActualizacionVentas() {
+        $lastUpdate = DB::table('ventas')->max('updated_at');
+        return response()->json(['last_update' => strtotime($lastUpdate)]);
+    }
 
 
         

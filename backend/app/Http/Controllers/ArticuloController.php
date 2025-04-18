@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Articulo;
 use Illuminate\Http\Request; 
+use Illuminate\Support\Facades\DB;
 
 class ArticuloController extends Controller
 {
@@ -296,6 +297,16 @@ class ArticuloController extends Controller
         }
 
         return response()->json(['message' => "Costos y precios actualizados con un incremento del $porcentaje%."]);
+    }
+
+    public function ultimaActualizacionArticulos() {
+        $lastUpdate = DB::table('articulos')->max('updated_at');
+        return response()->json(['last_update' => strtotime($lastUpdate)]);
+    }
+
+    public function ultimaActualizacionTallesArticulos() {
+        $lastUpdate = DB::table('talles')->max('updated_at');
+        return response()->json(['last_update' => strtotime($lastUpdate)]);
     }
 
 
