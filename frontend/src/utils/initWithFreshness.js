@@ -1,4 +1,5 @@
 import { cachedFetch, getCacheLastUpdate } from "./cacheFetch";
+import axios from "axios";
 
 export async function initWithFreshness({
     key,
@@ -11,8 +12,8 @@ export async function initWithFreshness({
     setLoading(true);
 
     try {
-        const { data } = await fetch(`/api${apiPath}`);
-        const backendLastUpdate = Number((await data.json()).last_update || 0);
+        const { data } = await axios.get(`/api${apiPath}`);
+        const backendLastUpdate = Number(data.last_update || 0);
         const localLastUpdate = getCacheLastUpdate(key);
 
         if (backendLastUpdate > localLastUpdate) {
