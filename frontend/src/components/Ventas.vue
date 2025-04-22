@@ -726,7 +726,8 @@ export default {
             useSyncedCache({
                 key: CLIENTES_KEY,
                 apiPath: "/clientes/ultima-actualizacion",
-                fetchFn: () => axios.get("/api/clientes").then((r) => r.data),
+                fetchFn: () =>
+                    axios.get("/api/clientes/listar").then((r) => r.data),
                 onData: (data) => (this.clientes = data),
             }),
         ]).then(() => {
