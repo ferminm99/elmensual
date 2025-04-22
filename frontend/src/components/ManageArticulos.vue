@@ -257,11 +257,21 @@ export default {
     },
     methods: {
         async fetchArticulos() {
-            this.articulos = await cachedFetch(
-                ARTICULOS_KEY,
-                () => axios.get("/api/articulos").then((res) => res.data),
-                { ttl: 86400 }
-            );
+            this.loading = true;
+            try {
+                const data = await cachedFetch(
+                    ARTICULOS_KEY,
+                    () => axios.get("/api/articulos").then((res) => res.data),
+                    { ttl: 86400 }
+                );
+
+                this.articulos = Array.isArray(data) ? data : [];
+            } catch (error) {
+                console.error("Error al cargar los artículos:", error);
+                this.articulos = []; // fallback para evitar romper la app
+            } finally {
+                this.loading = false;
+            }
         },
         openAddDialog() {
             this.isEdit = false;
