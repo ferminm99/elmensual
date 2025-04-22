@@ -61,11 +61,11 @@ export async function cachedFetch(
 
     // fetch real
     const data = await fetchFn();
-    localStorage.setItem(key, JSON.stringify(data));
+    const safeData = Array.isArray(data) ? data : []; // Asegura array
+    localStorage.setItem(key, JSON.stringify(safeData));
     localStorage.setItem(key + "_time", now.toString());
-    localStorage.setItem(key + "_last_update", now.toString());
-    memoryCache[key] = { data, time: now };
-    return data;
+    memoryCache[key] = { data: safeData, time: now };
+    return safeData;
 }
 
 export function updateCache(key, newData) {
