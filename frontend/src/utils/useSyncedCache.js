@@ -42,6 +42,9 @@ export async function useSyncedCache({
 
         const result = await cachedFetch(key, fetchFn, { ttl });
 
+        // 🧠 Reemplazamos el cache por completo
+        await updateCache(key, result);
+
         // 🧠 Guardamos la fecha nueva si corresponde
         if (backendLastUpdate > localLastUpdate) {
             localStorage.setItem(`${key}_last_update`, backendLastUpdate);

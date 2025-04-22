@@ -697,7 +697,7 @@ export default {
     },
     created() {
         this.loading = true;
-        this.cacheListener = this.handleCacheSync;
+
         window.addEventListener("notifyCacheChange", this.cacheListener);
 
         Promise.all([
