@@ -184,6 +184,7 @@ import {
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import ExcelJS from "exceljs";
 import { ARTICULOS_KEY } from "@/utils/cacheKeys";
+import { initWithFreshness } from "@/utils/initWithFreshness";
 
 export default {
     data() {
@@ -238,25 +239,61 @@ export default {
         },
     },
     created() {
-        console.log("CHANGED?");
-        const cache = getMemoryCache(ARTICULOS_KEY, 86400);
-        if (cache) {
-            this.articulos = cache;
-        } else {
-            this.fetchArticulos();
-        }
-
-        onCacheChange((key) => {
+        this.cacheListener = (key) => {
             if (key === ARTICULOS_KEY) {
-                console.log("🔁 Recargando artículos desde otro componente");
-                this.fetchArticulos();
+                initWithFreshness({
+                    key: ARTICULOS_KEY,
+                    apiPath: "/articulos/ultima-actualizacion",
+                    fetchFn: () =>
+                        axios.get("/api/articulos").then((res) => res.data),
+                    setLoading: (v) => (this.loading = v),
+                    onData: (data) => (this.articulos = data),
+                });
             }
-        });
+        };
+
+        this.cacheListener(ARTICULOS_KEY);
+        onCacheChange(this.cacheListener); // ✅ usa tu sistema
     },
+
     beforeUnmount() {
-        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
+        window.removeEventListener("cache-updated", this.cacheListener); // ✅ limpia el listener correcto
     },
     methods: {
+        async initArticulosConFrescura() {
+            this.loading = true;
+
+            try {
+                // Verificar si el backend tiene una versión más nueva
+                const { data } = await axios.get(
+                    "/api/articulos/ultima-actualizacion"
+                );
+                const backendLastUpdate = Number(data.last_update || 0);
+                const localLastUpdate = getCacheLastUpdate(ARTICULOS_KEY);
+
+                if (backendLastUpdate > localLastUpdate) {
+                    console.warn(
+                        "♻️ Backend tiene data más nueva. Reseteando caché."
+                    );
+                    localStorage.removeItem(ARTICULOS_KEY);
+                    localStorage.removeItem(`${ARTICULOS_KEY}_time`);
+                    localStorage.removeItem(`${ARTICULOS_KEY}_last_update`);
+                }
+
+                const dataCache = await cachedFetch(
+                    ARTICULOS_KEY,
+                    () => axios.get("/api/articulos").then((res) => res.data),
+                    { ttl: 86400 }
+                );
+
+                this.articulos = Array.isArray(dataCache) ? dataCache : [];
+            } catch (err) {
+                console.error("❌ Error al inicializar artículos:", err);
+                this.articulos = [];
+            } finally {
+                this.loading = false;
+            }
+        },
         async fetchArticulos(force = false) {
             this.loading = true;
             try {
