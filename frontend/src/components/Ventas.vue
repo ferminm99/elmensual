@@ -610,7 +610,7 @@ import {
     VENTAS_KEY,
     CLIENTES_KEY,
 } from "../utils/cacheKeys";
-
+import { useSyncedCache } from "@/utils/useSyncedCache";
 import { checkCacheFreshness } from "@/utils/cacheFreshness";
 
 export default {
@@ -695,43 +695,43 @@ export default {
             ],
         };
     },
-    created: async function () {
+    created() {
         this.loading = true;
+        this.cacheListener = this.handleCacheSync;
+        window.addEventListener("notifyCacheChange", this.cacheListener);
 
-        await Promise.all([
-            checkCacheFreshness(VENTAS_KEY, "/ventas/ultima-actualizacion"),
-            checkCacheFreshness(
-                ARTICULOS_TALLES_KEY,
-                "/articulos/talles/ultima-actualizacion"
-            ),
-            checkCacheFreshness(
-                ARTICULOS_TALLES_KEY,
-                "/articulos/ultima-actualizacion"
-            ),
-            checkCacheFreshness(CLIENTES_KEY, "/clientes/ultima-actualizacion"),
-        ]);
-
-        const articulosMem = getMemoryCache(ARTICULOS_TALLES_KEY, 86400);
-        const ventasMem = getMemoryCache(VENTAS_KEY, 86400);
-        const clientesMem = getMemoryCache(CLIENTES_KEY, 86400);
-
-        if (articulosMem) this.articulos = articulosMem;
-        else await this.fetchArticulos();
-
-        if (ventasMem) {
-            this.ventas = ventasMem.sort(
-                (a, b) => new Date(b.fecha) - new Date(a.fecha)
-            );
-            this.ventasFiltradas = this.ventas;
-        } else {
-            await this.fetchVentas();
-        }
-
-        if (clientesMem) this.clientes = clientesMem;
-        else if (this.fetchClientes) await this.fetchClientes();
-
-        await this.fetchUltimaFacturacion();
-        this.loading = false;
+        Promise.all([
+            useSyncedCache({
+                key: ARTICULOS_TALLES_KEY,
+                apiPath: "/articulos/talles/ultima-actualizacion",
+                fetchFn: () =>
+                    axios
+                        .get("/api/articulo/listar/talles")
+                        .then((r) => r.data),
+                onData: (data) => (this.articulos = data),
+                setLoading: (val) => (this.loading = val), // opcional
+            }),
+            useSyncedCache({
+                key: VENTAS_KEY,
+                apiPath: "/ventas/ultima-actualizacion",
+                fetchFn: () =>
+                    axios.get("/api/ventas/listar").then((r) => r.data),
+                onData: (data) => {
+                    this.ventas = data.sort(
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                    );
+                    this.ventasFiltradas = this.ventas;
+                },
+            }),
+            useSyncedCache({
+                key: CLIENTES_KEY,
+                apiPath: "/clientes/ultima-actualizacion",
+                fetchFn: () => axios.get("/api/clientes").then((r) => r.data),
+                onData: (data) => (this.clientes = data),
+            }),
+        ]).then(() => {
+            this.fetchUltimaFacturacion();
+        });
     },
     computed: {
         snackbarStyle() {
@@ -792,28 +792,10 @@ export default {
         },
     },
     beforeUnmount() {
-        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
+        window.removeEventListener("notifyCacheChange", this.cacheListener);
     },
 
     methods: {
-        handleCacheSync(e) {
-            const key = e.detail;
-            const ttl = 86400;
-            if (key === ARTICULOS_TALLES_KEY) {
-                const updated = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
-                if (updated) this.articulos = updated;
-            }
-            if (key === VENTAS_KEY) {
-                const updated = getMemoryCache(VENTAS_KEY, ttl);
-                if (updated) {
-                    this.ventas = updated.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
-                    );
-                    this.ventasFiltradas = this.ventas;
-                }
-            }
-        },
-
         getItemClass(item) {
             if (item.id === this.ventaUltimaFacturada) {
                 return "ultima-facturada"; // Clase para la última facturada

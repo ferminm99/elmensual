@@ -185,6 +185,7 @@ import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import ExcelJS from "exceljs";
 import { ARTICULOS_KEY } from "@/utils/cacheKeys";
 import { initWithFreshness } from "@/utils/initWithFreshness";
+import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
     data() {
