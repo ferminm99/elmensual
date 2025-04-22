@@ -13,7 +13,7 @@ export async function initWithFreshness({
 
     try {
         const { data } = await axios.get(`/api${apiPath}`);
-        const backendLastUpdate = Number(data.last_update || 0);
+        const backendLastUpdate = Number(data.last_update || 0) * 1000;
         const localLastUpdate = getCacheLastUpdate(key);
 
         console.log(`🧠 Cache check para "${key}"`);
@@ -28,14 +28,24 @@ export async function initWithFreshness({
             new Date(backendLastUpdate)
         );
 
+        let borrado = false;
+
         if (backendLastUpdate > localLastUpdate) {
             console.warn(`♻️ Reset cache de ${key} por update más nuevo`);
             localStorage.removeItem(key);
             localStorage.removeItem(`${key}_time`);
             localStorage.removeItem(`${key}_last_update`);
+            borrado = true;
         }
 
         const dataCache = await cachedFetch(key, fetchFn, { ttl });
+
+        if (borrado) {
+            localStorage.setItem(
+                `${key}_last_update`,
+                backendLastUpdate.toString()
+            );
+        }
 
         console.log(`✅ Datos finales para ${key}:`, dataCache);
 
