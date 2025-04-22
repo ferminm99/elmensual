@@ -369,8 +369,9 @@ export default {
 
                     eliminarBtn.onclick = (event) => {
                         event.stopPropagation();
-                        console.log("CLICK EN TACHO - ID:", arg.event.id); // DEBUG
-                        this.eliminarCompra(arg.event.id); // <-- usar directamente el ID
+                        const id = arg.event.id;
+                        if (!id) return console.warn("❌ Evento sin ID:", arg);
+                        this.eliminarCompra(id);
                     };
 
                     const titleDiv = document.createElement("div");
@@ -410,7 +411,9 @@ export default {
 
                     // Eliminar visualmente del calendario
                     const calendarApi = this.$refs.fullCalendar.getApi();
-                    const evento = calendarApi.getEventById(Number(compraId));
+                    const evento = calendarApi.getEventById(
+                        compraId.toString()
+                    );
                     if (evento) {
                         evento.remove();
                         console.log("EVENTO REMOVIDO DEL CALENDARIO");

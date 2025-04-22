@@ -238,6 +238,7 @@ export default {
         },
     },
     created() {
+        console.log("CHANGED?");
         const cache = getMemoryCache(ARTICULOS_KEY, 86400);
         if (cache) {
             this.articulos = cache;
