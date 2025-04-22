@@ -18,44 +18,52 @@ function setCacheLastUpdate(key) {
     localStorage.setItem(`${key}_last_update`, now.toString());
 }
 
-export async function cachedFetch(key, fetchFn, options = { ttl: 3600 }) {
-    const { ttl } = options;
+export async function cachedFetch(
+    key,
+    fetchFn,
+    options = { ttl: 3600, forceRefresh: false }
+) {
+    const { ttl, forceRefresh } = options;
     const now = Date.now();
 
-    // Memoria
-    const memory = memoryCache[key];
-    if (memory && now - memory.time < ttl * 1000) {
-        return memory.data;
-    }
+    if (!forceRefresh) {
+        const memory = memoryCache[key];
+        if (
+            memory &&
+            memory.data !== undefined &&
+            now - memory.time < ttl * 1000
+        ) {
+            return memory.data;
+        }
 
-    // localStorage
-    const cached = localStorage.getItem(key);
-    const cachedTime = localStorage.getItem(key + "_time");
+        const cached = localStorage.getItem(key);
+        const cachedTime = localStorage.getItem(key + "_time");
 
-    if (
-        cached &&
-        cached !== "undefined" &&
-        cached !== "" &&
-        cachedTime &&
-        now - cachedTime < ttl * 1000
-    ) {
-        try {
-            const parsed = JSON.parse(cached);
-            memoryCache[key] = { data: parsed, time: Number(cachedTime) };
-            return parsed;
-        } catch (e) {
-            console.warn(`❌ Error al parsear cache de ${key}:`, e);
-            localStorage.removeItem(key);
-            localStorage.removeItem(key + "_time");
-            localStorage.removeItem(key + "_last_update");
+        if (
+            cached &&
+            cached !== "undefined" &&
+            cached !== "" &&
+            cachedTime &&
+            now - cachedTime < ttl * 1000
+        ) {
+            try {
+                const parsed = JSON.parse(cached);
+                memoryCache[key] = { data: parsed, time: Number(cachedTime) };
+                return parsed;
+            } catch (e) {
+                console.warn(`❌ Error al parsear cache de ${key}:`, e);
+                localStorage.removeItem(key);
+                localStorage.removeItem(key + "_time");
+                localStorage.removeItem(key + "_last_update");
+            }
         }
     }
 
-    // Fetch real si no hay nada válido
+    // fetch real
     const data = await fetchFn();
     localStorage.setItem(key, JSON.stringify(data));
     localStorage.setItem(key + "_time", now.toString());
-    localStorage.setItem(key + "_last_update", now.toString()); // NUEVO
+    localStorage.setItem(key + "_last_update", now.toString());
     memoryCache[key] = { data, time: now };
     return data;
 }

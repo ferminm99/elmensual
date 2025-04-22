@@ -256,19 +256,19 @@ export default {
         window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
     methods: {
-        async fetchArticulos() {
+        async fetchArticulos(force = false) {
             this.loading = true;
             try {
                 const data = await cachedFetch(
                     ARTICULOS_KEY,
                     () => axios.get("/api/articulos").then((res) => res.data),
-                    { ttl: 86400 }
+                    { ttl: 86400, forceRefresh: force }
                 );
 
                 this.articulos = Array.isArray(data) ? data : [];
             } catch (error) {
                 console.error("Error al cargar los artículos:", error);
-                this.articulos = []; // fallback para evitar romper la app
+                this.articulos = [];
             } finally {
                 this.loading = false;
             }
