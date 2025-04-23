@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\CompraCalendario;
 use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\ActualizaMetaTrait;
 
 class CalendarioController extends Controller
 {
+    use ActualizaMetaTrait;
     public function index()
     {
         // Listar todas las compras agendadas
@@ -50,6 +52,8 @@ class CalendarioController extends Controller
             $compra = CompraCalendario::findOrFail($id);
             // Eliminar la compra
             $compra->delete();
+
+            $this->actualizarMeta('calendario');
 
             return response()->json(['message' => 'Compra eliminada correctamente.'], 200);
         } catch (ModelNotFoundException $e) {

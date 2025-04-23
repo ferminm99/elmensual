@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Articulo;
 use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\ActualizaMetaTrait;
 
 class ArticuloController extends Controller
 {
+    use ActualizaMetaTrait;
      // Método para listar todos los artículos
     public function index() {
         $articulos = Articulo::orderBy('nombre')->get(); // Ordena por nombre
@@ -73,14 +75,12 @@ class ArticuloController extends Controller
 
     // Método para eliminar un artículo
     public function destroy($id) {
-        // Encontrar el artículo por ID
         $articulo = Articulo::findOrFail($id);
-
-        // Eliminar los talles asociados al artículo
-        $articulo->talles()->delete();  // Asegúrate de tener la relación definida en el modelo Articulo
-
-        // Eliminar el artículo
+        $articulo->talles()->delete();
         $articulo->delete();
+
+        $this->actualizarMeta('articulos');
+        $this->actualizarMeta('talles');
 
         return response()->json(['message' => 'Artículo eliminado correctamente']);
     }
@@ -161,44 +161,41 @@ class ArticuloController extends Controller
     
         return response()->json(['message' => 'Bombachas agregadas correctamente']);
     }
+    
     public function eliminarBombachas(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
-        $talleSeleccionado = $request->input('talle');
-    
-        $talle = $articulo->talles()->where('talle', $talleSeleccionado)->first();
-    
-        if (!$talle) {
-            return response()->json(['message' => 'El talle no existe'], 400);
-        }
-    
+        $talle = $articulo->talles()->where('talle', $request->input('talle'))->first();
+
+        if (!$talle) return response()->json(['message' => 'El talle no existe'], 400);
+
         foreach ($request->input('cantidades') as $color => $cantidad) {
-            // Asegurarse de que no se elimine más de lo que hay disponible
             if ($talle->{$color} >= $cantidad) {
                 $talle->decrement($color, $cantidad);
             } else {
-                $talle->update([$color => 0]); // Si se trata de eliminar más de lo que hay, se establece en 0
+                $talle->update([$color => 0]);
             }
         }
-    
-        // Verificar si todos los colores del talle están en 0 para eliminar el registro
-        if ($talle->verde == 0 && $talle->azul == 0 && $talle->marron == 0 && $talle->negro == 0 && $talle->celeste == 0 && $talle->blancobeige == 0) {
+
+        if ($talle->verde == 0 && $talle->azul == 0 && $talle->marron == 0 &&
+            $talle->negro == 0 && $talle->celeste == 0 && $talle->blancobeige == 0) {
             $talle->delete();
         }
-    
+
+        $this->actualizarMeta('talles');
+
         return response()->json(['message' => 'Bombachas eliminadas correctamente']);
     }
 
     public function eliminarTalleCompleto(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
-        $talleSeleccionado = $request->input('talle');
-    
-        // Buscar el talle y eliminarlo
-        $talle = $articulo->talles()->where('talle', $talleSeleccionado)->first();
+        $talle = $articulo->talles()->where('talle', $request->input('talle'))->first();
+
         if ($talle) {
             $talle->delete();
+            $this->actualizarMeta('talles');
             return response()->json(['message' => 'Talle eliminado correctamente']);
         }
-    
+
         return response()->json(['message' => 'Talle no encontrado'], 404);
     }
 

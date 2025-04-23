@@ -5,6 +5,7 @@ import {
     updateCache,
 } from "@/utils/cacheFetch";
 import axios from "axios";
+import { notifyCacheChange } from "@/utils/cacheEvents";
 
 export async function useSyncedCache({
     key,
@@ -38,6 +39,8 @@ export async function useSyncedCache({
             localStorage.removeItem(key);
             localStorage.removeItem(`${key}_time`);
             localStorage.removeItem(`${key}_last_update`);
+            // 🔔 Notificar cambio
+            notifyCacheChange(key);
         }
 
         const result = await cachedFetch(key, fetchFn, { ttl });

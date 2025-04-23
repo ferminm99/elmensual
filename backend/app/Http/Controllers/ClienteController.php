@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\ActualizaMetaTrait;
 
 class ClienteController extends Controller
 {
+    use ActualizaMetaTrait;
+
     // Obtener todos los clientes
     public function index()
     {
@@ -48,10 +51,12 @@ class ClienteController extends Controller
 
 
     // Eliminar un cliente
-    public function destroy($id)
-    {
-        $cliente = Cliente::findOrFail($id); // Buscar el cliente por ID
-        $cliente->delete(); // Eliminar el cliente
+    public function destroy($id) {
+        $cliente = Cliente::findOrFail($id);
+        $cliente->delete();
+
+        $this->actualizarMeta('clientes');
+
         return response()->json(['message' => 'Cliente eliminado exitosamente']);
     }
 

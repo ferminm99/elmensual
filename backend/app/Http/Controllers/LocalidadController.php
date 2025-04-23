@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Localidad;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Traits\ActualizaMetaTrait;
 
 class LocalidadController extends Controller
 {
+    use ActualizaMetaTrait;
     public function index()
     {
         try {
@@ -33,10 +35,13 @@ class LocalidadController extends Controller
         return response()->json(['message' => 'Localidad actualizada', 'localidad' => $localidad]);
     }
 
-    public function destroy($id)
-    {
+    public function destroy($id) {
         $localidad = Localidad::findOrFail($id);
         $localidad->delete();
+
+        $this->actualizarMeta('localidades');
+
         return response()->json(['message' => 'Localidad eliminada']);
     }
+    
 }

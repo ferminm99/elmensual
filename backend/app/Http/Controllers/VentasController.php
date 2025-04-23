@@ -9,12 +9,13 @@ use App\Models\Talle;
 use Carbon\Carbon;
 use App\Models\Facturacion; // Importamos el modelo Facturacion
 use Illuminate\Support\Facades\DB;
-
+use App\Http\Controllers\Traits\ActualizaMetaTrait;
 
 use Illuminate\Http\Request; 
 
 class VentasController extends Controller
 {
+    use ActualizaMetaTrait;
     public function registrarVenta(Request $request) {
 
         // Normalizamos el nombre y apellido: primera letra en mayúscula, el resto en minúsculas
@@ -157,29 +158,24 @@ class VentasController extends Controller
 
 
  
-     // Eliminar una venta
-     public function destroy($id)
-    {
-        // Buscar la venta por ID
+    // Eliminar una venta
+    public function destroy($id) {
         $venta = Venta::findOrFail($id);
-
-        // Obtener el cliente asociado a la venta
         $cliente = $venta->cliente;
 
-        //Como elimine la venta recupero el articulo vendido!
         $articulo = Articulo::find($venta['articulo']['id']);
         $articulo->talles()->where('talle', $venta['talle'])->increment($venta['color'], 1);
-        
-        // Eliminar la venta
+
         $venta->delete();
 
-        // Verificar si el cliente tiene otras ventas
         if ($cliente->ventas()->count() === 0) {
-            // Si no tiene más ventas, eliminar el cliente
             $cliente->delete();
+            $this->actualizarMeta('clientes');
         }
 
-            
+        $this->actualizarMeta('ventas');
+        $this->actualizarMeta('talles');
+
         return response()->json(['message' => 'Venta eliminada exitosamente']);
     }
 
