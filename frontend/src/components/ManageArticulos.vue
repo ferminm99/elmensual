@@ -184,7 +184,6 @@ import {
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import ExcelJS from "exceljs";
 import { ARTICULOS_KEY } from "@/utils/cacheKeys";
-import { initWithFreshness } from "@/utils/initWithFreshness";
 import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
@@ -240,27 +239,27 @@ export default {
         },
     },
     created() {
-        this.cacheListener = (key) => {
-            if (key === ARTICULOS_KEY) {
-                initWithFreshness({
-                    key: ARTICULOS_KEY,
-                    apiPath: "/articulos/ultima-actualizacion",
-                    fetchFn: () =>
-                        axios.get("/api/articulos").then((res) => res.data),
-                    setLoading: (v) => (this.loading = v),
-                    onData: (data) => (this.articulos = data),
-                });
-            }
-        };
+        window.addEventListener("notifyCacheChange", this.handleCacheSync);
 
-        this.cacheListener(ARTICULOS_KEY);
-        onCacheChange(this.cacheListener); // ✅ usa tu sistema
+        useSyncedCache({
+            key: ARTICULOS_KEY,
+            apiPath: "/articulos/ultima-actualizacion",
+            fetchFn: () => axios.get("/api/articulos").then((res) => res.data),
+            onData: (data) => (this.articulos = data),
+            setLoading: (val) => (this.loading = val),
+        });
     },
 
     beforeUnmount() {
-        window.removeEventListener("cache-updated", this.cacheListener); // ✅ limpia el listener correcto
+        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
     methods: {
+        handleCacheSync(e) {
+            if (e.detail === ARTICULOS_KEY) {
+                this.fetchArticulos();
+            }
+        },
+
         async initArticulosConFrescura() {
             this.loading = true;
 

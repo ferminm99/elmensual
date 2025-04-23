@@ -422,7 +422,7 @@ import {
 } from "@/utils/cacheFetch";
 import { ARTICULOS_KEY, ARTICULOS_TALLES_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
-import { checkCacheFreshness } from "@/utils/cacheFreshness";
+import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
     data() {
@@ -495,32 +495,33 @@ export default {
             },
         };
     },
+
     created() {
-        const ttl = 86400;
-        const keys = [ARTICULOS_KEY, ARTICULOS_TALLES_KEY];
+        this.loading = true;
+        window.addEventListener("notifyCacheChange", this.handleCacheSync);
 
         Promise.all([
-            checkCacheFreshness(
-                ARTICULOS_KEY,
-                "/articulos/ultima-actualizacion"
-            ),
-            checkCacheFreshness(
-                ARTICULOS_TALLES_KEY,
-                "/articulos/talles/ultima-actualizacion"
-            ),
-        ])
-            .then(() => {
-                this.fetchArticulos();
-            })
-            .catch((err) => {
-                console.warn(
-                    "❌ Error verificando frescura de cache en Inventario.vue",
-                    err
-                );
-                this.fetchArticulos();
-            });
-
-        window.addEventListener("notifyCacheChange", this.handleCacheSync); // <- escucha evento global
+            useSyncedCache({
+                key: ARTICULOS_KEY,
+                apiPath: "/articulos/ultima-actualizacion",
+                fetchFn: () =>
+                    axios.get("/api/articulos/listar").then((r) => r.data),
+                onData: (data) => (this.articulos = data),
+            }),
+            useSyncedCache({
+                key: ARTICULOS_TALLES_KEY,
+                apiPath: "/articulos/talles/ultima-actualizacion",
+                fetchFn: () =>
+                    axios
+                        .get("/api/articulo/listar/talles")
+                        .then((r) => r.data),
+                onData: (data) => {
+                    this.articulosCompletos = data;
+                    this.fetchTalles(); // actualiza la tabla si hay un artículo seleccionado
+                },
+                setLoading: (val) => (this.loading = val),
+            }),
+        ]);
     },
 
     beforeUnmount() {
@@ -591,12 +592,11 @@ export default {
     },
     methods: {
         handleCacheSync(e) {
-            const key = e.detail;
-            if (key === ARTICULOS_TALLES_KEY) {
-                console.log(
-                    "🔁 Recargando artículos en Home.vue por cambio externo"
-                );
-                this.fetchArticulos();
+            if (
+                e.detail === ARTICULOS_KEY ||
+                e.detail === ARTICULOS_TALLES_KEY
+            ) {
+                this.fetchArticulos(); // Esto refresca ambos si el método lo cubre
             }
         },
 

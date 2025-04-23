@@ -170,24 +170,29 @@ export default {
         },
     },
     created() {
-        const mem = getMemoryCache(LOCALIDADES_KEY, 86400);
-        if (mem) {
-            this.localidades = mem;
-        } else {
-            this.fetchLocalidades();
-        }
+        window.addEventListener("notifyCacheChange", this.handleCacheSync);
 
-        onCacheChange((key) => {
-            if (key === LOCALIDADES_KEY) {
-                console.log("🔁 Recargando localidades desde otro componente");
-                this.fetchLocalidades();
-            }
+        useSyncedCache({
+            key: LOCALIDADES_KEY,
+            apiPath: "/localidades/ultima-actualizacion",
+            fetchFn: () =>
+                axios.get("/api/localidades").then((res) => res.data),
+            onData: (data) => (this.localidades = data),
+            setLoading: (val) => (this.loading = val),
         });
     },
+
     beforeUnmount() {
         window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
+
     methods: {
+        handleCacheSync(e) {
+            if (e.detail === LOCALIDADES_KEY) {
+                this.fetchLocalidades(); // actualiza si se recibe evento externo
+            }
+        },
+
         async fetchLocalidades() {
             this.localidades = await cachedFetch(
                 LOCALIDADES_KEY,

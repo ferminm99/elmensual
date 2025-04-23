@@ -175,7 +175,6 @@ import axios from "axios";
 import { getMemoryCache, updateCache } from "@/utils/cacheFetch";
 import { PEDIDOS_KEY, ARTICULOS_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
-import ResponsiveTable from "./components/ResponsiveTable.vue";
 
 export default {
     data() {

@@ -130,6 +130,7 @@ import {
 } from "@/utils/cacheFetch";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import { CLIENTES_KEY, VENTAS_KEY } from "@/utils/cacheKeys"; // si querés ser prolijo
+import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
     data() {
@@ -170,36 +171,47 @@ export default {
         };
     },
     created() {
-        const clientesMem = getMemoryCache(CLIENTES_KEY, 86400);
-        const ventasMem = getMemoryCache(VENTAS_KEY, 86400);
+        this.loading = true;
+        window.addEventListener("notifyCacheChange", this.cacheListener);
 
-        if (clientesMem) {
-            this.clientes = clientesMem;
-            this.datosCargados.clientes = true;
-        } else {
-            this.fetchClientes();
-        }
-
-        if (ventasMem) {
-            this.ventas = ventasMem;
-            this.datosCargados.ventas = true;
-        } else {
-            this.fetchVentas();
-        }
-
-        this.verificarYCalcularTotales();
-        onCacheChange((key) => {
-            if (key === CLIENTES_KEY) {
-                console.log("♻️ Clientes actualizados desde otro componente");
-                this.fetchClientes();
-            }
-        });
+        Promise.all([
+            useSyncedCache({
+                key: CLIENTES_KEY,
+                apiPath: "/clientes/ultima-actualizacion",
+                fetchFn: () =>
+                    axios.get("/api/clientes/listar").then((r) => r.data),
+                onData: (data) => {
+                    this.clientes = data;
+                    this.datosCargados.clientes = true;
+                    this.verificarYCalcularTotales();
+                },
+                setLoading: (val) => (this.loading = val),
+            }),
+            useSyncedCache({
+                key: VENTAS_KEY,
+                apiPath: "/ventas/ultima-actualizacion",
+                fetchFn: () =>
+                    axios.get("/api/ventas/listar").then((r) => r.data),
+                onData: (data) => {
+                    this.ventas = data;
+                    this.datosCargados.ventas = true;
+                    this.verificarYCalcularTotales();
+                },
+            }),
+        ]);
     },
+
     beforeUnmount() {
-        window.removeEventListener("notifyCacheChange", this.handleCacheSync);
+        window.removeEventListener("notifyCacheChange", this.cacheListener);
     },
 
     methods: {
+        cacheListener(e) {
+            if (e?.detail?.key === CLIENTES_KEY) {
+                this.fetchClientes();
+            }
+        },
+
         async fetchClientes() {
             this.clientes = await cachedFetch(
                 CLIENTES_KEY,
