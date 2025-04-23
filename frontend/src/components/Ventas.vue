@@ -1279,7 +1279,7 @@ export default {
             this.loading = true;
             axios
                 .delete(`/api/ventas/${this.selectedVenta.id}`)
-                .then(() => {
+                .then((res) => {
                     const updatedAt = res.data.updated_at || Date.now();
                     this.ventas = removeFromCache(
                         VENTAS_KEY,
