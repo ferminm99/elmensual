@@ -38,11 +38,13 @@ class LocalidadController extends Controller
     public function destroy($id) {
         $localidad = Localidad::findOrFail($id);
         $localidad->delete();
-
-        if ($localidad = Localidad::latest()->first()) $localidad->touch();
-
+    
+        $ultima = Localidad::latest()->first();
+        if ($ultima) $ultima->touch();
+    
         return response()->json(['message' => 'Localidad eliminada']);
     }
+    
     
     public function ultimaActualizacionLocalidades() {
         $lastUpdate = DB::table('localidades')->max('updated_at');

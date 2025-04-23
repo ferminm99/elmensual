@@ -78,10 +78,13 @@ class ArticuloController extends Controller
         $articulo = Articulo::findOrFail($id);
         $articulo->talles()->delete();
         $articulo->delete();
-
-        if ($articulo = Articulo::latest()->first()) $articulo->touch();
-        if ($ultimoTalle = $articulo->talles()->latest()->first()) $ultimoTalle->touch();
-
+    
+        $ultimoArticulo = Articulo::latest()->first();
+        if ($ultimoArticulo) $ultimoArticulo->touch();
+    
+        $ultimoTalle = Talle::latest()->first();
+        if ($ultimoTalle) $ultimoTalle->touch();
+    
         return response()->json(['message' => 'Artículo eliminado correctamente']);
     }
     
@@ -165,9 +168,9 @@ class ArticuloController extends Controller
     public function eliminarBombachas(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
         $talle = $articulo->talles()->where('talle', $request->input('talle'))->first();
-
+    
         if (!$talle) return response()->json(['message' => 'El talle no existe'], 400);
-
+    
         foreach ($request->input('cantidades') as $color => $cantidad) {
             if ($talle->{$color} >= $cantidad) {
                 $talle->decrement($color, $cantidad);
@@ -175,29 +178,37 @@ class ArticuloController extends Controller
                 $talle->update([$color => 0]);
             }
         }
-
-        if ($talle->verde == 0 && $talle->azul == 0 && $talle->marron == 0 &&
-            $talle->negro == 0 && $talle->celeste == 0 && $talle->blancobeige == 0) {
+    
+        if (
+            $talle->verde == 0 && $talle->azul == 0 && $talle->marron == 0 &&
+            $talle->negro == 0 && $talle->celeste == 0 && $talle->blancobeige == 0
+        ) {
             $talle->delete();
         }
-
-        if ($ultimoTalle = $articulo->talles()->latest()->first()) $ultimoTalle->touch();
-
+    
+        $ultimoTalle = $articulo->talles()->latest()->first();
+        if ($ultimoTalle) $ultimoTalle->touch();
+    
         return response()->json(['message' => 'Bombachas eliminadas correctamente']);
     }
+    
 
     public function eliminarTalleCompleto(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
         $talle = $articulo->talles()->where('talle', $request->input('talle'))->first();
-
+    
         if ($talle) {
             $talle->delete();
-            if ($ultimoTalle = $articulo->talles()->latest()->first()) $ultimoTalle->touch();
+    
+            $ultimoTalle = $articulo->talles()->latest()->first();
+            if ($ultimoTalle) $ultimoTalle->touch();
+    
             return response()->json(['message' => 'Talle eliminado correctamente']);
         }
-
+    
         return response()->json(['message' => 'Talle no encontrado'], 404);
     }
+    
 
     public function editarBombachas(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);

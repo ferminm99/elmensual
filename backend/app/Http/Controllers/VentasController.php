@@ -170,20 +170,25 @@ class VentasController extends Controller
 
             $venta->delete();
 
-            // Si el cliente no tiene más ventas, lo borramos
+            // Si no quedan ventas del cliente, eliminarlo
             if ($cliente->ventas()->count() === 0) {
                 $cliente->delete();
+                $ultimoCliente = Cliente::latest()->first();
+                if ($ultimoCliente) $ultimoCliente->touch();
             }
 
-            // ✅ Tocamos algún registro para forzar updated_at
             $ultimaVenta = Venta::latest()->first();
             if ($ultimaVenta) $ultimaVenta->touch();
+
+            $ultimoTalle = Talle::latest()->first();
+            if ($ultimoTalle) $ultimoTalle->touch();
 
             return response()->json(['message' => 'Venta eliminada exitosamente']);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'La venta no existe'], 404);
         }
     }
+
 
 
 

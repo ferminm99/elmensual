@@ -45,16 +45,14 @@ class CalendarioController extends Controller
     }
 
 
-    public function destroy($id)
-    {
+    public function destroy($id) {
         try {
-            // Buscar la compra por id
             $compra = CompraCalendario::findOrFail($id);
-            // Eliminar la compra
             $compra->delete();
-
-            if ($compra = CompraCalendario::latest()->first()) $compra->touch();
-
+    
+            $ultima = CompraCalendario::latest()->first();
+            if ($ultima) $ultima->touch();
+    
             return response()->json(['message' => 'Compra eliminada correctamente.'], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Compra no encontrada.'], 404);
@@ -62,6 +60,7 @@ class CalendarioController extends Controller
             return response()->json(['error' => 'Error al eliminar la compra.'], 500);
         }
     }
+    
 
 
     public function ultimaActualizacionCalendario() {

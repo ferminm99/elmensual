@@ -54,11 +54,14 @@ class ClienteController extends Controller
     public function destroy($id) {
         $cliente = Cliente::findOrFail($id);
         $cliente->delete();
-
-        if ($cliente = Cliente::latest()->first()) $cliente->touch();
-
+    
+        // Tocar el updated_at del cliente más reciente (si hay otros)
+        $ultimoCliente = Cliente::latest()->first();
+        if ($ultimoCliente) $ultimoCliente->touch();
+    
         return response()->json(['message' => 'Cliente eliminado exitosamente']);
     }
+    
 
     public function ultimaActualizacionClientes() {
         $lastUpdate = DB::table('clientes')->max('updated_at');
