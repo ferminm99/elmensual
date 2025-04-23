@@ -611,7 +611,6 @@ import {
     CLIENTES_KEY,
 } from "../utils/cacheKeys";
 import { useSyncedCache } from "@/utils/useSyncedCache";
-import { checkCacheFreshness } from "@/utils/cacheFreshness";
 
 export default {
     components: {
@@ -796,6 +795,12 @@ export default {
         window.removeEventListener("notifyCacheChange", this.cacheListener);
     },
 
+    watch: {
+        ventas(newVentas) {
+            this.ventasFiltradas = [...newVentas];
+        },
+    },
+
     methods: {
         getItemClass(item) {
             if (item.id === this.ventaUltimaFacturada) {
@@ -888,11 +893,17 @@ export default {
                     const ventaActualizada = res.data;
 
                     // Reemplazar venta actualizada en cache
-                    this.ventas = modifyInCache(VENTAS_KEY, (ventas) =>
-                        ventas.map((v) =>
-                            v.id === ventaActualizada.id ? ventaActualizada : v
-                        )
+                    this.ventas = modifyInCache(
+                        VENTAS_KEY,
+                        (ventas) =>
+                            ventas.map((v) =>
+                                v.id === ventaActualizada.id
+                                    ? ventaActualizada
+                                    : v
+                            ),
+                        ventaActualizada.updated_at
                     );
+
                     notifyCacheChange(VENTAS_KEY);
                     this.refreshVentasDesdeCache();
                     this.tablaKey += 1; // 🔁 fuerza re-render del componente
@@ -1233,11 +1244,17 @@ export default {
                     const ventaActualizada = res.data;
 
                     // Reemplazar en cache
-                    this.ventas = modifyInCache(VENTAS_KEY, (ventas) =>
-                        ventas.map((v) =>
-                            v.id === ventaActualizada.id ? ventaActualizada : v
-                        )
+                    this.ventas = modifyInCache(
+                        VENTAS_KEY,
+                        (ventas) =>
+                            ventas.map((v) =>
+                                v.id === ventaActualizada.id
+                                    ? ventaActualizada
+                                    : v
+                            ),
+                        ventaActualizada.updated_at
                     );
+
                     notifyCacheChange(VENTAS_KEY);
 
                     // Reemplazar en vista local
@@ -1269,8 +1286,10 @@ export default {
                 .then(() => {
                     this.ventas = removeFromCache(
                         VENTAS_KEY,
-                        (venta) => venta.id === this.selectedVenta.id
+                        (venta) => venta.id === this.selectedVenta.id,
+                        res.data.updated_at
                     );
+
                     notifyCacheChange(VENTAS_KEY);
                     this.refreshVentasDesdeCache();
                     this.tablaKey += 1;
@@ -1642,7 +1661,9 @@ export default {
                 const nuevasVentas = res.data;
 
                 // Guardarlas en cache
-                nuevasVentas.forEach((v) => appendToCache(VENTAS_KEY, v));
+                nuevasVentas.forEach((v) =>
+                    appendToCache(VENTAS_KEY, v, v.updated_at)
+                );
                 notifyCacheChange(VENTAS_KEY);
 
                 // Actualizar tabla local

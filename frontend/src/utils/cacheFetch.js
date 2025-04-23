@@ -68,8 +68,7 @@ export async function cachedFetch(
     return safeData;
 }
 
-export function updateCache(key, newData) {
-    const now = Date.now();
+export function updateCache(key, newData, lastUpdate = Date.now()) {
     if (!Array.isArray(newData)) {
         console.warn(
             `updateCache: El valor para "${key}" no es un array.`,
@@ -77,20 +76,20 @@ export function updateCache(key, newData) {
         );
     }
     localStorage.setItem(key, JSON.stringify(newData));
-    localStorage.setItem(key + "_time", now.toString());
-    localStorage.setItem(key + "_last_update", now.toString()); // NUEVO
-    memoryCache[key] = { data: newData, time: now };
+    localStorage.setItem(key + "_time", Date.now().toString());
+    localStorage.setItem(key + "_last_update", lastUpdate.toString());
+    memoryCache[key] = { data: newData, time: Date.now() };
 }
 
 export function appendToCache(key, newItem) {
     const cached =
         memoryCache[key]?.data || JSON.parse(localStorage.getItem(key)) || [];
     const updated = [...cached, newItem];
-    updateCache(key, updated);
+    const lastUpdate = newItem?.updated_at || Date.now();
+    updateCache(key, updated, lastUpdate);
     return updated;
 }
-
-export function removeFromCache(key, predicateFn) {
+export function removeFromCache(key, predicateFn, updated_at = null) {
     let cached = memoryCache[key]?.data;
     if (!Array.isArray(cached)) {
         try {
@@ -99,14 +98,12 @@ export function removeFromCache(key, predicateFn) {
             cached = [];
         }
     }
-    if (!Array.isArray(cached)) cached = [];
-
     const updated = cached.filter((item) => !predicateFn(item));
-    updateCache(key, updated);
+    updateCache(key, updated, updated_at || Date.now());
     return updated;
 }
 
-export function modifyInCache(key, modifyFn) {
+export function modifyInCache(key, modifyFn, updated_at = null) {
     const cachedRaw = memoryCache[key]?.data || localStorage.getItem(key);
     let cached = [];
 
@@ -123,7 +120,7 @@ export function modifyInCache(key, modifyFn) {
     }
 
     const updated = modifyFn(cached);
-    updateCache(key, updated);
+    updateCache(key, updated, updated_at || Date.now());
     return updated;
 }
 
@@ -137,7 +134,6 @@ export function applyStockDelta(
     delta = parseInt(delta) || 0;
     if (delta === 0) return;
 
-    // Obtener copia actual del cache (de memoria si existe, o localStorage si no)
     let cache = memoryCache[cacheKey]?.data;
     if (!cache) {
         try {
@@ -147,15 +143,12 @@ export function applyStockDelta(
         }
     }
 
-    const now = Date.now();
-
     const updatedCache = cache.map((articulo) => {
         if (articulo.id !== articuloId) return articulo;
 
         const talles = Array.isArray(articulo.talles)
             ? [...articulo.talles]
             : [];
-
         const existente = talles.find((t) => t.talle === talle);
 
         if (existente) {
@@ -179,7 +172,6 @@ export function applyStockDelta(
 
             return { ...articulo, talles };
         } else if (delta > 0) {
-            // Crear nuevo talle
             const nuevoTalle = {
                 talle,
                 marron: 0,
@@ -199,9 +191,5 @@ export function applyStockDelta(
         return articulo;
     });
 
-    // Actualizar ambos
-    memoryCache[cacheKey] = { data: updatedCache, time: now };
-    localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
-    localStorage.setItem(`${cacheKey}_time`, now.toString());
-    localStorage.setItem(`${cacheKey}_last_update`, now.toString());
+    updateCache(cacheKey, updatedCache, Date.now());
 }

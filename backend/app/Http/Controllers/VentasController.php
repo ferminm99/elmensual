@@ -97,7 +97,11 @@ class VentasController extends Controller
             
         }
     
-        return response()->json($ventasRegistradas, 201);
+        return response()->json([
+            'ventas' => $ventasRegistradas,
+            'last_update' => now()->timestamp * 1000, // en milisegundos
+        ], 201);
+        
     }
 
     //Obtiene la ultima facturacion
@@ -122,7 +126,14 @@ class VentasController extends Controller
             $ultimaVentaId = $facturacion->venta_id;
         }
 
-        return response()->json(['message' => 'Facturaciones guardadas con éxito', 'ultima_venta_id' => $ultimaVentaId]);
+        $lastUpdate = Venta::latest('updated_at')->first()?->updated_at->timestamp * 1000;
+
+        return response()->json([
+            'message' => 'Facturaciones guardadas con éxito',
+            'ultima_venta_id' => $ultimaVentaId,
+            'last_update' => $lastUpdate,
+        ]);
+
     }
     // Obtener las ventas para visualizarlas
     public function obtenerVentas()
@@ -153,7 +164,11 @@ class VentasController extends Controller
         // Cargar relaciones para que el frontend reciba la venta completa
         $venta->load('articulo', 'cliente');
 
-        return response()->json($venta);
+        return response()->json([
+            'venta' => $venta,
+            'last_update' => now()->timestamp * 1000,
+        ]);
+        
     }
 
 
@@ -183,7 +198,10 @@ class VentasController extends Controller
             $ultimoTalle = Talle::latest()->first();
             if ($ultimoTalle) $ultimoTalle->touch();
 
-            return response()->json(['message' => 'Venta eliminada exitosamente']);
+            return response()->json([
+                'message' => 'Venta eliminada exitosamente',
+                'last_update' => now()->timestamp * 1000,
+            ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'La venta no existe'], 404);
         }
@@ -224,7 +242,10 @@ class VentasController extends Controller
         // Recargar relaciones para devolver todo completo
         $venta->load('articulo', 'cliente');
 
-        return response()->json($venta);
+        return response()->json([
+            'venta' => $venta,
+            'last_update' => now()->timestamp * 1000,
+        ]);
     }
 
     public function ultimaActualizacionVentas() {
