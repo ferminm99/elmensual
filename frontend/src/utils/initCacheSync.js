@@ -3,18 +3,22 @@ import { getCacheLastUpdate, getMemoryCache } from "./cacheFetch";
 
 export function initCacheSync(keys, { onUpdate }) {
     const ttl = 86400;
+    const toleranciaMs = 2000; // ⚠️ Margen para evitar limpiar por diferencia mínima
 
     // Revisión inicial por cambios remotos (al iniciar el componente)
     keys.forEach((key) => {
         const lastUpdate = getCacheLastUpdate(key);
         const localTime = parseInt(localStorage.getItem(`${key}_time`) || "0");
 
-        if (lastUpdate > localTime) {
+        if (lastUpdate - localTime > toleranciaMs) {
             console.warn(
-                `🟡 Cambios detectados en ${key}. Limpiando cache local.`
+                `🟡 Cambios detectados en ${key} (diff ${
+                    lastUpdate - localTime
+                }ms). Limpiando cache local.`
             );
             localStorage.removeItem(key);
             localStorage.removeItem(`${key}_time`);
+            localStorage.removeItem(`${key}_last_update`);
         }
     });
 
@@ -29,6 +33,6 @@ export function initCacheSync(keys, { onUpdate }) {
 
     // Retornar función de cleanup para usar en `beforeUnmount`
     return () => {
-        window.removeEventListener("storage", () => {});
+        window.removeEventListener("storage", () => {}); // (opcional) podrías mejorar esto si querés evitar memory leaks
     };
 }
