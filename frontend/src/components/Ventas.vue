@@ -1639,6 +1639,7 @@ export default {
             if (!this.productos.length) {
                 this.snackbarText = "Por favor ingresa los productos";
                 this.snackbar = true;
+                this.loading = false;
                 return;
             }
 
@@ -1646,6 +1647,7 @@ export default {
                 this.snackbarText =
                     "Por favor ingresa el nombre y apellido del cliente.";
                 this.snackbar = true;
+                this.loading = false;
                 return;
             }
 
@@ -1673,13 +1675,13 @@ export default {
 
                 notifyCacheChange(VENTAS_KEY);
 
-                // Actualizar tabla local
+                // ✅ Mostrar de inmediato en esta pestaña
                 this.ventas.push(...nuevasVentas);
                 this.ventas.sort(
                     (a, b) => new Date(b.fecha) - new Date(a.fecha)
                 );
-                this.refreshVentasDesdeCache();
-                this.tablaKey += 1; // 🔁 fuerza re-render del componente
+                this.ventasFiltradas = [...this.ventas];
+                this.tablaKey += 1;
 
                 // Restar stock en cache y local
                 this.productos.forEach((p) => {
@@ -1695,25 +1697,27 @@ export default {
                 this.articulos = getMemoryCache(ARTICULOS_TALLES_KEY, 86400); // refrescar desde memoria
 
                 this.dialogVenta = false;
-                this.form = {
-                    cliente_nombre: "",
-                    cliente_apellido: "",
-                    cliente_cuit: "",
-                    cliente_cbu: "",
-                    fecha: moment().format("YYYY-MM-DD"),
-                    forma_pago: "efectivo",
-                };
-                this.productos = [];
-                this.articuloActual = null;
-                this.tallesDisponibles = [];
-                this.coloresDisponibles = [];
-
+                this.resetFormVenta?.();
                 this.fetchUltimaFacturacion();
             } catch (error) {
                 console.error(error);
             } finally {
                 this.loading = false;
             }
+        },
+        resetFormVenta() {
+            this.form = {
+                cliente_nombre: "",
+                cliente_apellido: "",
+                cliente_cuit: "",
+                cliente_cbu: "",
+                fecha: moment().format("YYYY-MM-DD"),
+                forma_pago: "efectivo",
+            };
+            this.productos = [];
+            this.articuloActual = null;
+            this.tallesDisponibles = [];
+            this.coloresDisponibles = [];
         },
         calcularPrecioTotal() {
             // Recalcula el precio total
