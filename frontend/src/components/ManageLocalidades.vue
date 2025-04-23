@@ -121,6 +121,7 @@ import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import { LOCALIDADES_KEY } from "@/utils/cacheKeys";
 import ExcelJS from "exceljs";
 import ResponsiveTable from "./components/ResponsiveTable.vue";
+import { useSyncedCache } from "@/utils/useSyncedCache";
 
 function normalize(text) {
     // text = text.toString();
