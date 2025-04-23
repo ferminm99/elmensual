@@ -65,8 +65,7 @@ class CalendarioController extends Controller
 
 
     public function ultimaActualizacionCalendario() {
-        $lastUpdate = DB::table('compras_calendario')->max('updated_at');
-        return response()->json(['last_update' => strtotime($lastUpdate)]);
+        return response()->json(['last_update' => $this->obtenerMeta('compras_calendario')]);
     }
 
 }

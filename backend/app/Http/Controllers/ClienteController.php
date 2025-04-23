@@ -61,8 +61,7 @@ class ClienteController extends Controller
     }
 
     public function ultimaActualizacionClientes() {
-        $lastUpdate = DB::table('clientes')->max('updated_at');
-        return response()->json(['last_update' => strtotime($lastUpdate)]);
+        return response()->json(['last_update' => $this->obtenerMeta('clientes')]);
     }
 
 }

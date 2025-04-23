@@ -221,10 +221,9 @@ class VentasController extends Controller
     }
 
     public function ultimaActualizacionVentas() {
-        $lastUpdate = DB::table('ventas')->max('updated_at');
-        return response()->json(['last_update' => strtotime($lastUpdate)]);
+        return response()->json(['last_update' => $this->obtenerMeta('ventas')]);
     }
-
+    
 
         
 
