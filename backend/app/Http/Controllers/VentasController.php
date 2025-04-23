@@ -159,25 +159,31 @@ class VentasController extends Controller
 
  
     // Eliminar una venta
-    public function destroy($id) {
-        $venta = Venta::findOrFail($id);
-        $cliente = $venta->cliente;
+    public function destroy($id)
+    {
+        try {
+            $venta = Venta::findOrFail($id);
+            $cliente = $venta->cliente;
 
-        $articulo = Articulo::find($venta['articulo']['id']);
-        $articulo->talles()->where('talle', $venta['talle'])->increment($venta['color'], 1);
+            $articulo = Articulo::find($venta['articulo']['id']);
+            $articulo->talles()->where('talle', $venta['talle'])->increment($venta['color'], 1);
 
-        $venta->delete();
+            $venta->delete();
 
-        if ($cliente->ventas()->count() === 0) {
-            $cliente->delete();
-            $this->actualizarMeta('clientes');
+            if ($cliente->ventas()->count() === 0) {
+                $cliente->delete();
+                $this->actualizarMeta('clientes');
+            }
+
+            $this->actualizarMeta('ventas');
+            $this->actualizarMeta('talles');
+
+            return response()->json(['message' => 'Venta eliminada exitosamente']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'La venta no existe'], 404);
         }
-
-        $this->actualizarMeta('ventas');
-        $this->actualizarMeta('talles');
-
-        return response()->json(['message' => 'Venta eliminada exitosamente']);
     }
+
 
     public function cambiarBombacha(Request $request)
     {
