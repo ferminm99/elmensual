@@ -890,9 +890,7 @@ export default {
                     forma_pago: this.selectedVenta.forma_pago,
                 })
                 .then((res) => {
-                    const ventaActualizada = res.data;
-
-                    // Reemplazar venta actualizada en cache
+                    const ventaActualizada = res.data.venta || res.data;
                     this.ventas = modifyInCache(
                         VENTAS_KEY,
                         (ventas) =>
@@ -1241,9 +1239,7 @@ export default {
                     forma_pago: this.selectedVenta.forma_pago,
                 })
                 .then((res) => {
-                    const ventaActualizada = res.data;
-
-                    // Reemplazar en cache
+                    const ventaActualizada = res.data.venta || res.data; // por si viene como objeto con clave 'venta'
                     this.ventas = modifyInCache(
                         VENTAS_KEY,
                         (ventas) =>
@@ -1284,10 +1280,11 @@ export default {
             axios
                 .delete(`/api/ventas/${this.selectedVenta.id}`)
                 .then(() => {
+                    const updatedAt = res.data.updated_at || Date.now();
                     this.ventas = removeFromCache(
                         VENTAS_KEY,
                         (venta) => venta.id === this.selectedVenta.id,
-                        res.data.updated_at
+                        updatedAt
                     );
 
                     notifyCacheChange(VENTAS_KEY);
@@ -1658,12 +1655,14 @@ export default {
                 const res = await axios.post("/api/ventas", ventaData);
 
                 // Las ventas que devuelve el backend ya vienen con articulo, cliente, id, etc.
-                const nuevasVentas = res.data;
+                const nuevasVentas = Array.isArray(res.data.ventas)
+                    ? res.data.ventas
+                    : [];
 
-                // Guardarlas en cache
                 nuevasVentas.forEach((v) =>
                     appendToCache(VENTAS_KEY, v, v.updated_at)
                 );
+
                 notifyCacheChange(VENTAS_KEY);
 
                 // Actualizar tabla local
