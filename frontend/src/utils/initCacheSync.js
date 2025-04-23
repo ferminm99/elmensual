@@ -8,7 +8,7 @@ export function initCacheSync(keys, { onUpdate }) {
     // Revisión inicial por cambios remotos (al iniciar el componente)
     keys.forEach((key) => {
         const lastUpdate = getCacheLastUpdate(key);
-        const localTime = parseInt(localStorage.getItem(`${key}_time`) || "0");
+        const localTime = parseInt(localStorage.getItem(`${key}_time`)) || 0;
 
         if (lastUpdate - localTime > toleranciaMs) {
             console.warn(
