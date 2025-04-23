@@ -92,6 +92,14 @@ export default {
             return result;
         },
     },
+    watch: {
+        items: {
+            handler(newVal) {
+                console.log("🔁 items cambiaron en ResponsiveTable", newVal);
+            },
+            deep: true, // 🔍 Importante para detectar cambios internos
+        },
+    },
 };
 </script>
 
