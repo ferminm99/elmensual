@@ -1274,6 +1274,14 @@ export default {
             this.selectedVenta = { ...item };
             this.confirmDeleteDialog = true;
         },
+        cacheListener(e) {
+            if (e.detail === VENTAS_KEY) {
+                console.log("🔁 Cambios detectados en ventas desde otro tab");
+                this.refreshVentasDesdeCache();
+                this.tablaKey += 1;
+            }
+        },
+
         // Eliminar la venta
         deleteVenta() {
             this.loading = true;
