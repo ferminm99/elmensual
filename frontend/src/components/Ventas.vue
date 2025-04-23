@@ -1267,17 +1267,15 @@ export default {
             axios
                 .delete(`/api/ventas/${this.selectedVenta.id}`)
                 .then(() => {
-                    // 🧠 1. Eliminar la venta del cache
                     this.ventas = removeFromCache(
                         VENTAS_KEY,
                         (venta) => venta.id === this.selectedVenta.id
                     );
                     notifyCacheChange(VENTAS_KEY);
-
                     this.refreshVentasDesdeCache();
-                    this.tablaKey += 1; // 🔁 fuerza re-render del componente
+                    this.tablaKey += 1;
 
-                    // 🧠 2. Restaurar el stock del artículo vendido
+                    // Restaurar stock
                     this.articulos = modifyInCache(
                         ARTICULOS_TALLES_KEY,
                         (articulos) => {
@@ -1315,16 +1313,20 @@ export default {
                     this.confirmDeleteDialog = false;
                     this.snackbarText = "Venta eliminada y stock restaurado.";
                     this.snackbar = true;
-                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
-                    this.snackbarText = "Error al eliminar la venta.";
+                    if (error.response?.status === 404) {
+                        this.snackbarText = "La venta ya no existe.";
+                    } else {
+                        this.snackbarText = "Error al eliminar la venta.";
+                    }
                     this.snackbar = true;
+                })
+                .finally(() => {
                     this.loading = false;
                 });
         },
-
         openVentaDialog() {
             this.dialogVenta = true;
         },
