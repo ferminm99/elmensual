@@ -80,7 +80,7 @@ export default {
             console.log("📦 items recibidos:", this.items);
             console.log("🔍 search:", this.search);
 
-            if (!this.search) return this.items;
+            if (!this.search) return [...this.items];
 
             const searchLower = this.search.toLowerCase();
             const result = this.items.filter((item) =>
