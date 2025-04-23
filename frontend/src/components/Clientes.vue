@@ -309,6 +309,12 @@ export default {
                     notifyCacheChange(CLIENTES_KEY);
                     this.calculateTotals();
                     this.confirmDeleteDialog = false;
+                })
+                .catch((error) => {
+                    alert(
+                        "No se pudo eliminar el cliente. Probablemente ya fue eliminado."
+                    );
+                    console.error(error);
                 });
         },
         capitalizarPalabras(texto) {
