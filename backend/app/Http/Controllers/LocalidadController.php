@@ -44,4 +44,10 @@ class LocalidadController extends Controller
         return response()->json(['message' => 'Localidad eliminada']);
     }
     
+    public function ultimaActualizacionLocalidades() {
+        $lastUpdate = DB::table('localidades')->max('updated_at');
+        return response()->json(['last_update' => strtotime($lastUpdate)]);
+    }
+
+    
 }
