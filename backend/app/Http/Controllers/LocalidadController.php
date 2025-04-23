@@ -39,7 +39,7 @@ class LocalidadController extends Controller
         $localidad = Localidad::findOrFail($id);
         $localidad->delete();
 
-        $this->actualizarMeta('localidades');
+        if ($localidad = Localidad::latest()->first()) $localidad->touch();
 
         return response()->json(['message' => 'Localidad eliminada']);
     }

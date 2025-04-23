@@ -79,8 +79,8 @@ class ArticuloController extends Controller
         $articulo->talles()->delete();
         $articulo->delete();
 
-        $this->actualizarMeta('articulos');
-        $this->actualizarMeta('talles');
+        if ($articulo = Articulo::latest()->first()) $articulo->touch();
+        if ($ultimoTalle = $articulo->talles()->latest()->first()) $ultimoTalle->touch();
 
         return response()->json(['message' => 'Artículo eliminado correctamente']);
     }
@@ -181,7 +181,7 @@ class ArticuloController extends Controller
             $talle->delete();
         }
 
-        $this->actualizarMeta('talles');
+        if ($ultimoTalle = $articulo->talles()->latest()->first()) $ultimoTalle->touch();
 
         return response()->json(['message' => 'Bombachas eliminadas correctamente']);
     }
@@ -192,7 +192,7 @@ class ArticuloController extends Controller
 
         if ($talle) {
             $talle->delete();
-            $this->actualizarMeta('talles');
+            if ($ultimoTalle = $articulo->talles()->latest()->first()) $ultimoTalle->touch();
             return response()->json(['message' => 'Talle eliminado correctamente']);
         }
 

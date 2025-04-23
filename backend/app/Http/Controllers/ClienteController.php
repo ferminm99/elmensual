@@ -55,7 +55,7 @@ class ClienteController extends Controller
         $cliente = Cliente::findOrFail($id);
         $cliente->delete();
 
-        $this->actualizarMeta('clientes');
+        if ($cliente = Cliente::latest()->first()) $cliente->touch();
 
         return response()->json(['message' => 'Cliente eliminado exitosamente']);
     }

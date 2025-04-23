@@ -53,7 +53,7 @@ class CalendarioController extends Controller
             // Eliminar la compra
             $compra->delete();
 
-            $this->actualizarMeta('calendario');
+            if ($compra = CompraCalendario::latest()->first()) $compra->touch();
 
             return response()->json(['message' => 'Compra eliminada correctamente.'], 200);
         } catch (ModelNotFoundException $e) {
