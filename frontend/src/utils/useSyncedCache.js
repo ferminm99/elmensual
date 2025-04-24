@@ -28,10 +28,16 @@ export async function useSyncedCache({
                 params: { timestamp: localLastUpdate },
             });
 
-            const updatedItems = Array.isArray(data) ? data : [];
-            const backendLastUpdate = updatedItems.length
-                ? new Date().getTime()
-                : localLastUpdate;
+            const backendLastUpdate = data?.last_update
+                ? Number(data.last_update) * 1000
+                : (() => {
+                      console.error(
+                          `❌ [${key}] No se recibió last_update del backend`
+                      );
+                      throw new Error("No se recibió last_update");
+                  })();
+
+            const updatedItems = Array.isArray(data?.data) ? data.data : [];
 
             console.log(`🧠 Cache check para "${key}"`);
             console.log(
@@ -60,7 +66,7 @@ export async function useSyncedCache({
         const result = await cachedFetch(key, fetchFn, { ttl });
         await updateCache(key, result);
 
-        onData(Array.isArray(result) ? result : []);
+        onData(updatedItems);
     } catch (err) {
         console.error(`❌ Error en useSyncedCache ${key}:`, err);
         onData([]);

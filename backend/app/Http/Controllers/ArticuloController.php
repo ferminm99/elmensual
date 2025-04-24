@@ -310,6 +310,7 @@ class ArticuloController extends Controller
     public function articulosTallesActualizadosDesde(Request $request)
     {
         $timestamp = $request->query('timestamp');
+
         if (!$timestamp || !is_numeric($timestamp)) {
             return response()->json(['error' => 'Timestamp inválido'], 400);
         }
@@ -323,8 +324,14 @@ class ArticuloController extends Controller
             })
             ->get();
 
-        return response()->json($articulos);
+        $lastUpdate = DB::table('talles')->max('updated_at') ?? now();
+
+        return response()->json([
+            'data' => $articulos,
+            'last_update' => strtotime($lastUpdate),
+        ]);
     }
+
 
     public function articulosActualizadosDesde(Request $request)
     {
@@ -338,7 +345,12 @@ class ArticuloController extends Controller
 
         $articulos = Articulo::where('updated_at', '>', $fecha)->get();
 
-        return response()->json($articulos);
+        $lastUpdate = DB::table('articulos')->max('updated_at') ?? now();
+
+        return response()->json([
+            'data' => $articulos,
+            'last_update' => strtotime($lastUpdate),
+        ]);
     }
 
 
