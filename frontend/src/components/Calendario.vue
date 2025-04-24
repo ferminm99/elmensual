@@ -107,6 +107,7 @@ import {
     modifyInCache,
 } from "@/utils/cacheFetch";
 import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
+import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
     components: {
