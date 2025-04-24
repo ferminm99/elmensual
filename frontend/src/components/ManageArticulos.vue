@@ -425,7 +425,10 @@ export default {
                     : [];
 
                 this.articulos = articulosActualizados;
-                updateCache(ARTICULOS_KEY, articulosActualizados);
+                updateCache(ARTICULOS_KEY, {
+                    articulos: articulosActualizados,
+                });
+
                 notifyCacheChange(ARTICULOS_KEY);
                 this.loading = false;
                 alert("Precios recalculados correctamente.");
@@ -449,7 +452,9 @@ export default {
                         : [];
 
                     this.articulos = articulosActualizados;
-                    updateCache(ARTICULOS_KEY, articulosActualizados);
+                    updateCache(ARTICULOS_KEY, {
+                        articulos: articulosActualizados,
+                    });
 
                     notifyCacheChange(ARTICULOS_KEY);
                     this.dialogoAumento = false;
