@@ -839,12 +839,12 @@ export default {
         },
         getTotalBombachas(talle) {
             return (
-                talle.marron +
-                talle.negro +
-                talle.verde +
-                talle.azul +
-                talle.celeste +
-                talle.blancobeige
+                Number(talle.marron) +
+                Number(talle.negro) +
+                Number(talle.verde) +
+                Number(talle.azul) +
+                Number(talle.celeste) +
+                Number(talle.blancobeige)
             );
         },
         async addQuantities() {
