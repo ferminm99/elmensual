@@ -361,57 +361,16 @@ export default {
                 : axios.post("/api/articulo", this.form);
 
             req.then((res) => {
-                console.log("✅ Respuesta del backend:", res.data);
-
-                if (this.isEdit) {
-                    console.log(
-                        "🧠 Antes de modifyInCache:",
-                        getMemoryCache(ARTICULOS_KEY)
-                    );
-
-                    modifyInCache(ARTICULOS_KEY, (articulos) =>
-                        articulos.map((a) =>
-                            a.id === this.form.id ? { ...this.form } : a
-                        )
-                    );
-
-                    console.log(
-                        "🧠 Después de modifyInCache:",
-                        getMemoryCache(ARTICULOS_KEY)
-                    );
-                } else {
-                    appendToCache(ARTICULOS_KEY, res.data.articulo);
-                }
-
-                const updated = getMemoryCache(ARTICULOS_KEY);
-                console.log("📦 updated desde memoria:", updated);
-
-                this.articulos = Array.isArray(updated)
-                    ? updated
-                    : Array.isArray(updated?.articulos)
-                    ? updated.articulos
-                    : Array.isArray(updated?.data)
-                    ? updated.data
-                    : [];
-
-                console.log(
-                    "📋 this.articulos después del save:",
-                    this.articulos
-                );
+                // usamos directamente el array completo que manda el backend
+                const nuevosArticulos = res.data.articulos;
+                updateCache(ARTICULOS_KEY, nuevosArticulos);
+                this.articulos = nuevosArticulos;
 
                 notifyCacheChange(ARTICULOS_KEY);
                 this.dialog = false;
                 this.searchNombre = "";
                 this.searchNumero = "";
                 this.loading = false;
-            }).catch((err) => {
-                this.loading = false;
-                if (err.response?.status === 422) {
-                    alert("❌ Ya existe un artículo con ese número.");
-                } else {
-                    console.error("❌ Error inesperado:", err);
-                    alert("Ocurrió un error al guardar el artículo.");
-                }
             });
         },
 
