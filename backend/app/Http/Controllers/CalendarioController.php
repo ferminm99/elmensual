@@ -68,15 +68,16 @@ class CalendarioController extends Controller
             if (!$timestamp || !is_numeric($timestamp)) {
                 return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
             }
-
+    
             $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
-
-
+    
             $compras = \App\Models\CompraCalendario::where('updated_at', '>', $desde)->get();
-
+            $lastUpdate = DB::table('compra_calendarios')->max('updated_at') ?? now();
+    
             return response()->json([
-                'compras' => $compras,
+                'data' => $compras,
                 'count' => $compras->count(),
+                'last_update' => strtotime($lastUpdate),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -84,6 +85,7 @@ class CalendarioController extends Controller
             ], 500);
         }
     }
+    
 
 
     public function ultimaActualizacionCalendario() {

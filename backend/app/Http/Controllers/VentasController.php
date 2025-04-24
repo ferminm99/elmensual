@@ -253,32 +253,34 @@ class VentasController extends Controller
         return response()->json(['last_update' => strtotime($lastUpdate)]);
     }
     
-
     public function ventasActualizadasDesde(Request $request)
-{
-    try {
-        $timestamp = $request->query('timestamp');
-        if (!$timestamp) {
-            return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
+    {
+        try {
+            $timestamp = $request->query('timestamp');
+            if (!$timestamp || !is_numeric($timestamp)) {
+                return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
+            }
+    
+            $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
+    
+            $ventas = Venta::with('articulo', 'cliente')
+                ->where('updated_at', '>', $desde)
+                ->get();
+    
+            $lastUpdate = DB::table('ventas')->max('updated_at') ?? now();
+    
+            return response()->json([
+                'data' => $ventas,
+                'count' => $ventas->count(),
+                'last_update' => strtotime($lastUpdate),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener ventas actualizadas: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
-
-        $ventas = Venta::with('articulo', 'cliente')
-            ->where('updated_at', '>', $desde)
-            ->get();
-
-        return response()->json([
-            'ventas' => $ventas,
-            'count' => $ventas->count(),
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => 'Error al obtener ventas actualizadas: ' . $e->getMessage(),
-        ], 500);
     }
-}
-
+    
 
         
 

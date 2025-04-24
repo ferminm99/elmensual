@@ -22,6 +22,7 @@ export async function useSyncedCache({
         const localLastUpdate = getCacheLastUpdate(key);
         const noHayCache =
             !cached || !Array.isArray(cached) || cached.length === 0;
+        let updatedItems = [];
 
         if (!noHayCache) {
             const { data } = await axios.get(`/api${apiPath}`, {

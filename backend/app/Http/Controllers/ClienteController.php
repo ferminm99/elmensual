@@ -71,13 +71,14 @@ class ClienteController extends Controller
             }
     
             $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
-
     
             $clientes = \App\Models\Cliente::where('updated_at', '>', $desde)->get();
+            $lastUpdate = DB::table('clientes')->max('updated_at') ?? now();
     
             return response()->json([
-                'clientes' => $clientes,
+                'data' => $clientes,
                 'count' => $clientes->count(),
+                'last_update' => strtotime($lastUpdate),
             ]);
         } catch (\Exception $e) {
             return response()->json([

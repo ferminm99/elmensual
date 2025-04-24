@@ -57,10 +57,12 @@ class LocalidadController extends Controller
             $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
 
             $localidades = \App\Models\Localidad::where('updated_at', '>', $desde)->get();
+            $lastUpdate = DB::table('localidads')->max('updated_at') ?? now();
 
             return response()->json([
-                'localidades' => $localidades,
+                'data' => $localidades,
                 'count' => $localidades->count(),
+                'last_update' => strtotime($lastUpdate),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -68,6 +70,7 @@ class LocalidadController extends Controller
             ], 500);
         }
     }
+
 
     
     public function ultimaActualizacionLocalidades() {
