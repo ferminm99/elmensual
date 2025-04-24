@@ -361,9 +361,12 @@ export default {
                 : axios.post("/api/articulo", this.form);
 
             req.then((res) => {
+                console.log(res);
                 const nuevosArticulos = Array.isArray(res.data.articulos)
                     ? res.data.articulos
                     : [];
+
+                console.log(nuevosArticulos);
 
                 updateCache(ARTICULOS_KEY, nuevosArticulos);
                 this.articulos = nuevosArticulos;
