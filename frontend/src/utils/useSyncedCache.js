@@ -6,7 +6,6 @@ import {
 } from "@/utils/cacheFetch";
 import axios from "axios";
 import { notifyCacheChange } from "@/utils/cacheEvents";
-
 export async function useSyncedCache({
     key,
     apiPath,
@@ -18,12 +17,9 @@ export async function useSyncedCache({
     setLoading(true);
 
     try {
-        const MARGEN_TIEMPO = 2000; // 2 segundos
-
+        const MARGEN_TIEMPO = 2000;
         const cached = getMemoryCache(key, ttl);
         const localLastUpdate = getCacheLastUpdate(key);
-
-        // Si no hay datos en cache, hacer fetch completo sin comparar fechas
         const noHayCache =
             !cached || !Array.isArray(cached) || cached.length === 0;
 
@@ -31,6 +27,7 @@ export async function useSyncedCache({
             const { data } = await axios.get(`/api${apiPath}`, {
                 params: { timestamp: localLastUpdate },
             });
+
             const backendLastUpdate = Number(data.last_update || 0) * 1000;
 
             console.log(`🧠 Cache check para "${key}"`);
@@ -51,23 +48,14 @@ export async function useSyncedCache({
                 localStorage.removeItem(`${key}_time`);
                 localStorage.removeItem(`${key}_last_update`);
                 notifyCacheChange(key);
-            }
-        }
-
-        // En ambos casos, hacer fetch (desde cache o desde red)
-        const result = await cachedFetch(key, fetchFn, { ttl });
-
-        // Reemplazar en memoria y localStorage
-        await updateCache(key, result);
-
-        // Guardar la nueva fecha si corresponde
-        if (!noHayCache) {
-            const { data } = await axios.get(`/api${apiPath}`);
-            const backendLastUpdate = Number(data.last_update || 0) * 1000;
-            if (backendLastUpdate > localLastUpdate) {
+            } else {
+                // Guardar last_update aunque no haya cambio
                 localStorage.setItem(`${key}_last_update`, backendLastUpdate);
             }
         }
+
+        const result = await cachedFetch(key, fetchFn, { ttl });
+        await updateCache(key, result);
 
         onData(Array.isArray(result) ? result : []);
     } catch (err) {

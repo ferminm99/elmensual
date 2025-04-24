@@ -61,19 +61,29 @@ class CalendarioController extends Controller
         }
     }
     
-    public function calendarioActualizadoDesde(Request $request)
+    public function calendarioActualizadosDesde(Request $request)
     {
-        $timestamp = $request->query('timestamp');
-        if (!$timestamp || !is_numeric($timestamp)) {
-            return response()->json(['error' => 'Timestamp inválido'], 400);
+        try {
+            $timestamp = $request->query('timestamp');
+            if (!$timestamp || !is_numeric($timestamp)) {
+                return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
+            }
+
+            $desde = \Carbon\Carbon::createFromTimestampMs($timestamp);
+
+            $compras = \App\Models\CompraCalendario::where('updated_at', '>', $desde)->get();
+
+            return response()->json([
+                'compras' => $compras,
+                'count' => $compras->count(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener compras actualizadas: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $from = now()->createFromTimestampMs($timestamp);
-
-        $compras = CompraCalendario::where('updated_at', '>', $from)->get();
-
-        return response()->json($compras);
     }
+
 
     public function ultimaActualizacionCalendario() {
         $lastUpdate = DB::table('compras_calendario')->max('updated_at');
