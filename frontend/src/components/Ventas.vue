@@ -1175,6 +1175,8 @@ export default {
                 textoCompleto.includes(word)
             );
 
+            console.log("FILTRANDO", item);
+
             return allWordsMatch;
         },
         // Filtro personalizado para buscar por otros datos
