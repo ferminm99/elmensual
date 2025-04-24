@@ -6,6 +6,7 @@
             :headers="headers"
             :items="items"
             :search="search"
+            :custom-filter="customFilter"
             class="elevation-1 mt-2"
             dense
         >
@@ -68,6 +69,7 @@ export default {
         headers: Array,
         items: Array,
         search: String,
+        customFilter: Function,
     },
     computed: {
         isMobile() {
@@ -77,19 +79,23 @@ export default {
             return isMobile;
         },
         filteredItems() {
-            console.log("📦 items recibidos:", this.items);
-            console.log("🔍 search:", this.search);
-
             if (!this.search) return [...this.items];
 
             const searchLower = this.search.toLowerCase();
-            const result = this.items.filter((item) =>
+
+            if (this.customFilter) {
+                // Usar el filtro que pasaron desde el padre
+                return this.items.filter((item) =>
+                    this.customFilter(null, this.search, item)
+                );
+            }
+
+            // Fallback si no pasaron customFilter
+            return this.items.filter((item) =>
                 Object.values(item).some((val) =>
                     String(val).toLowerCase().includes(searchLower)
                 )
             );
-            console.log("🔎 Resultado filtrado:", result);
-            return result;
         },
     },
     watch: {
