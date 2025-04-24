@@ -279,8 +279,12 @@ class ArticuloController extends Controller
             ]);
         }
 
-        return response()->json(['message' => 'Precios recalculados correctamente.']);
+        return response()->json([
+            'message' => 'Precios recalculados correctamente.',
+            'articulos' => Articulo::orderBy('nombre')->get()
+        ]);
     }
+
 
     // Aumentar todos los costos originales por porcentaje
     public function aumentarCostoOriginal(Request $request)
@@ -304,8 +308,12 @@ class ArticuloController extends Controller
             ]);
         }
 
-        return response()->json(['message' => "Costos y precios actualizados con un incremento del $porcentaje%."]);
+        return response()->json([
+            'message' => "Costos y precios actualizados con un incremento del $porcentaje%.",
+            'articulos' => Articulo::orderBy('nombre')->get()
+        ]);
     }
+
 
     public function articulosTallesActualizadosDesde(Request $request)
     {

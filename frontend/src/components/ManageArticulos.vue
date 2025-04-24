@@ -395,7 +395,10 @@ export default {
         recalcularPrecios() {
             this.loading = true;
             axios.put("/api/articulos/recalcular-precios").then((res) => {
-                this.articulos = res.data;
+                this.articulos = Array.isArray(res.data.articulos)
+                    ? res.data.articulos
+                    : [];
+
                 updateCache(ARTICULOS_KEY, res.data);
                 notifyCacheChange(ARTICULOS_KEY);
                 this.loading = false;
@@ -413,7 +416,9 @@ export default {
                     porcentaje: this.porcentajeAumento,
                 })
                 .then((res) => {
-                    this.articulos = res.data;
+                    this.articulos = Array.isArray(res.data.articulos)
+                        ? res.data.articulos
+                        : [];
                     updateCache(ARTICULOS_KEY, res.data);
                     notifyCacheChange(ARTICULOS_KEY);
                     this.dialogoAumento = false;
