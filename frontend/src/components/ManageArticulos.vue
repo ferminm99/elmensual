@@ -244,15 +244,18 @@ export default {
         useSyncedCache({
             key: ARTICULOS_KEY,
             apiPath: "/articulos/actualizados-desde",
-            fetchFn: () => axios.get("/api/articulos").then((res) => res.data),
+            fetchFn: () => axios.get("/api/articulos").then((res) => res.data), // ⚠️ solo array
             onData: (data) => {
-                this.articulos = Array.isArray(data)
+                const normalized = Array.isArray(data)
                     ? data
+                    : Array.isArray(data?.data)
+                    ? data.data
                     : Array.isArray(data?.articulos)
                     ? data.articulos
                     : [];
-            },
 
+                this.articulos = normalized;
+            },
             setLoading: (val) => (this.loading = val),
         });
     },
