@@ -205,7 +205,7 @@
                 <v-card-text>
                     <v-form ref="form">
                         <!-- Selección de artículo -->
-                        <v-select
+                        <v-autocomplete
                             v-model="form.articulo_id"
                             :items="articulos"
                             :item-title="
@@ -213,8 +213,10 @@
                             "
                             item-value="id"
                             label="Selecciona un artículo"
+                            clearable
+                            filterable
                             @update:modelValue="loadTallesYColores"
-                        ></v-select>
+                        />
 
                         <!-- Selección de talle y color dependientes -->
                         <v-row>
@@ -1115,7 +1117,7 @@ export default {
             const searchText = search.toLowerCase().trim();
 
             // Acceder al cliente
-            const cliente = item.raw.cliente || {};
+            const cliente = item.cliente || {};
             const clienteNombreCompleto = `${cliente.nombre || ""} ${
                 cliente.apellido || ""
             }`.toLowerCase();
@@ -1123,14 +1125,14 @@ export default {
             const cuit = (cliente.cuit || "").toLowerCase(); // Puede ser el DNI o CUIT
 
             // Acceder al artículo
-            const articulo = item.raw.articulo || {};
+            const articulo = item.articulo || {};
             const articuloNombre = (articulo.nombre || "").toLowerCase();
-            const talle = (item.raw.talle || "").toString(); // Convertimos a string para comparar
-            const color = (item.raw.color || "").toLowerCase();
+            const talle = (item.talle || "").toString(); // Convertimos a string para comparar
+            const color = (item.color || "").toLowerCase();
 
             // Comparar por precio y costo original
-            const precio = (item.raw.precio || "").toString(); // Convertimos a string
-            const costoOriginal = (item.raw.costo_original || "").toString(); // Convertimos a string
+            const precio = (item.precio || "").toString(); // Convertimos a string
+            const costoOriginal = (item.costo_original || "").toString(); // Convertimos a string
 
             // Ver si alguno de estos campos coincide con el texto de búsqueda
             const matchesCliente = clienteNombreCompleto.includes(searchText);
@@ -1158,11 +1160,11 @@ export default {
             const searchText = search.toLowerCase().trim().split(" ");
 
             // Acceder al artículo
-            const articulo = item.raw.articulo || {};
+            const articulo = item.articulo || {};
             const articuloNombre = (articulo.nombre || "").toLowerCase();
             const numeroArticulo = (articulo.numero || "").toString(); // Número de artículo
-            const talle = (item.raw.talle || "").toString(); // Convertimos a string
-            const color = (item.raw.color || "").toLowerCase();
+            const talle = (item.talle || "").toString(); // Convertimos a string
+            const color = (item.color || "").toLowerCase();
 
             // Concatenar todos los campos en un solo string de búsqueda
             const textoCompleto =
@@ -1180,7 +1182,7 @@ export default {
             const searchText = search.toLowerCase().trim();
 
             // Acceder al cliente
-            const cliente = item.raw.cliente || {};
+            const cliente = item.cliente || {};
             const clienteNombreCompleto = `${cliente.nombre || ""} ${
                 cliente.apellido || ""
             }`.toLowerCase();
@@ -1188,8 +1190,8 @@ export default {
             const cuit = (cliente.cuit || "").toLowerCase(); // Puede ser el DNI o CUIT
 
             // Comparar por precio y costo original
-            const precio = (item.raw.precio || "").toString(); // Convertimos a string
-            const costoOriginal = (item.raw.costo_original || "").toString(); // Convertimos a string
+            const precio = (item.precio || "").toString(); // Convertimos a string
+            const costoOriginal = (item.costo_original || "").toString(); // Convertimos a string
 
             // Ver si alguno de estos campos coincide con el texto de búsqueda
             const matchesCliente = clienteNombreCompleto.includes(searchText);
