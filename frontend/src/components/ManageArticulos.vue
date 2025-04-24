@@ -362,11 +362,26 @@ export default {
 
             req.then((res) => {
                 if (this.isEdit) {
-                    modifyInCache(ARTICULOS_KEY, (articulos) =>
-                        articulos.map((a) =>
+                    modifyInCache(ARTICULOS_KEY, (cache) => {
+                        const lista = Array.isArray(cache)
+                            ? cache
+                            : Array.isArray(cache?.articulos)
+                            ? cache.articulos
+                            : Array.isArray(cache?.data)
+                            ? cache.data
+                            : [];
+
+                        const nuevos = lista.map((a) =>
                             a.id === this.form.id ? { ...this.form } : a
-                        )
-                    );
+                        );
+
+                        if (Array.isArray(cache)) return nuevos;
+                        if (Array.isArray(cache?.articulos))
+                            return { ...cache, articulos: nuevos };
+                        if (Array.isArray(cache?.data))
+                            return { ...cache, data: nuevos };
+                        return nuevos;
+                    });
                 } else {
                     appendToCache(ARTICULOS_KEY, res.data.articulo);
                 }
