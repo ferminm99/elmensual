@@ -296,7 +296,13 @@ export default {
                     { ttl: 86400 }
                 );
 
-                this.articulos = Array.isArray(dataCache) ? dataCache : [];
+                this.articulos = Array.isArray(dataCache)
+                    ? dataCache
+                    : Array.isArray(dataCache?.articulos)
+                    ? dataCache.articulos
+                    : Array.isArray(dataCache?.data)
+                    ? dataCache.data
+                    : [];
             } catch (err) {
                 console.error("❌ Error al inicializar artículos:", err);
                 this.articulos = [];
@@ -313,7 +319,13 @@ export default {
                     { ttl: 86400, forceRefresh: force }
                 );
 
-                this.articulos = Array.isArray(data) ? data : [];
+                this.articulos = Array.isArray(data)
+                    ? data
+                    : Array.isArray(data?.articulos)
+                    ? data.articulos
+                    : Array.isArray(data?.data)
+                    ? data.data
+                    : [];
             } catch (error) {
                 console.error("Error al cargar los artículos:", error);
                 this.articulos = [];
@@ -364,6 +376,8 @@ export default {
                 }
                 notifyCacheChange(ARTICULOS_KEY);
                 this.dialog = false;
+                this.searchNombre = "";
+                this.searchNumero = "";
                 this.loading = false;
             }).catch((err) => {
                 this.loading = false;
@@ -396,11 +410,12 @@ export default {
         recalcularPrecios() {
             this.loading = true;
             axios.put("/api/articulos/recalcular-precios").then((res) => {
-                this.articulos = Array.isArray(res.data.articulos)
+                const articulosActualizados = Array.isArray(res.data.articulos)
                     ? res.data.articulos
                     : [];
 
-                updateCache(ARTICULOS_KEY, res.data);
+                this.articulos = articulosActualizados;
+                updateCache(ARTICULOS_KEY, articulosActualizados);
                 notifyCacheChange(ARTICULOS_KEY);
                 this.loading = false;
                 alert("Precios recalculados correctamente.");
@@ -417,10 +432,15 @@ export default {
                     porcentaje: this.porcentajeAumento,
                 })
                 .then((res) => {
-                    this.articulos = Array.isArray(res.data.articulos)
+                    const articulosActualizados = Array.isArray(
+                        res.data.articulos
+                    )
                         ? res.data.articulos
                         : [];
-                    updateCache(ARTICULOS_KEY, res.data);
+
+                    this.articulos = articulosActualizados;
+                    updateCache(ARTICULOS_KEY, articulosActualizados);
+
                     notifyCacheChange(ARTICULOS_KEY);
                     this.dialogoAumento = false;
                     this.loading = false;
