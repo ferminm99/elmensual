@@ -62,6 +62,19 @@ class ClienteController extends Controller
         return response()->json(['message' => 'Cliente eliminado exitosamente']);
     }
     
+    public function clientesActualizadosDesde(Request $request)
+    {
+        $timestamp = $request->query('timestamp');
+        if (!$timestamp || !is_numeric($timestamp)) {
+            return response()->json(['error' => 'Timestamp inválido'], 400);
+        }
+
+        $from = now()->createFromTimestampMs($timestamp);
+
+        $clientes = Cliente::where('updated_at', '>', $from)->get();
+
+        return response()->json($clientes);
+    }
 
     public function ultimaActualizacionClientes() {
         $lastUpdate = DB::table('clientes')->max('updated_at');

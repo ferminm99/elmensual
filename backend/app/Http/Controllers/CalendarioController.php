@@ -61,7 +61,19 @@ class CalendarioController extends Controller
         }
     }
     
+    public function calendarioActualizadoDesde(Request $request)
+    {
+        $timestamp = $request->query('timestamp');
+        if (!$timestamp || !is_numeric($timestamp)) {
+            return response()->json(['error' => 'Timestamp inválido'], 400);
+        }
 
+        $from = now()->createFromTimestampMs($timestamp);
+
+        $compras = CompraCalendario::where('updated_at', '>', $from)->get();
+
+        return response()->json($compras);
+    }
 
     public function ultimaActualizacionCalendario() {
         $lastUpdate = DB::table('compras_calendario')->max('updated_at');

@@ -254,6 +254,29 @@ class VentasController extends Controller
     }
     
 
+    public function ventasActualizadasDesde($timestamp)
+{
+    try {
+        // Convertir el timestamp de milisegundos a formato datetime
+        $desde = Carbon::createFromTimestampMs($timestamp);
+
+        // Buscar todas las ventas que fueron modificadas o creadas después de ese timestamp
+        $ventas = Venta::with('articulo', 'cliente')
+            ->where('updated_at', '>', $desde)
+            ->get();
+
+        return response()->json([
+            'ventas' => $ventas,
+            'count' => $ventas->count(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Error al obtener ventas actualizadas: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+
         
 
 }

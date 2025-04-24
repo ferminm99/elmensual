@@ -142,6 +142,19 @@ export default {
             },
         };
     },
+    created() {
+        this.loading = true;
+
+        useSyncedCache({
+            key: "compras_calendario",
+            apiPath: "/calendario/actualizados-desde",
+            fetchFn: () =>
+                axios.get("/api/comprascalendario/listar").then((r) => r.data),
+            onData: () => this.fetchCompras(),
+            setLoading: (val) => (this.loading = val),
+        });
+    },
+
     methods: {
         resetForm() {
             this.form = {

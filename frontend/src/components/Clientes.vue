@@ -177,7 +177,7 @@ export default {
         Promise.all([
             useSyncedCache({
                 key: CLIENTES_KEY,
-                apiPath: "/clientes/ultima-actualizacion",
+                apiPath: "/clientes/actualizados-desde",
                 fetchFn: () =>
                     axios.get("/api/clientes/listar").then((r) => r.data),
                 onData: (data) => {
@@ -189,7 +189,7 @@ export default {
             }),
             useSyncedCache({
                 key: VENTAS_KEY,
-                apiPath: "/ventas/ultima-actualizacion",
+                apiPath: "/ventas/actualizadas-desde",
                 fetchFn: () =>
                     axios.get("/api/ventas/listar").then((r) => r.data),
                 onData: (data) => {

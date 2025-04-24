@@ -503,21 +503,21 @@ export default {
         Promise.all([
             useSyncedCache({
                 key: ARTICULOS_KEY,
-                apiPath: "/articulos/ultima-actualizacion",
+                apiPath: "/articulos/actualizados-desde",
                 fetchFn: () =>
                     axios.get("/api/articulos/listar").then((r) => r.data),
                 onData: (data) => (this.articulos = data),
             }),
             useSyncedCache({
                 key: ARTICULOS_TALLES_KEY,
-                apiPath: "/articulos/talles/ultima-actualizacion",
+                apiPath: "/articulos/talles/actualizados-desde",
                 fetchFn: () =>
                     axios
                         .get("/api/articulo/listar/talles")
                         .then((r) => r.data),
                 onData: (data) => {
                     this.articulosCompletos = data;
-                    this.fetchTalles(); // actualiza la tabla si hay un artículo seleccionado
+                    this.fetchTalles();
                 },
                 setLoading: (val) => (this.loading = val),
             }),

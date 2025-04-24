@@ -175,7 +175,7 @@ export default {
 
         useSyncedCache({
             key: LOCALIDADES_KEY,
-            apiPath: "/localidades/ultima-actualizacion",
+            apiPath: "/localidades/actualizados-desde",
             fetchFn: () =>
                 axios.get("/api/localidades").then((res) => res.data),
             onData: (data) => (this.localidades = data),

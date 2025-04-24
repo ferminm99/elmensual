@@ -243,7 +243,7 @@ export default {
 
         useSyncedCache({
             key: ARTICULOS_KEY,
-            apiPath: "/articulos/ultima-actualizacion",
+            apiPath: "/articulos/actualizados-desde",
             fetchFn: () => axios.get("/api/articulos").then((res) => res.data),
             onData: (data) => (this.articulos = data),
             setLoading: (val) => (this.loading = val),

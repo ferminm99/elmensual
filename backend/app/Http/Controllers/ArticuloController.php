@@ -307,6 +307,41 @@ class ArticuloController extends Controller
         return response()->json(['message' => "Costos y precios actualizados con un incremento del $porcentaje%."]);
     }
 
+    public function articulosTallesActualizadosDesde(Request $request)
+    {
+        $timestamp = $request->query('timestamp');
+        if (!$timestamp || !is_numeric($timestamp)) {
+            return response()->json(['error' => 'Timestamp inválido'], 400);
+        }
+
+        $from = now()->createFromTimestampMs($timestamp);
+
+        $articulos = Articulo::with('talles')
+            ->where('updated_at', '>', $from)
+            ->orWhereHas('talles', function ($q) use ($from) {
+                $q->where('updated_at', '>', $from);
+            })
+            ->get();
+
+        return response()->json($articulos);
+    }
+
+    public function articulosActualizadosDesde(Request $request)
+    {
+        $timestamp = $request->query('timestamp');
+
+        if (!$timestamp || !is_numeric($timestamp)) {
+            return response()->json(['message' => 'Parámetro timestamp inválido.'], 400);
+        }
+
+        $fecha = Carbon::createFromTimestampMs($timestamp);
+
+        $articulos = Articulo::where('updated_at', '>', $fecha)->get();
+
+        return response()->json($articulos);
+    }
+
+
     public function ultimaActualizacionArticulos() {
         $lastUpdate = DB::table('articulos')->max('updated_at');
         return response()->json(['last_update' => strtotime($lastUpdate)]);

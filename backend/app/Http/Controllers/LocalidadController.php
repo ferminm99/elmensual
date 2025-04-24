@@ -46,6 +46,20 @@ class LocalidadController extends Controller
     }
     
     
+    public function localidadesActualizadasDesde(Request $request)
+    {
+        $timestamp = $request->query('timestamp');
+        if (!$timestamp || !is_numeric($timestamp)) {
+            return response()->json(['error' => 'Timestamp inválido'], 400);
+        }
+
+        $from = now()->createFromTimestampMs($timestamp);
+
+        $localidades = Localidad::where('updated_at', '>', $from)->get();
+
+        return response()->json($localidades);
+    }
+    
     public function ultimaActualizacionLocalidades() {
         $lastUpdate = DB::table('localidades')->max('updated_at');
         return response()->json(['last_update' => strtotime($lastUpdate)]);
