@@ -286,7 +286,6 @@ class ArticuloController extends Controller
     }
 
 
-    // Aumentar todos los costos originales por porcentaje
     public function aumentarCostoOriginal(Request $request)
     {
         $porcentaje = $request->input('porcentaje');
@@ -298,7 +297,13 @@ class ArticuloController extends Controller
         $articulos = Articulo::all();
 
         foreach ($articulos as $articulo) {
+            // Calcular nuevo costo con porcentaje
             $nuevoCosto = $articulo->costo_original * (1 + $porcentaje / 100);
+
+            // Redondear a múltiplo más cercano de 5 (entero, sin coma)
+            $nuevoCosto = round($nuevoCosto / 5) * 5;
+
+            // Calcular nuevos precios
             $precios = $this->calcularPrecios($nuevoCosto);
 
             $articulo->update([
@@ -313,6 +318,7 @@ class ArticuloController extends Controller
             'articulos' => Articulo::orderBy('nombre')->get()
         ]);
     }
+
 
 
     public function articulosTallesActualizadosDesde(Request $request)
