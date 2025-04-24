@@ -91,29 +91,49 @@
         <v-row v-if="filtroAplicado" class="total-fecha-row">
             <v-col
                 cols="12"
-                class="d-flex flex-column flex-md-row justify-md-space-between align-md-center pa-3 bordered-total rounded"
+                class="d-flex flex-column pa-3 bordered-total rounded"
             >
-                <div class="mb-2 mb-md-0">
-                    <div class="text-caption grey--text text--darken-1">
-                        Total bruto de ventas
-                    </div>
-                    <div class="font-weight-bold text-h6 black--text">
-                        ${{ totalVentasFiltradas }}
-                    </div>
+                <!-- Rango de fechas -->
+                <div class="mb-3">
+                    <v-icon small class="mr-1" color="primary"
+                        >mdi-calendar-range</v-icon
+                    >
+                    Ventas del
+                    <strong>{{ formatFechaMoment(fechaDesde) }}</strong>
+                    al
+                    <strong>{{ formatFechaMoment(fechaHasta) }}</strong>
                 </div>
 
-                <div>
-                    <div class="text-caption grey--text text--darken-1">
-                        Ganancia neta (precio - costo)
+                <!-- Totales -->
+                <div
+                    class="d-flex flex-column flex-md-row justify-md-space-between align-md-center"
+                >
+                    <div class="mb-2 mb-md-0">
+                        <div class="text-caption grey--text text--darken-1">
+                            Total bruto de ventas
+                        </div>
+                        <div class="font-weight-bold text-h6 black--text">
+                            ${{ totalVentasFiltradas }}
+                        </div>
                     </div>
-                    <div class="font-weight-bold text-h6 green--text">
-                        ${{ gananciasNetasFiltradas }}
-                    </div>
-                </div>
 
-                <v-btn icon @click="cancelarFiltro" class="ml-md-4">
-                    <v-icon color="red">mdi-close-circle</v-icon>
-                </v-btn>
+                    <div>
+                        <div class="text-caption grey--text text--darken-1">
+                            Ganancia neta (precio - costo)
+                        </div>
+                        <div class="font-weight-bold text-h6 green--text">
+                            ${{ gananciasNetasFiltradas }}
+                        </div>
+                    </div>
+
+                    <v-btn
+                        icon
+                        @click="cancelarFiltro"
+                        class="ml-md-4 mt-3 mt-md-0"
+                    >
+                        <v-icon color="red">mdi-close-circle</v-icon>
+                    </v-btn>
+                </div>
             </v-col>
         </v-row>
 
