@@ -224,11 +224,12 @@ export default {
     },
     computed: {
         articulosFiltrados() {
+            const list = Array.isArray(this.articulos) ? this.articulos : [];
             const normalizar = (str) =>
                 str?.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
             const textoNombre = normalizar(this.searchNombre.trim());
             const textoNumero = normalizar(this.searchNumero.trim());
-            return this.articulos.filter((art) => {
+            return list.filter((art) => {
                 const nombre = normalizar(art.nombre);
                 const numero = normalizar(String(art.numero));
                 return (
