@@ -70,7 +70,8 @@ class ClienteController extends Controller
                 return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
             }
     
-            $desde = \Carbon\Carbon::createFromTimestampMs($timestamp);
+            $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
+
     
             $clientes = \App\Models\Cliente::where('updated_at', '>', $desde)->get();
     

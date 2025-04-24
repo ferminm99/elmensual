@@ -262,7 +262,7 @@ class VentasController extends Controller
             return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
         }
 
-        $desde = Carbon::createFromTimestampMs($timestamp);
+        $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
 
         $ventas = Venta::with('articulo', 'cliente')
             ->where('updated_at', '>', $desde)

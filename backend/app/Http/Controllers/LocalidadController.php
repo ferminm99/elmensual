@@ -54,7 +54,7 @@ class LocalidadController extends Controller
                 return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
             }
 
-            $desde = \Carbon\Carbon::createFromTimestampMs($timestamp);
+            $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
 
             $localidades = \App\Models\Localidad::where('updated_at', '>', $desde)->get();
 

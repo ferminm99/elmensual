@@ -334,7 +334,7 @@ class ArticuloController extends Controller
             return response()->json(['message' => 'Parámetro timestamp inválido.'], 400);
         }
 
-        $fecha = Carbon::createFromTimestampMs($timestamp);
+        $fecha = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
 
         $articulos = Articulo::where('updated_at', '>', $fecha)->get();
 
