@@ -22,7 +22,7 @@ export async function useSyncedCache({
         const localLastUpdate = getCacheLastUpdate(key);
         const noHayCache =
             !cached || !Array.isArray(cached) || cached.length === 0;
-        let updatedItems = [];
+        let updatedItems = null;
 
         if (!noHayCache) {
             const { data } = await axios.get(`/api${apiPath}`, {
@@ -38,7 +38,7 @@ export async function useSyncedCache({
                       throw new Error("No se recibió last_update");
                   })();
 
-            const updatedItems = Array.isArray(data?.data) ? data.data : [];
+            const nuevos = Array.isArray(data?.data) ? data.data : [];
 
             console.log(`🧠 Cache check para "${key}"`);
             console.log(
@@ -58,8 +58,8 @@ export async function useSyncedCache({
                 localStorage.removeItem(`${key}_time`);
                 localStorage.removeItem(`${key}_last_update`);
                 notifyCacheChange(key);
+                updatedItems = nuevos;
             } else {
-                // Guardar last_update aunque no haya cambio
                 localStorage.setItem(`${key}_last_update`, backendLastUpdate);
             }
         }
@@ -67,7 +67,7 @@ export async function useSyncedCache({
         const result = await cachedFetch(key, fetchFn, { ttl });
         await updateCache(key, result);
 
-        onData(updatedItems);
+        onData(updatedItems !== null ? updatedItems : result);
     } catch (err) {
         console.error(`❌ Error en useSyncedCache ${key}:`, err);
         onData([]);
