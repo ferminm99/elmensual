@@ -838,14 +838,16 @@ export default {
             this.talles = [...tallesArray].sort((a, b) => a.talle - b.talle);
         },
         getTotalBombachas(talle) {
-            return (
-                Number(talle.marron) +
-                Number(talle.negro) +
-                Number(talle.verde) +
-                Number(talle.azul) +
-                Number(talle.celeste) +
-                Number(talle.blancobeige)
-            );
+            return [
+                "marron",
+                "negro",
+                "verde",
+                "azul",
+                "celeste",
+                "blancobeige",
+            ]
+                .map((color) => Number(talle[color]) || 0)
+                .reduce((acc, val) => acc + val, 0);
         },
         async addQuantities() {
             this.loading = true;
