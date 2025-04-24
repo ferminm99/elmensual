@@ -64,18 +64,27 @@ class ClienteController extends Controller
     
     public function clientesActualizadosDesde(Request $request)
     {
-        $timestamp = $request->query('timestamp'); // <- esto lo extrae de ?timestamp=...
-        
-        if (!$timestamp || !is_numeric($timestamp)) {
-            return response()->json(['error' => 'Timestamp inválido'], 400);
+        try {
+            $timestamp = $request->query('timestamp');
+            if (!$timestamp || !is_numeric($timestamp)) {
+                return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
+            }
+    
+            $desde = \Carbon\Carbon::createFromTimestampMs($timestamp);
+    
+            $clientes = \App\Models\Cliente::where('updated_at', '>', $desde)->get();
+    
+            return response()->json([
+                'clientes' => $clientes,
+                'count' => $clientes->count(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener clientes actualizados: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $fecha = date('Y-m-d H:i:s', $timestamp); // Convertir a formato compatible con SQL
-
-        $clientes = \App\Models\Cliente::where('updated_at', '>', $fecha)->get();
-
-        return response()->json($clientes);
     }
+    
 
 
     public function ultimaActualizacionClientes() {
