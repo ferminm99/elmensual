@@ -361,33 +361,31 @@ export default {
                 : axios.post("/api/articulo", this.form);
 
             req.then((res) => {
+                console.log("✅ Respuesta del backend:", res.data);
+
                 if (this.isEdit) {
-                    modifyInCache(ARTICULOS_KEY, (cache) => {
-                        const lista = Array.isArray(cache)
-                            ? cache
-                            : Array.isArray(cache?.articulos)
-                            ? cache.articulos
-                            : Array.isArray(cache?.data)
-                            ? cache.data
-                            : [];
+                    console.log(
+                        "🧠 Antes de modifyInCache:",
+                        getMemoryCache(ARTICULOS_KEY)
+                    );
 
-                        const nuevos = lista.map((a) =>
+                    modifyInCache(ARTICULOS_KEY, (articulos) =>
+                        articulos.map((a) =>
                             a.id === this.form.id ? { ...this.form } : a
-                        );
+                        )
+                    );
 
-                        if (Array.isArray(cache)) return nuevos;
-                        if (Array.isArray(cache?.articulos))
-                            return { ...cache, articulos: nuevos };
-                        if (Array.isArray(cache?.data))
-                            return { ...cache, data: nuevos };
-                        return nuevos;
-                    });
+                    console.log(
+                        "🧠 Después de modifyInCache:",
+                        getMemoryCache(ARTICULOS_KEY)
+                    );
                 } else {
                     appendToCache(ARTICULOS_KEY, res.data.articulo);
                 }
 
-                // 🔐 Siempre re-obtenemos desde caché y nos aseguramos que sea array
                 const updated = getMemoryCache(ARTICULOS_KEY);
+                console.log("📦 updated desde memoria:", updated);
+
                 this.articulos = Array.isArray(updated)
                     ? updated
                     : Array.isArray(updated?.articulos)
@@ -395,6 +393,11 @@ export default {
                     : Array.isArray(updated?.data)
                     ? updated.data
                     : [];
+
+                console.log(
+                    "📋 this.articulos después del save:",
+                    this.articulos
+                );
 
                 notifyCacheChange(ARTICULOS_KEY);
                 this.dialog = false;
