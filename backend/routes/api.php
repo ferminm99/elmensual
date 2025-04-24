@@ -40,13 +40,13 @@ Route::middleware('token-auth')->group(function () {
     Route::post('/articulo', [ArticuloController::class, 'store']);
     Route::put('/articulo/{id}', [ArticuloController::class, 'update']);
     Route::delete('/articulo/{id}', [ArticuloController::class, 'destroy']);
-    Route::get('/articulos/listar', [ArticuloController::class, 'listarArticulos']);
     Route::get('/articulo/{id}', [ArticuloController::class, 'mostrarArticulo']);
     Route::get('/articulo/listar/talles', [ArticuloController::class, 'listarArticulosConTalles']);
     Route::post('/articulo/{id}/agregar-bombachas', [ArticuloController::class, 'agregarBombachas']);
     Route::post('/articulo/{id}/eliminar-bombachas', [ArticuloController::class, 'eliminarBombachas']);
     Route::post('/articulo/{id}/editar-bombachas', [ArticuloController::class, 'editarBombachas']);
     Route::post('/articulo/{id}/eliminar-talle-completo', [ArticuloController::class, 'eliminarTalleCompleto']);
+    Route::get('/articulos/listar', [ArticuloController::class, 'listarArticulos']);
     Route::put('/articulos/recalcular-precios', [ArticuloController::class, 'recalcularPreciosMasivamente']);
     Route::put('/articulos/aumentar-costos', [ArticuloController::class, 'aumentarCostoOriginal']);
     Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
