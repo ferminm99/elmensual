@@ -907,6 +907,7 @@ export default {
             ) {
                 this.snackbarText = "Por favor selecciona la nueva bombacha.";
                 this.snackbar = true;
+                this.loading = false;
                 return;
             }
 
@@ -926,6 +927,8 @@ export default {
                 })
                 .then((res) => {
                     const ventaActualizada = res.data.venta || res.data;
+
+                    // 🔄 Actualizar en cache
                     this.ventas = modifyInCache(
                         VENTAS_KEY,
                         (ventas) =>
@@ -937,11 +940,25 @@ export default {
                         ventaActualizada.updated_at
                     );
 
-                    notifyCacheChange(VENTAS_KEY);
-                    this.refreshVentasDesdeCache();
-                    this.tablaKey += 1; // 🔁 fuerza re-render del componente
+                    // 🔁 Asegurar que esté en ventas
+                    const idx = this.ventas.findIndex(
+                        (v) => v.id === ventaActualizada.id
+                    );
+                    if (idx !== -1) {
+                        this.ventas[idx] = ventaActualizada;
+                    } else {
+                        this.ventas.push(ventaActualizada);
+                    }
 
-                    // Ajustar stock de artículos (esto ya lo hiciste correctamente)
+                    this.ventas.sort(
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                    );
+                    this.ventasFiltradas = [...this.ventas];
+                    this.tablaKey += 1;
+
+                    notifyCacheChange(VENTAS_KEY);
+
+                    // 📦 Ajustar stock
                     applyStockDelta(
                         this.selectedVenta.articulo.id,
                         this.selectedVenta.talle,
@@ -957,6 +974,8 @@ export default {
                         ARTICULOS_TALLES_KEY
                     );
                     notifyCacheChange(ARTICULOS_TALLES_KEY);
+
+                    // Refrescar articulos desde memoria (stock ya ajustado)
                     this.articulos = getMemoryCache(
                         ARTICULOS_TALLES_KEY,
                         86400
@@ -966,12 +985,13 @@ export default {
                     this.snackbarText =
                         "Cambio de bombacha realizado con éxito.";
                     this.snackbar = true;
-                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
                     this.snackbarText = "Error al cambiar la bombacha.";
                     this.snackbar = true;
+                })
+                .finally(() => {
                     this.loading = false;
                 });
         },
@@ -1260,10 +1280,6 @@ export default {
         // Actualizar el precio de la venta
         updateVenta() {
             this.loading = true;
-            const ventaAnterior = this.ventas.find(
-                (v) => v.id === this.selectedVenta.id
-            );
-
             axios
                 .put(`/api/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
@@ -1274,8 +1290,10 @@ export default {
                     forma_pago: this.selectedVenta.forma_pago,
                 })
                 .then((res) => {
-                    const ventaActualizada = res.data.venta || res.data; // por si viene como objeto con clave 'venta'
-                    this.ventas = modifyInCache(
+                    const ventaActualizada = res.data.venta || res.data;
+
+                    // Actualizar en cache
+                    const updated = modifyInCache(
                         VENTAS_KEY,
                         (ventas) =>
                             ventas.map((v) =>
@@ -1288,19 +1306,33 @@ export default {
 
                     notifyCacheChange(VENTAS_KEY);
 
-                    // Reemplazar en vista local
-                    this.refreshVentasDesdeCache();
-                    this.tablaKey += 1; // 🔁 fuerza re-render del componente
+                    // Asegurar que esté en this.ventas
+                    const idx = this.ventas.findIndex(
+                        (v) => v.id === ventaActualizada.id
+                    );
+                    if (idx !== -1) {
+                        this.ventas[idx] = ventaActualizada;
+                    } else {
+                        this.ventas.push(ventaActualizada);
+                    }
+
+                    // Actualizar filtro activo si hay
+                    this.ventas.sort(
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                    );
+                    this.ventasFiltradas = [...this.ventas];
+                    this.tablaKey += 1;
 
                     this.snackbarText = "Venta actualizada correctamente.";
                     this.snackbar = true;
                     this.editDialog = false;
-                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error(error);
                     this.snackbarText = "Error al actualizar la venta.";
                     this.snackbar = true;
+                })
+                .finally(() => {
                     this.loading = false;
                 });
         },
