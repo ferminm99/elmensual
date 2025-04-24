@@ -959,7 +959,7 @@ export default {
                 .then((response) => {
                     console.log(response.data.message);
                     // Eliminar el talle del cache
-                    modifyInCache(ARTICULOS_KEY, (articulos) => {
+                    modifyInCache(ARTICULOS_TALLES_KEY, (articulos) => {
                         return articulos.map((articulo) => {
                             if (articulo.id !== this.selectedArticulo)
                                 return articulo;
@@ -971,6 +971,7 @@ export default {
                             };
                         });
                     });
+
                     notifyCacheChange(ARTICULOS_KEY);
                     this.confirmFullDeleteDialog = false;
                     this.fetchTalles(); // Actualiza la tabla después de eliminar

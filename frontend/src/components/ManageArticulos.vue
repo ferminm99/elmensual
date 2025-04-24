@@ -340,19 +340,9 @@ export default {
             req.then((res) => {
                 if (this.isEdit) {
                     this.articulos = modifyInCache(ARTICULOS_KEY, (articulos) =>
-                        articulos.map((art) => {
-                            if (art.id === id) {
-                                return {
-                                    ...art,
-                                    talles: Array.isArray(art.talles)
-                                        ? art.talles.filter(
-                                              (t) => t.talle !== talleAEliminar
-                                          )
-                                        : [],
-                                };
-                            }
-                            return art;
-                        })
+                        articulos.map((a) =>
+                            a.id === this.form.id ? { ...this.form } : a
+                        )
                     );
                 } else {
                     // res.data.articulo porque es como lo devuelve el backend
