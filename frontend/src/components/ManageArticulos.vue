@@ -366,21 +366,20 @@ export default {
                             a.id === this.form.id ? { ...this.form } : a
                         )
                     );
-                    const updated = getMemoryCache(ARTICULOS_KEY);
-                    this.articulos = Array.isArray(updated)
-                        ? updated
-                        : Array.isArray(updated?.articulos)
-                        ? updated.articulos
-                        : Array.isArray(updated?.data)
-                        ? updated.data
-                        : [];
                 } else {
-                    // res.data.articulo porque es como lo devuelve el backend
-                    this.articulos = appendToCache(
-                        ARTICULOS_KEY,
-                        res.data.articulo
-                    );
+                    appendToCache(ARTICULOS_KEY, res.data.articulo);
                 }
+
+                // 🔐 Siempre re-obtenemos desde caché y nos aseguramos que sea array
+                const updated = getMemoryCache(ARTICULOS_KEY);
+                this.articulos = Array.isArray(updated)
+                    ? updated
+                    : Array.isArray(updated?.articulos)
+                    ? updated.articulos
+                    : Array.isArray(updated?.data)
+                    ? updated.data
+                    : [];
+
                 notifyCacheChange(ARTICULOS_KEY);
                 this.dialog = false;
                 this.searchNombre = "";
@@ -396,6 +395,7 @@ export default {
                 }
             });
         },
+
         openDeleteConfirm(item) {
             this.articuloAEliminar = item;
             this.confirmDeleteDialog = true;
