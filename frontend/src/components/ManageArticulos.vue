@@ -361,8 +361,10 @@ export default {
                 : axios.post("/api/articulo", this.form);
 
             req.then((res) => {
-                // usamos directamente el array completo que manda el backend
-                const nuevosArticulos = res.data.articulos;
+                const nuevosArticulos = Array.isArray(res.data.articulos)
+                    ? res.data.articulos
+                    : [];
+
                 updateCache(ARTICULOS_KEY, nuevosArticulos);
                 this.articulos = nuevosArticulos;
 
@@ -371,9 +373,16 @@ export default {
                 this.searchNombre = "";
                 this.searchNumero = "";
                 this.loading = false;
+            }).catch((err) => {
+                this.loading = false;
+                if (err.response?.status === 422) {
+                    alert("❌ Ya existe un artículo con ese número.");
+                } else {
+                    console.error("❌ Error inesperado:", err);
+                    alert("Ocurrió un error al guardar el artículo.");
+                }
             });
         },
-
         openDeleteConfirm(item) {
             this.articuloAEliminar = item;
             this.confirmDeleteDialog = true;
