@@ -361,16 +361,18 @@ export default {
                 : axios.post("/api/articulo", this.form);
 
             req.then((res) => {
-                console.log(res);
-                const nuevosArticulos = Array.isArray(res.data.articulos)
-                    ? res.data.articulos
-                    : [];
+                const nuevo = res.data.articulo;
 
-                console.log(nuevosArticulos);
+                // Usamos append o modify y luego recuperamos el array actualizado
+                const updated = this.isEdit
+                    ? modifyInCache(ARTICULOS_KEY, (articulos) =>
+                          articulos.map((a) =>
+                              a.id === nuevo.id ? { ...nuevo } : a
+                          )
+                      )
+                    : appendToCache(ARTICULOS_KEY, nuevo);
 
-                updateCache(ARTICULOS_KEY, nuevosArticulos);
-                this.articulos = nuevosArticulos;
-
+                this.articulos = updated || [];
                 notifyCacheChange(ARTICULOS_KEY);
                 this.dialog = false;
                 this.searchNombre = "";
