@@ -366,16 +366,13 @@ export default {
                             a.id === this.form.id ? { ...this.form } : a
                         )
                     );
-                    this.articulos = Array.isArray(
-                        getMemoryCache(ARTICULOS_KEY)
-                    )
-                        ? getMemoryCache(ARTICULOS_KEY)
-                        : Array.isArray(
-                              getMemoryCache(ARTICULOS_KEY)?.articulos
-                          )
-                        ? getMemoryCache(ARTICULOS_KEY).articulos
-                        : Array.isArray(getMemoryCache(ARTICULOS_KEY)?.data)
-                        ? getMemoryCache(ARTICULOS_KEY).data
+                    const updated = getMemoryCache(ARTICULOS_KEY);
+                    this.articulos = Array.isArray(updated)
+                        ? updated
+                        : Array.isArray(updated?.articulos)
+                        ? updated.articulos
+                        : Array.isArray(updated?.data)
+                        ? updated.data
                         : [];
                 } else {
                     // res.data.articulo porque es como lo devuelve el backend
