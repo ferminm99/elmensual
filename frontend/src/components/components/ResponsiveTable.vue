@@ -75,7 +75,6 @@ export default {
         isMobile() {
             const { mdAndDown } = useDisplay();
             const isMobile = mdAndDown.value;
-            console.log("📱 isMobile:", isMobile);
             return isMobile;
         },
         filteredItems() {

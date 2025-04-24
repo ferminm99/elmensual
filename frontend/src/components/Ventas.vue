@@ -88,21 +88,35 @@
             </v-col>
         </v-row>
 
-        <v-row v-if="filtroAplicado">
-            <v-col cols="12" class="d-flex align-center">
-                <span>
-                    Total de Ventas desde
-                    {{ formatFechaMoment(fechaDesde) }} hasta
-                    {{ formatFechaMoment(fechaHasta) }}: ${{
-                        totalVentasFiltradas
-                    }}
-                </span>
-                <!-- Botón de cancelar el filtro -->
-                <v-btn icon @click="cancelarFiltro" class="cancelar-filtro-btn">
+        <v-row v-if="filtroAplicado" class="total-fecha-row">
+            <v-col
+                cols="12"
+                class="d-flex flex-column flex-md-row justify-md-space-between align-md-center pa-3 bordered-total rounded"
+            >
+                <div class="mb-2 mb-md-0">
+                    <div class="text-caption grey--text text--darken-1">
+                        Total bruto de ventas
+                    </div>
+                    <div class="font-weight-bold text-h6 black--text">
+                        ${{ totalVentasFiltradas }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-caption grey--text text--darken-1">
+                        Ganancia neta (precio - costo)
+                    </div>
+                    <div class="font-weight-bold text-h6 green--text">
+                        ${{ gananciasNetasFiltradas }}
+                    </div>
+                </div>
+
+                <v-btn icon @click="cancelarFiltro" class="ml-md-4">
                     <v-icon color="red">mdi-close-circle</v-icon>
                 </v-btn>
             </v-col>
         </v-row>
+
         <!-- Tabla para visualizar las ventas -->
         <!-- <v-card class="pa-5"> -->
         <!-- <v-card-title class="text-left mb-4"> -->
@@ -780,7 +794,6 @@ export default {
                 maximumFractionDigits: 2,
             });
         },
-        // Calcular las ganancias netas dentro del rango de fechas
         gananciasNetasFiltradas() {
             const total = this.ventasFiltradas.reduce((total, venta) => {
                 const diferencia =
@@ -1862,6 +1875,16 @@ export default {
 
 .facturada-general {
     background-color: #f0e68c; /* Color para las demás ventas facturadas */
+}
+
+.bordered-total {
+    border: 1px solid #e0e0e0;
+    background-color: #fdfdfd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.rounded {
+    border-radius: 12px;
 }
 
 /* Escala general para evitar "todo mini" */
