@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CompraCalendario extends Model
 {
     use HasFactory;
-    public $timestamps = false; 
+    public $timestamps = true; 
 
     protected $table = 'compras_calendario';
 

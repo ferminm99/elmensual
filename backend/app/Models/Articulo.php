@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Articulo extends Model
 {
     use HasFactory;
-    public $timestamps = false; // Desactiva las marcas de tiempo
+    public $timestamps = true; // Desactiva las marcas de tiempo
 
     protected $fillable = ['numero', 'nombre', 'precio','costo_original','precio_efectivo','precio_transferencia'];
 

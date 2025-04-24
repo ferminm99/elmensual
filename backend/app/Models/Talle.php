@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Talle extends Model
 {
     use HasFactory;
-    public $timestamps = false; // Desactiva las marcas de tiempo
+    public $timestamps = true; // Desactiva las marcas de tiempo
 
     protected $fillable = ['articulo_id', 'talle', 'marron', 'negro', 'verde', 'azul', 'celeste', 'blancobeige'];
 

@@ -74,20 +74,28 @@ class ArticuloController extends Controller
     }
 
     // Método para eliminar un artículo
-    public function destroy($id) {
-        $articulo = Articulo::findOrFail($id);
-        $articulo->talles()->delete();
-        $articulo->delete();
-    
-        $ultimoArticulo = Articulo::latest()->first();
-        if ($ultimoArticulo) $ultimoArticulo->touch();
-    
-        $ultimoTalle = Talle::latest()->first();
-        if ($ultimoTalle) $ultimoTalle->touch();
-    
-        return response()->json(['message' => 'Artículo eliminado correctamente']);
+    public function destroy($id)
+    {
+        try {
+            $articulo = Articulo::findOrFail($id);
+            $articulo->talles()->delete(); // seguro aunque no tenga talles
+            $articulo->delete();
+
+            // Tocar últimos solo si existen
+            if ($ultimo = Articulo::latest()->first()) $ultimo->touch();
+            if ($ultimoTalle = Talle::latest()->first()) $ultimoTalle->touch();
+
+            return response()->json(['message' => 'Artículo eliminado correctamente']);
+        } catch (\Exception $e) {
+            \Log::error("❌ Error al eliminar artículo {$id}: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al eliminar el artículo',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-    
+
+
     public function mostrarArticulo($id)
     {
         // Obtener el artículo y sus talles
