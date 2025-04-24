@@ -245,7 +245,14 @@ export default {
             key: ARTICULOS_KEY,
             apiPath: "/articulos/actualizados-desde",
             fetchFn: () => axios.get("/api/articulos").then((res) => res.data),
-            onData: (data) => (this.articulos = data),
+            onData: (data) => {
+                this.articulos = Array.isArray(data)
+                    ? data
+                    : Array.isArray(data?.articulos)
+                    ? data.articulos
+                    : [];
+            },
+
             setLoading: (val) => (this.loading = val),
         });
     },
