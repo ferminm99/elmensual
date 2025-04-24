@@ -28,7 +28,9 @@ export async function useSyncedCache({
             !cached || !Array.isArray(cached) || cached.length === 0;
 
         if (!noHayCache) {
-            const { data } = await axios.get(`/api${apiPath}`);
+            const { data } = await axios.get(`/api${apiPath}`, {
+                params: { timestamp: localLastUpdate },
+            });
             const backendLastUpdate = Number(data.last_update || 0) * 1000;
 
             console.log(`🧠 Cache check para "${key}"`);

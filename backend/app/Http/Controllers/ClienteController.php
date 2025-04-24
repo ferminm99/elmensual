@@ -64,17 +64,19 @@ class ClienteController extends Controller
     
     public function clientesActualizadosDesde(Request $request)
     {
-        $timestamp = $request->query('timestamp');
+        $timestamp = $request->query('timestamp'); // <- esto lo extrae de ?timestamp=...
+        
         if (!$timestamp || !is_numeric($timestamp)) {
             return response()->json(['error' => 'Timestamp inválido'], 400);
         }
 
-        $from = now()->createFromTimestampMs($timestamp);
+        $fecha = date('Y-m-d H:i:s', $timestamp); // Convertir a formato compatible con SQL
 
-        $clientes = Cliente::where('updated_at', '>', $from)->get();
+        $clientes = \App\Models\Cliente::where('updated_at', '>', $fecha)->get();
 
         return response()->json($clientes);
     }
+
 
     public function ultimaActualizacionClientes() {
         $lastUpdate = DB::table('clientes')->max('updated_at');

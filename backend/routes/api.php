@@ -62,7 +62,7 @@ Route::middleware('token-auth')->group(function () {
     Route::post('/facturaciones/guardar', [VentasController::class, 'guardarFacturaciones']);
     Route::get('/facturaciones/ultima', [VentasController::class, 'obtenerUltimaFacturacion']);
     Route::get('/ventas/ultima-actualizacion', [VentasController::class, 'ultimaActualizacionVentas']);
-    Route::get('/ventas/actualizadas-desde/{timestamp}', [VentasController::class, 'ventasActualizadasDesde']);
+    Route::get('/ventas/actualizadas-desde', [VentasController::class, 'ventasActualizadasDesde']);
 
     // Calendario
     Route::get('/comprascalendario/listar', [CalendarioController::class, 'index']);
