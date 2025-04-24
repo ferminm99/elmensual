@@ -596,10 +596,20 @@ export default {
                 e.detail === ARTICULOS_KEY ||
                 e.detail === ARTICULOS_TALLES_KEY
             ) {
-                this.fetchArticulos(); // Esto refresca ambos si el método lo cubre
+                const ttl = 86400;
+
+                const nuevosArticulos = getMemoryCache(ARTICULOS_KEY, ttl);
+                const nuevosTalles = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
+
+                if (Array.isArray(nuevosArticulos)) {
+                    this.articulos = nuevosArticulos;
+                }
+                if (Array.isArray(nuevosTalles)) {
+                    this.articulosCompletos = nuevosTalles;
+                    this.fetchTalles(); // importante refrescar tabla visible
+                }
             }
         },
-
         exportarAExcel() {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet("Bombachas");
