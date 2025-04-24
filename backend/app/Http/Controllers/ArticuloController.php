@@ -77,13 +77,19 @@ class ArticuloController extends Controller
     public function destroy($id)
     {
         try {
-            $articulo = Articulo::findOrFail($id);
-            $articulo->talles()->delete(); // seguro aunque no tenga talles
+            $articulo = Articulo::find($id);
+
+            if (!$articulo) {
+                return response()->json([
+                    'message' => 'El artículo ya no existe o fue eliminado.',
+                ], 404);
+            }
+
+            $articulo->talles()->delete();
             $articulo->delete();
 
-            // Tocar últimos solo si existen
             if ($ultimo = Articulo::latest()->first()) $ultimo->touch();
-            if ($ultimoTalle = Talle::latest()->first()) $ultimoTalle->touch();
+            if ($ultimoTalle = \App\Models\Talle::latest()->first()) $ultimoTalle->touch();
 
             return response()->json(['message' => 'Artículo eliminado correctamente']);
         } catch (\Exception $e) {
@@ -94,6 +100,7 @@ class ArticuloController extends Controller
             ], 500);
         }
     }
+
 
 
     public function mostrarArticulo($id)
