@@ -349,11 +349,12 @@ export default {
 
             req.then((res) => {
                 if (this.isEdit) {
-                    this.articulos = modifyInCache(ARTICULOS_KEY, (articulos) =>
+                    modifyInCache(ARTICULOS_KEY, (articulos) =>
                         articulos.map((a) =>
                             a.id === this.form.id ? { ...this.form } : a
                         )
                     );
+                    this.articulos = getMemoryCache(ARTICULOS_KEY) || [];
                 } else {
                     // res.data.articulo porque es como lo devuelve el backend
                     this.articulos = appendToCache(
