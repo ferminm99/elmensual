@@ -958,27 +958,41 @@ export default {
                 )
                 .then((response) => {
                     console.log(response.data.message);
-                    // Eliminar el talle del cache
+
+                    // 🔒 Asegurar que no quede data fantasma en cache
                     modifyInCache(ARTICULOS_TALLES_KEY, (articulos) => {
                         return articulos.map((articulo) => {
                             if (articulo.id !== this.selectedArticulo)
                                 return articulo;
-                            return {
-                                ...articulo,
-                                talles: articulo.talles.filter(
-                                    (t) => t.talle !== this.talleAEliminar
-                                ),
-                            };
+                            const nuevosTalles = (articulo.talles || []).filter(
+                                (t) => t.talle !== this.talleAEliminar
+                            );
+                            return { ...articulo, talles: nuevosTalles };
                         });
                     });
 
-                    notifyCacheChange(ARTICULOS_KEY);
+                    notifyCacheChange(ARTICULOS_TALLES_KEY);
+
+                    // 🔁 Forzar refetch desde backend para asegurar consistencia
+                    cachedFetch(
+                        ARTICULOS_TALLES_KEY,
+                        () =>
+                            axios
+                                .get("/api/articulo/listar/talles")
+                                .then((res) => res.data),
+                        { ttl: 1, forceRefresh: true }
+                    ).then(() => {
+                        this.fetchTalles();
+                    });
+
                     this.confirmFullDeleteDialog = false;
-                    this.fetchTalles(); // Actualiza la tabla después de eliminar
                     this.loading = false;
                 })
                 .catch((error) => {
-                    console.error(error);
+                    console.error(
+                        "❌ Error al eliminar talle completo:",
+                        error
+                    );
                     this.loading = false;
                 });
         },

@@ -28,7 +28,10 @@ export async function useSyncedCache({
                 params: { timestamp: localLastUpdate },
             });
 
-            const backendLastUpdate = Number(data.last_update || 0) * 1000;
+            const updatedItems = Array.isArray(data) ? data : [];
+            const backendLastUpdate = updatedItems.length
+                ? new Date().getTime()
+                : localLastUpdate;
 
             console.log(`🧠 Cache check para "${key}"`);
             console.log(
