@@ -765,6 +765,8 @@ export default {
                 fetchFn: () =>
                     axios.get("/api/clientes/listar").then((r) => r.data),
                 onData: (data) => (this.clientes = data),
+            }).then(() => {
+                console.log("✅ Ventas sincronizadas:", this.ventas.length);
             }),
         ]).then(() => {
             this.fetchUltimaFacturacion();
@@ -866,9 +868,10 @@ export default {
                                 "ultimaFacturacion",
                                 JSON.stringify(this.ultimaFacturacion)
                             );
-                            updateSimpleCache(
+                            updateCache(
                                 "ultimaFacturacion",
-                                this.ultimaFacturacion
+                                this.ultimaFacturacion,
+                                Date.now()
                             );
                             notifyCacheChange("ultimaFacturacion");
                         } else {

@@ -78,6 +78,7 @@ export async function useSyncedCache({
         const result = await cachedFetch(key, fetchFn, { ttl });
         await updateCache(key, result, localLastUpdate); // mismo timestamp viejo
 
+        console.log("🔁 useSyncedCache ejecutado");
         onData(updatedItems !== null ? updatedItems : result);
     } catch (err) {
         console.error(`❌ Error en useSyncedCache ${key}:`, err);
