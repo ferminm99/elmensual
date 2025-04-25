@@ -765,10 +765,10 @@ export default {
                 fetchFn: () =>
                     axios.get("/api/clientes/listar").then((r) => r.data),
                 onData: (data) => (this.clientes = data),
-            }).then(() => {
-                console.log("✅ Ventas sincronizadas:", this.ventas.length);
             }),
         ]).then(() => {
+            console.log("✅ Todas las sync completadas");
+            console.log("👉 Ventas cargadas:", this.ventas.length);
             this.fetchUltimaFacturacion();
         });
     },
@@ -868,11 +868,19 @@ export default {
                                 "ultimaFacturacion",
                                 JSON.stringify(this.ultimaFacturacion)
                             );
-                            updateCache(
+                            localStorage.setItem(
                                 "ultimaFacturacion",
-                                this.ultimaFacturacion,
-                                Date.now()
+                                JSON.stringify(this.ultimaFacturacion)
                             );
+                            localStorage.setItem(
+                                "ultimaFacturacion_time",
+                                Date.now().toString()
+                            );
+                            localStorage.setItem(
+                                "ultimaFacturacion_last_update",
+                                Date.now().toString()
+                            );
+
                             notifyCacheChange("ultimaFacturacion");
                         } else {
                             // Si no se encuentra la venta
