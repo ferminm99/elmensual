@@ -637,6 +637,7 @@ import {
     removeFromCache,
     modifyInCache,
     getMemoryCache,
+    memoryCache,
     getCacheLastUpdate,
     applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
