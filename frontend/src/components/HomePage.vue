@@ -592,21 +592,18 @@ export default {
     },
     methods: {
         handleCacheSync(e) {
+            console.log("🔄 Recibí cambio de cache en Home:", e.detail);
             if (
                 e.detail === ARTICULOS_KEY ||
                 e.detail === ARTICULOS_TALLES_KEY
             ) {
-                const ttl = 86400;
-
-                const nuevosArticulos = getMemoryCache(ARTICULOS_KEY, ttl);
-                const nuevosTalles = getMemoryCache(ARTICULOS_TALLES_KEY, ttl);
-
-                if (Array.isArray(nuevosArticulos)) {
-                    this.articulos = nuevosArticulos;
-                }
+                const nuevosTalles = getMemoryCache(
+                    ARTICULOS_TALLES_KEY,
+                    86400
+                );
                 if (Array.isArray(nuevosTalles)) {
-                    this.articulosCompletos = nuevosTalles;
-                    this.fetchTalles(); // importante refrescar tabla visible
+                    this.articulosCompletos = [...nuevosTalles]; // 🔁 fuerza reactividad
+                    this.fetchTalles(); // ⬅️ esto actualiza la tabla
                 }
             }
         },
