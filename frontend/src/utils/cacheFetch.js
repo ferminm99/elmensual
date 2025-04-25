@@ -13,9 +13,9 @@ export function getCacheLastUpdate(key) {
     return Number(localStorage.getItem(`${key}_last_update`) || 0);
 }
 
-function setCacheLastUpdate(key) {
+export function updateSimpleCache(key, value) {
     const now = Date.now();
-    localStorage.setItem(`${key}_last_update`, now.toString());
+    memoryCache[key] = { data: value, time: now };
 }
 
 export async function cachedFetch(

@@ -637,7 +637,6 @@ import {
     removeFromCache,
     modifyInCache,
     getMemoryCache,
-    memoryCache,
     getCacheLastUpdate,
     applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
@@ -647,6 +646,7 @@ import {
     VENTAS_KEY,
     CLIENTES_KEY,
 } from "../utils/cacheKeys";
+import { updateSimpleCache } from "@/utils/cacheFetch";
 import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
@@ -866,9 +866,10 @@ export default {
                                 "ultimaFacturacion",
                                 JSON.stringify(this.ultimaFacturacion)
                             );
-                            memoryCache["ultimaFacturacion"] =
-                                this.ultimaFacturacion;
-
+                            updateSimpleCache(
+                                "ultimaFacturacion",
+                                this.ultimaFacturacion
+                            );
                             notifyCacheChange("ultimaFacturacion");
                         } else {
                             // Si no se encuentra la venta
