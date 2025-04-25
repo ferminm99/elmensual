@@ -861,15 +861,13 @@ export default {
 
                         if (ventaCorrespondiente) {
                             // Asignar la fecha de facturación correspondiente
-                            this.ultimaFacturacion = {
-                                ...ventaCorrespondiente,
-                                fecha_facturacion:
-                                    ultimaFacturacion.fecha_facturacion,
-                            };
-                            updateCache(
+                            localStorage.setItem(
                                 "ultimaFacturacion",
-                                this.ultimaFacturacion
+                                JSON.stringify(this.ultimaFacturacion)
                             );
+                            memoryCache["ultimaFacturacion"] =
+                                this.ultimaFacturacion;
+
                             notifyCacheChange("ultimaFacturacion");
                         } else {
                             // Si no se encuentra la venta
