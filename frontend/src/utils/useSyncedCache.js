@@ -67,16 +67,16 @@ export async function useSyncedCache({
                     ttl,
                     forceRefresh: true,
                 });
-                await updateCache(key, result);
+                await updateCache(key, result, backendLastUpdate); // 👈 Aca le pasás explícitamente el del backend
                 onData(result);
                 return;
             } else {
-                localStorage.setItem(`${key}_last_update`, backendLastUpdate);
+                localStorage.setItem(`${key}_last_update`, backendLastUpdate); // 👈 Esto está bien
             }
         }
 
         const result = await cachedFetch(key, fetchFn, { ttl });
-        await updateCache(key, result);
+        await updateCache(key, result, localLastUpdate); // mismo timestamp viejo
 
         onData(updatedItems !== null ? updatedItems : result);
     } catch (err) {
