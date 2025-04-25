@@ -215,7 +215,7 @@ export default {
             ],
         };
     },
-    created() {
+    mounted() {
         const pedidosCache = getMemoryCache(PEDIDOS_KEY);
         this.pedidos =
             pedidosCache ?? JSON.parse(localStorage.getItem("pedidos") || "[]");

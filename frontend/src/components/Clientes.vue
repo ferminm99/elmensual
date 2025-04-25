@@ -170,7 +170,7 @@ export default {
             ],
         };
     },
-    created() {
+    mounted() {
         this.loading = true;
         window.addEventListener("notifyCacheChange", this.cacheListener);
 

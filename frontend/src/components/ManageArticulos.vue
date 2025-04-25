@@ -239,7 +239,7 @@ export default {
             });
         },
     },
-    created() {
+    mounted() {
         window.addEventListener("notifyCacheChange", this.handleCacheSync);
 
         useSyncedCache({

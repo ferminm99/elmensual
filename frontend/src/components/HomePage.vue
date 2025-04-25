@@ -496,7 +496,7 @@ export default {
         };
     },
 
-    created() {
+    mounted() {
         this.loading = true;
         window.addEventListener("notifyCacheChange", this.handleCacheSync);
 
@@ -523,7 +523,6 @@ export default {
             }),
         ]);
     },
-
     beforeUnmount() {
         window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
