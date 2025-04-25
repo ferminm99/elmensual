@@ -24,7 +24,7 @@ export async function useSyncedCache({
             !cached || !Array.isArray(cached) || cached.length === 0;
         let updatedItems = null;
 
-        if (!noHayCache) {
+        if (!noHayCache && localLastUpdate > 0) {
             const { data } = await axios.get(`/api${apiPath}`, {
                 params: { timestamp: localLastUpdate },
             });
@@ -51,9 +51,9 @@ export async function useSyncedCache({
                 backendLastUpdate,
                 new Date(backendLastUpdate)
             );
-            alert(
-                `[${key}] local: ${localLastUpdate}, backend: ${backendLastUpdate}`
-            );
+            // alert(
+            //     `[${key}] local: ${localLastUpdate}, backend: ${backendLastUpdate}`
+            // );
 
             if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
                 console.warn(`♻️ Backend más nuevo. Borrando caché de ${key}`);
