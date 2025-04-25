@@ -17,6 +17,8 @@ export async function useSyncedCache({
     setLoading(true);
 
     try {
+        localStorage.clear();
+
         const MARGEN_TIEMPO = 2000;
         const cached = getMemoryCache(key, ttl);
         const localLastUpdate = getCacheLastUpdate(key);
