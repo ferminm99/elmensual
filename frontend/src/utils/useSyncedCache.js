@@ -51,6 +51,9 @@ export async function useSyncedCache({
                 backendLastUpdate,
                 new Date(backendLastUpdate)
             );
+            alert(
+                `[${key}] local: ${localLastUpdate}, backend: ${backendLastUpdate}`
+            );
 
             if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
                 console.warn(`♻️ Backend más nuevo. Borrando caché de ${key}`);
