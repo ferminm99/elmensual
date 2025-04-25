@@ -58,7 +58,15 @@ export async function useSyncedCache({
                 localStorage.removeItem(`${key}_time`);
                 localStorage.removeItem(`${key}_last_update`);
                 notifyCacheChange(key);
-                updatedItems = nuevos;
+
+                // ⚠️ Forzar que fetch vuelva al backend
+                const result = await cachedFetch(key, fetchFn, {
+                    ttl,
+                    forceRefresh: true,
+                });
+                await updateCache(key, result);
+                onData(result);
+                return;
             } else {
                 localStorage.setItem(`${key}_last_update`, backendLastUpdate);
             }
