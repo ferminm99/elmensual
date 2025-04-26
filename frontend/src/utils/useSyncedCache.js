@@ -6,6 +6,7 @@ import {
 } from "@/utils/cacheFetch";
 import axios from "axios";
 import { notifyCacheChange } from "@/utils/cacheEvents";
+
 export async function useSyncedCache({
     key,
     apiPath,
@@ -15,6 +16,7 @@ export async function useSyncedCache({
     setLoading = () => {},
 }) {
     setLoading(true);
+    localStorage.clear();
 
     try {
         const MARGEN_TIEMPO = 2000;
@@ -22,7 +24,6 @@ export async function useSyncedCache({
         const localLastUpdate = getCacheLastUpdate(key);
         const noHayCache =
             !cached || !Array.isArray(cached) || cached.length === 0;
-        let updatedItems = null;
 
         if (!noHayCache && localLastUpdate > 0) {
             const { data } = await axios.get(`/api${apiPath}`, {
@@ -51,35 +52,37 @@ export async function useSyncedCache({
                 backendLastUpdate,
                 new Date(backendLastUpdate)
             );
-            // alert(
-            //     `[${key}] local: ${localLastUpdate}, backend: ${backendLastUpdate}`
-            // );
 
-            if (backendLastUpdate > localLastUpdate) {
+            if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
                 console.warn(`♻️ Backend más nuevo. Borrando caché de ${key}`);
                 localStorage.removeItem(key);
                 localStorage.removeItem(`${key}_time`);
                 localStorage.removeItem(`${key}_last_update`);
                 notifyCacheChange(key);
 
-                // ⚠️ Forzar que fetch vuelva al backend
-                const result = await cachedFetch(key, fetchFn, {
-                    ttl,
-                    forceRefresh: true,
-                });
-                await updateCache(key, result, backendLastUpdate); // 👈 Aca le pasás explícitamente el del backend
+                // Traer nueva data fresca del backend
+                const result = await cachedFetch(key, fetchFn, { ttl });
+
+                // ⬇️ Guardar el cache NUEVO con backendLastUpdate, no con el viejo
+                await updateCache(key, result, backendLastUpdate);
+
+                console.log("🔁 useSyncedCache ejecutado (backend más nuevo)");
                 onData(result);
                 return;
             } else {
-                localStorage.setItem(`${key}_last_update`, backendLastUpdate); // 👈 Esto está bien
+                // Si backend no es más nuevo, igual actualizamos el _last_update al backend por si acaso
+                localStorage.setItem(`${key}_last_update`, backendLastUpdate);
             }
         }
 
+        // Si no había cache o está todo OK, simplemente fetch normal
         const result = await cachedFetch(key, fetchFn, { ttl });
-        await updateCache(key, result, backendLastUpdate); // ✅ guardar el backendLastUpdate
 
-        console.log("🔁 useSyncedCache ejecutado");
-        onData(updatedItems !== null ? updatedItems : result);
+        // ⬇️ Y ahora sí: si no hubo diferencias, mantenemos el localLastUpdate
+        await updateCache(key, result, localLastUpdate);
+
+        console.log("🔁 useSyncedCache ejecutado (sin cambios)");
+        onData(result);
     } catch (err) {
         console.error(`❌ Error en useSyncedCache ${key}:`, err);
         onData([]);
