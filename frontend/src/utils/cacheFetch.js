@@ -23,9 +23,7 @@ export function clearCacheKey(key) {
 export function resetAllCache() {
     try {
         localStorage.clear();
-        for (const key in memoryCache) {
-            delete memoryCache[key];
-        }
+        memoryCache = {}; // también limpiar la cache en memoria
         console.log("🧹 Limpieza total de localStorage + memoryCache hecha.");
     } catch (e) {
         console.error("❌ Error limpiando todo el cache", e);
