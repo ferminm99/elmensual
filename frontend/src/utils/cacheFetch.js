@@ -8,6 +8,16 @@ export function getMemoryCache(key, ttl) {
     }
     return null;
 }
+export function clearCacheKey(key) {
+    try {
+        delete memoryCache[key];
+        localStorage.removeItem(key);
+        localStorage.removeItem(`${key}_time`);
+        localStorage.removeItem(`${key}_last_update`);
+    } catch (e) {
+        console.error(`❌ Error al limpiar cache para "${key}"`, e);
+    }
+}
 
 export function getCacheLastUpdate(key) {
     return Number(localStorage.getItem(`${key}_last_update`) || 0);

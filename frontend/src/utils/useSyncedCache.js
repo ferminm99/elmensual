@@ -21,7 +21,12 @@ export async function useSyncedCache({
         const MARGEN_TIEMPO = 2000;
         const cached = getMemoryCache(key, ttl);
         let localLastUpdate = getCacheLastUpdate(key);
-        if (!localLastUpdate || isNaN(localLastUpdate)) {
+        if (
+            !localLastUpdate ||
+            isNaN(localLastUpdate) ||
+            localLastUpdate > Date.now() + 60000
+        ) {
+            // Si no hay lastUpdate o es del año 55000, lo reseteamos
             localLastUpdate = 0;
         }
 
@@ -58,9 +63,7 @@ export async function useSyncedCache({
 
             if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
                 console.warn(`♻️ Backend más nuevo. Borrando caché de ${key}`);
-                localStorage.removeItem(key);
-                localStorage.removeItem(`${key}_time`);
-                localStorage.removeItem(`${key}_last_update`);
+                clearCacheKey(key);
                 notifyCacheChange(key);
 
                 // Traer nueva data fresca del backend
