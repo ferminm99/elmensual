@@ -34,51 +34,62 @@ export async function useSyncedCache({
         const noHayCache =
             !cached || !Array.isArray(cached) || cached.length === 0;
 
-        if (!noHayCache && localLastUpdate > 0) {
-            const { data } = await axios.get(`/api${apiPath}`, {
-                params: { timestamp: localLastUpdate },
-            });
+        if (!noHayCache) {
+            if (localLastUpdate > 0) {
+                // ✅ Solo si localLastUpdate es válido hacemos el axios
+                const { data } = await axios.get(`/api${apiPath}`, {
+                    params: { timestamp: localLastUpdate },
+                });
 
-            const backendLastUpdate = data?.last_update
-                ? Number(data.last_update) * 1000
-                : (() => {
-                      console.error(
-                          `❌ [${key}] No se recibió last_update del backend`
-                      );
-                      throw new Error("No se recibió last_update");
-                  })();
+                const backendLastUpdate = data?.last_update
+                    ? Number(data.last_update) * 1000
+                    : (() => {
+                          console.error(
+                              `❌ [${key}] No se recibió last_update del backend`
+                          );
+                          throw new Error("No se recibió last_update");
+                      })();
 
-            const nuevos = Array.isArray(data?.data) ? data.data : [];
+                const nuevos = Array.isArray(data?.data) ? data.data : [];
 
-            console.log(`🧠 Cache check para "${key}"`);
-            console.log(
-                "🔸 localLastUpdate:",
-                localLastUpdate,
-                new Date(localLastUpdate)
-            );
-            console.log(
-                "🔹 backendLastUpdate:",
-                backendLastUpdate,
-                new Date(backendLastUpdate)
-            );
+                console.log(`🧠 Cache check para "${key}"`);
+                console.log(
+                    "🔸 localLastUpdate:",
+                    localLastUpdate,
+                    new Date(localLastUpdate)
+                );
+                console.log(
+                    "🔹 backendLastUpdate:",
+                    backendLastUpdate,
+                    new Date(backendLastUpdate)
+                );
 
-            if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
-                console.warn(`♻️ Backend más nuevo. Borrando caché de ${key}`);
-                clearCacheKey(key);
-                notifyCacheChange(key);
+                if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
+                    console.warn(
+                        `♻️ Backend más nuevo. Borrando caché de ${key}`
+                    );
+                    clearCacheKey(key);
+                    notifyCacheChange(key);
 
-                // Traer nueva data fresca del backend
-                const result = await cachedFetch(key, fetchFn, { ttl });
+                    const result = await cachedFetch(key, fetchFn, { ttl });
+                    await updateCache(key, result, backendLastUpdate);
 
-                // ⬇️ Guardar el cache NUEVO con backendLastUpdate, no con el viejo
-                await updateCache(key, result, backendLastUpdate);
-
-                console.log("🔁 useSyncedCache ejecutado (backend más nuevo)");
-                onData(result);
-                return;
+                    console.log(
+                        "🔁 useSyncedCache ejecutado (backend más nuevo)"
+                    );
+                    onData(result);
+                    return;
+                } else {
+                    localStorage.setItem(
+                        `${key}_last_update`,
+                        backendLastUpdate
+                    );
+                }
             } else {
-                // Si backend no es más nuevo, igual actualizamos el _last_update al backend por si acaso
-                localStorage.setItem(`${key}_last_update`, backendLastUpdate);
+                // 🛑 Si el localLastUpdate era inválido, salteamos el fetch incremental
+                console.warn(
+                    `⛔ No hay localLastUpdate válido para ${key}. Se hace fetch normal.`
+                );
             }
         }
 

@@ -638,6 +638,7 @@ import {
     modifyInCache,
     getMemoryCache,
     getCacheLastUpdate,
+    resetAllCache,
     applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
 import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
@@ -648,7 +649,6 @@ import {
 } from "../utils/cacheKeys";
 import { setSimpleCache } from "@/utils/cacheSimple";
 import { useSyncedCache } from "@/utils/useSyncedCache";
-import { memoryCache } from "@/utils/cacheFetch";
 
 export default {
     components: {
@@ -734,11 +734,7 @@ export default {
     },
     mounted() {
         this.loading = true;
-        localStorage.clear();
-        for (const key in memoryCache) {
-            delete memoryCache[key];
-        }
-        console.log("🧹 Borrado total de localStorage y memoryCache");
+        resetAllCache();
 
         localStorage.clear();
         window.addEventListener("notifyCacheChange", this.cacheListener);
