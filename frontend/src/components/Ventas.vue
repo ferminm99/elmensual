@@ -648,6 +648,7 @@ import {
 } from "../utils/cacheKeys";
 import { setSimpleCache } from "@/utils/cacheSimple";
 import { useSyncedCache } from "@/utils/useSyncedCache";
+import { memoryCache } from "@/utils/cacheFetch";
 
 export default {
     components: {
@@ -733,6 +734,12 @@ export default {
     },
     mounted() {
         this.loading = true;
+        localStorage.clear();
+        for (const key in memoryCache) {
+            delete memoryCache[key];
+        }
+        console.log("🧹 Borrado total de localStorage y memoryCache");
+
         localStorage.clear();
         window.addEventListener("notifyCacheChange", this.cacheListener);
 

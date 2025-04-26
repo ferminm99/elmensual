@@ -1,4 +1,4 @@
-const memoryCache = {}; // clave: { data, time }
+export const memoryCache = {}; // clave: { data, time }
 
 export function getMemoryCache(key, ttl) {
     const entry = memoryCache[key];
