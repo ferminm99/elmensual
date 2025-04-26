@@ -1,3 +1,9 @@
+import {
+    getMemoryCache,
+    getCacheLastUpdate,
+    updateCache,
+} from "@/utils/cacheFetch";
+
 export async function useSyncedCache({
     key,
     apiPath,
