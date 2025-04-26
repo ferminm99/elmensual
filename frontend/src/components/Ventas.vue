@@ -848,45 +848,54 @@ export default {
             }
             return "";
         },
-        fetchUltimaFacturacion() {
+        async fetchUltimaFacturacion() {
             this.loading = true;
 
-            axios
-                .get("/api/facturaciones/ultima")
-                .then((response) => {
-                    const ultima = response.data;
+            try {
+                const response = await axios.get("/api/facturaciones/ultima");
+                const ultima = response.data;
 
-                    if (ultima && ultima.venta_id) {
-                        const ventaCorrespondiente = this.ventas.find(
-                            (venta) => venta.id === ultima.venta_id
+                if (ultima && ultima.venta_id) {
+                    // Si no hay ventas cargadas todavía, espero que se sincronicen
+                    if (!this.ventas.length) {
+                        console.warn(
+                            "⏳ No hay ventas cargadas aún. Esperando..."
                         );
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 300)
+                        ); // Esperar 300ms
+                    }
 
-                        if (ventaCorrespondiente) {
-                            this.ultimaFacturacion = ventaCorrespondiente;
-                            this.ventaUltimaFacturada = ventaCorrespondiente.id;
+                    const ventaCorrespondiente = this.ventas.find(
+                        (venta) => venta.id === ultima.venta_id
+                    );
 
-                            // Opcionalmente guardarlo:
-                            setSimpleCache(
-                                "ultimaFacturacion",
-                                ventaCorrespondiente
-                            );
-                            notifyCacheChange("ultimaFacturacion");
-                        } else {
-                            this.ultimaFacturacion = null;
-                        }
+                    if (ventaCorrespondiente) {
+                        this.ultimaFacturacion = ventaCorrespondiente;
+                        this.ventaUltimaFacturada = ventaCorrespondiente.id;
+
+                        // Guardarlo opcionalmente
+                        setSimpleCache(
+                            "ultimaFacturacion",
+                            ventaCorrespondiente
+                        );
+                        notifyCacheChange("ultimaFacturacion");
                     } else {
+                        console.warn(
+                            "⚠️ No se encontró la venta correspondiente en las ventas locales."
+                        );
                         this.ultimaFacturacion = null;
                     }
-                })
-                .catch((error) => {
-                    console.error("Error fetching última facturación", error);
+                } else {
                     this.ultimaFacturacion = null;
-                })
-                .finally(() => {
-                    this.loading = false;
-                });
+                }
+            } catch (error) {
+                console.error("❌ Error fetching última facturación", error);
+                this.ultimaFacturacion = null;
+            } finally {
+                this.loading = false;
+            }
         },
-
         formatPrice(value) {
             const number = parseFloat(value); // Convertir el valor a número
             return isNaN(number) ? value : number.toFixed(2); // Verificar si es un número y aplicar toFixed

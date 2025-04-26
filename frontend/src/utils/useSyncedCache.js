@@ -16,7 +16,6 @@ export async function useSyncedCache({
     setLoading = () => {},
 }) {
     setLoading(true);
-    localStorage.clear();
 
     try {
         const MARGEN_TIEMPO = 2000;
