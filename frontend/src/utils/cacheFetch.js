@@ -18,6 +18,42 @@ export function updateSimpleCache(key, value) {
     memoryCache[key] = { data: value, time: now };
 }
 
+// Guarda un objeto o dato simple en localStorage
+export function setSimpleCache(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        localStorage.setItem(`${key}_time`, Date.now().toString());
+    } catch (e) {
+        console.error(`❌ Error al guardar simple cache para "${key}"`, e);
+    }
+}
+
+// Obtiene un objeto o dato simple de localStorage
+export function getSimpleCache(key, ttl = 86400) {
+    try {
+        const raw = localStorage.getItem(key);
+        const time = localStorage.getItem(`${key}_time`);
+        const now = Date.now();
+
+        if (raw && time && now - Number(time) < ttl * 1000) {
+            return JSON.parse(raw);
+        }
+    } catch (e) {
+        console.error(`❌ Error al obtener simple cache para "${key}"`, e);
+    }
+    return null;
+}
+
+// Borra un simple cache
+export function clearSimpleCache(key) {
+    try {
+        localStorage.removeItem(key);
+        localStorage.removeItem(`${key}_time`);
+    } catch (e) {
+        console.error(`❌ Error al borrar simple cache para "${key}"`, e);
+    }
+}
+
 export async function cachedFetch(
     key,
     fetchFn,

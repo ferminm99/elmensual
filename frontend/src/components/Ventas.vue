@@ -646,7 +646,7 @@ import {
     VENTAS_KEY,
     CLIENTES_KEY,
 } from "../utils/cacheKeys";
-import { updateSimpleCache } from "@/utils/cacheFetch";
+import { setSimpleCache } from "@/utils/cacheSimple";
 import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
@@ -850,48 +850,39 @@ export default {
         },
         fetchUltimaFacturacion() {
             this.loading = true;
-            // Hacer una solicitud al backend para obtener la última facturación
+
             axios
                 .get("/api/facturaciones/ultima")
                 .then((response) => {
-                    const ultimaFacturacion = response.data;
+                    const ultima = response.data;
 
-                    if (ultimaFacturacion && ultimaFacturacion.venta_id) {
-                        // Buscar en la lista de ventas el ítem que coincide con el id de venta de la última facturación
+                    if (ultima && ultima.venta_id) {
                         const ventaCorrespondiente = this.ventas.find(
-                            (venta) => venta.id === ultimaFacturacion.venta_id
+                            (venta) => venta.id === ultima.venta_id
                         );
 
                         if (ventaCorrespondiente) {
-                            // Asignar la fecha de facturación correspondiente
-                            localStorage.setItem(
-                                "ultimaFacturacion",
-                                JSON.stringify(this.ultimaFacturacion)
-                            );
-                            localStorage.setItem(
-                                "ultimaFacturacion",
-                                JSON.stringify(this.ultimaFacturacion)
-                            );
-                            localStorage.setItem(
-                                "ultimaFacturacion_time",
-                                Date.now().toString()
-                            );
-                            localStorage.setItem(
-                                "ultimaFacturacion_last_update",
-                                Date.now().toString()
-                            );
+                            this.ultimaFacturacion = ventaCorrespondiente;
+                            this.ventaUltimaFacturada = ventaCorrespondiente.id;
 
+                            // Opcionalmente guardarlo:
+                            setSimpleCache(
+                                "ultimaFacturacion",
+                                ventaCorrespondiente
+                            );
                             notifyCacheChange("ultimaFacturacion");
                         } else {
-                            // Si no se encuentra la venta
                             this.ultimaFacturacion = null;
                         }
+                    } else {
+                        this.ultimaFacturacion = null;
                     }
-                    this.loading = false;
                 })
                 .catch((error) => {
                     console.error("Error fetching última facturación", error);
                     this.ultimaFacturacion = null;
+                })
+                .finally(() => {
                     this.loading = false;
                 });
         },

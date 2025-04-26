@@ -76,7 +76,7 @@ export async function useSyncedCache({
         }
 
         const result = await cachedFetch(key, fetchFn, { ttl });
-        await updateCache(key, result, localLastUpdate); // mismo timestamp viejo
+        await updateCache(key, result, backendLastUpdate); // ✅ guardar el backendLastUpdate
 
         console.log("🔁 useSyncedCache ejecutado");
         onData(updatedItems !== null ? updatedItems : result);
