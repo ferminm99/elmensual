@@ -20,7 +20,11 @@ export async function useSyncedCache({
     try {
         const MARGEN_TIEMPO = 2000;
         const cached = getMemoryCache(key, ttl);
-        const localLastUpdate = getCacheLastUpdate(key);
+        let localLastUpdate = getCacheLastUpdate(key);
+        if (!localLastUpdate || isNaN(localLastUpdate)) {
+            localLastUpdate = 0;
+        }
+
         const noHayCache =
             !cached || !Array.isArray(cached) || cached.length === 0;
 
