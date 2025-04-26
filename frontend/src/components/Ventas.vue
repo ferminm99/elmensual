@@ -639,6 +639,7 @@ import {
     getMemoryCache,
     getCacheLastUpdate,
     resetAllCache,
+    setSimpleCache,
     applyStockDelta,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
 import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
@@ -647,7 +648,6 @@ import {
     VENTAS_KEY,
     CLIENTES_KEY,
 } from "../utils/cacheKeys";
-import { setSimpleCache } from "@/utils/cacheSimple";
 import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
