@@ -649,7 +649,7 @@ import {
 } from "../utils/cacheKeys";
 import { setSimpleCache } from "@/utils/cacheSimple";
 import { useSyncedCache } from "@/utils/useSyncedCache";
-localStorage.clear();
+
 export default {
     components: {
         Datepicker,
