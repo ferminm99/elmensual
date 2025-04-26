@@ -3,6 +3,7 @@ import {
     getCacheLastUpdate,
     cachedFetch,
     updateCache,
+    clearCacheKey,
 } from "@/utils/cacheFetch";
 import axios from "axios";
 import { notifyCacheChange } from "@/utils/cacheEvents";
