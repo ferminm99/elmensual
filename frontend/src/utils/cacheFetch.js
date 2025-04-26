@@ -14,6 +14,7 @@ export function clearCacheKey(key) {
         localStorage.removeItem(key);
         localStorage.removeItem(`${key}_time`);
         localStorage.removeItem(`${key}_last_update`);
+        console.log("CACHE CLEARED");
     } catch (e) {
         console.error(`❌ Error al limpiar cache para "${key}"`, e);
     }
