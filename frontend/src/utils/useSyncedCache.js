@@ -1,13 +1,3 @@
-import {
-    getMemoryCache,
-    getCacheLastUpdate,
-    cachedFetch,
-    updateCache,
-    clearCacheKey,
-} from "@/utils/cacheFetch";
-import axios from "axios";
-import { notifyCacheChange } from "@/utils/cacheEvents";
-
 export async function useSyncedCache({
     key,
     apiPath,
@@ -22,13 +12,19 @@ export async function useSyncedCache({
         const MARGEN_TIEMPO = 2000;
         const cached = getMemoryCache(key, ttl);
         let localLastUpdate = getCacheLastUpdate(key);
+
         if (
             !localLastUpdate ||
             isNaN(localLastUpdate) ||
             localLastUpdate > Date.now() + 60000
         ) {
-            // Si no hay lastUpdate o es del año 55000, lo reseteamos
-            localLastUpdate = 0;
+            console.warn(
+                `⛔ No hay localLastUpdate válido para ${key}. Borrando caché.`
+            );
+
+            clearCacheKey(key);
+            notifyCacheChange(key);
+            localLastUpdate = 0; // seteo en 0 explícitamente
         }
 
         const noHayCache =
@@ -36,7 +32,6 @@ export async function useSyncedCache({
 
         if (!noHayCache) {
             if (localLastUpdate > 0) {
-                // ✅ Solo si localLastUpdate es válido hacemos el axios
                 const { data } = await axios.get(`/api${apiPath}`, {
                     params: { timestamp: localLastUpdate },
                 });
@@ -49,8 +44,6 @@ export async function useSyncedCache({
                           );
                           throw new Error("No se recibió last_update");
                       })();
-
-                const nuevos = Array.isArray(data?.data) ? data.data : [];
 
                 console.log(`🧠 Cache check para "${key}"`);
                 console.log(
@@ -85,18 +78,11 @@ export async function useSyncedCache({
                         backendLastUpdate
                     );
                 }
-            } else {
-                // 🛑 Si el localLastUpdate era inválido, salteamos el fetch incremental
-                console.warn(
-                    `⛔ No hay localLastUpdate válido para ${key}. Se hace fetch normal.`
-                );
             }
         }
 
-        // Si no había cache o está todo OK, simplemente fetch normal
+        // Si no había cache o ya está fresca
         const result = await cachedFetch(key, fetchFn, { ttl });
-
-        // ⬇️ Y ahora sí: si no hubo diferencias, mantenemos el localLastUpdate
         await updateCache(key, result, localLastUpdate);
 
         console.log("🔁 useSyncedCache ejecutado (sin cambios)");
