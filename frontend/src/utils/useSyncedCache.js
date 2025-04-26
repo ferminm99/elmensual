@@ -2,8 +2,11 @@ import {
     getMemoryCache,
     getCacheLastUpdate,
     updateCache,
+    clearCacheKey,
+    cachedFetch,
 } from "@/utils/cacheFetch";
 
+import { notifyCacheChange } from "@/utils/cacheEvents";
 export async function useSyncedCache({
     key,
     apiPath,
