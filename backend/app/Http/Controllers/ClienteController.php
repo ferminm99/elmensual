@@ -59,7 +59,11 @@ class ClienteController extends Controller
         $ultimoCliente = Cliente::latest()->first();
         if ($ultimoCliente) $ultimoCliente->touch();
     
-        return response()->json(['message' => 'Cliente eliminado exitosamente']);
+        return response()->json([
+            'message' => 'Cliente eliminado exitosamente',
+            'deleted_id' => $cliente->id,
+            'last_update' => now()->timestamp * 1000,
+        ]);
     }
     
     public function clientesActualizadosDesde(Request $request)

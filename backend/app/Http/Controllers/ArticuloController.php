@@ -91,7 +91,12 @@ class ArticuloController extends Controller
             if ($ultimo = Articulo::latest()->first()) $ultimo->touch();
             if ($ultimoTalle = \App\Models\Talle::latest()->first()) $ultimoTalle->touch();
 
-            return response()->json(['message' => 'Artículo eliminado correctamente']);
+            return response()->json([
+                'message' => 'Artículo eliminado exitosamente',
+                'deleted_id' => $articulo->id,
+                'last_update' => now()->timestamp * 1000,
+            ]);
+            
         } catch (\Exception $e) {
             \Log::error("❌ Error al eliminar artículo {$id}: " . $e->getMessage());
             return response()->json([
@@ -194,18 +199,26 @@ class ArticuloController extends Controller
             }
         }
     
+        $deletedIds = [];
+    
         if (
             $talle->verde == 0 && $talle->azul == 0 && $talle->marron == 0 &&
             $talle->negro == 0 && $talle->celeste == 0 && $talle->blancobeige == 0
         ) {
+            $deletedIds[] = $talle->id;
             $talle->delete();
         }
     
         $ultimoTalle = $articulo->talles()->latest()->first();
         if ($ultimoTalle) $ultimoTalle->touch();
     
-        return response()->json(['message' => 'Bombachas eliminadas correctamente']);
+        return response()->json([
+            'message' => 'Bombachas eliminadas correctamente',
+            'deleted_ids' => $deletedIds,
+            'last_update' => now()->timestamp * 1000,
+        ]);
     }
+    
     
 
     public function eliminarTalleCompleto(Request $request, $id) {
@@ -218,11 +231,16 @@ class ArticuloController extends Controller
             $ultimoTalle = $articulo->talles()->latest()->first();
             if ($ultimoTalle) $ultimoTalle->touch();
     
-            return response()->json(['message' => 'Talle eliminado correctamente']);
+            return response()->json([
+                'message' => 'Talle eliminado correctamente',
+                'deleted_ids' => [$talle->id],  // aunque sea 1 id, devolvemos array
+                'last_update' => now()->timestamp * 1000,
+            ]);
         }
     
         return response()->json(['message' => 'Talle no encontrado'], 404);
     }
+    
     
 
     public function editarBombachas(Request $request, $id) {

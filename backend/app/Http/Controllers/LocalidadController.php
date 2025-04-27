@@ -42,7 +42,11 @@ class LocalidadController extends Controller
         $ultima = Localidad::latest()->first();
         if ($ultima) $ultima->touch();
     
-        return response()->json(['message' => 'Localidad eliminada']);
+        return response()->json([
+            'message' => 'Localidad eliminada exitosamente',
+            'deleted_id' => $localidad->id,
+            'last_update' => now()->timestamp * 1000,
+        ]);
     }
     
     
