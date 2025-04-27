@@ -1304,8 +1304,12 @@ export default {
                 .then((res) => {
                     const ventaActualizada = res.data.venta || res.data;
 
-                    // Actualizar en cache
-                    const updated = modifyInCache(
+                    // 👇 Asegurás que updated_at esté en milisegundos
+                    const updatedAtMs = ventaActualizada.updated_at
+                        ? Number(ventaActualizada.updated_at) * 1000
+                        : Date.now();
+
+                    modifyInCache(
                         VENTAS_KEY,
                         (ventas) =>
                             ventas.map((v) =>
@@ -1313,12 +1317,11 @@ export default {
                                     ? ventaActualizada
                                     : v
                             ),
-                        ventaActualizada.updated_at
+                        updatedAtMs
                     );
 
                     notifyCacheChange(VENTAS_KEY);
 
-                    // Asegurar que esté en this.ventas
                     const idx = this.ventas.findIndex(
                         (v) => v.id === ventaActualizada.id
                     );
@@ -1328,7 +1331,6 @@ export default {
                         this.ventas.push(ventaActualizada);
                     }
 
-                    // Actualizar filtro activo si hay
                     this.ventas.sort(
                         (a, b) => new Date(b.fecha) - new Date(a.fecha)
                     );
