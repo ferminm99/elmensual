@@ -734,7 +734,7 @@ export default {
     },
     mounted() {
         this.loading = true;
-        localStorage.clear();
+
         window.addEventListener("notifyCacheChange", this.cacheListener);
 
         Promise.all([
