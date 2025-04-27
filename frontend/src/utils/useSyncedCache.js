@@ -77,20 +77,42 @@ export async function useSyncedCache({
                 );
 
                 if (backendLastUpdate > localLastUpdate + MARGEN_TIEMPO) {
-                    console.warn(
-                        `♻️ Backend más nuevo. Borrando caché de ${key}`
-                    );
-                    clearCacheKey(key);
-                    notifyCacheChange(key);
+                    console.warn(`♻️ Backend más nuevo detectado para ${key}`);
 
-                    const result = await cachedFetch(key, fetchFn, { ttl });
-                    await updateCache(key, result, backendLastUpdate);
+                    const nuevosDatos = data.data || [];
+                    if (Array.isArray(nuevosDatos) && nuevosDatos.length) {
+                        console.log(
+                            `➕ Agregando/Actualizando ${nuevosDatos.length} elementos nuevos a ${key}`
+                        );
 
-                    console.log(
-                        "🔁 useSyncedCache ejecutado (backend más nuevo)"
+                        const cacheActual = getMemoryCache(key, ttl) || [];
+
+                        // Merge: actualizar si existe, agregar si no
+                        const actualizado = [...cacheActual];
+                        nuevosDatos.forEach((nuevo) => {
+                            const index = actualizado.findIndex(
+                                (item) => item.id === nuevo.id
+                            );
+                            if (index !== -1) {
+                                actualizado[index] = nuevo;
+                            } else {
+                                actualizado.push(nuevo);
+                            }
+                        });
+
+                        await updateCache(key, actualizado, backendLastUpdate);
+                        onData(actualizado);
+                        return;
+                    } else {
+                        console.warn(
+                            `⚠️ No llegaron nuevos datos para ${key}. Ignorando actualización.`
+                        );
+                    }
+
+                    localStorage.setItem(
+                        `${key}_last_update`,
+                        backendLastUpdate
                     );
-                    onData(result);
-                    return;
                 } else {
                     localStorage.setItem(
                         `${key}_last_update`,
