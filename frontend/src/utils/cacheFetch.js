@@ -1,13 +1,33 @@
 export const memoryCache = {}; // clave: { data, time }
 
-export function getMemoryCache(key, ttl) {
-    const entry = memoryCache[key];
+export function getMemoryCache(key, ttl = 86400) {
     const now = Date.now();
-    if (entry && now - entry.time < ttl * 1000) {
-        return entry.data;
+
+    if (memoryCache[key]) {
+        if (
+            memoryCache[key]._time &&
+            now - memoryCache[key]._time < ttl * 1000
+        ) {
+            return memoryCache[key].data;
+        }
     }
+
+    // ⚡ Si no había en RAM, intento recuperar desde localStorage
+    const localData = localStorage.getItem(key);
+    const localTime = localStorage.getItem(`${key}_time`);
+
+    if (localData && localTime && now - Number(localTime) < ttl * 1000) {
+        const parsed = JSON.parse(localData);
+        memoryCache[key] = {
+            data: parsed,
+            _time: Number(localTime),
+        };
+        return parsed;
+    }
+
     return null;
 }
+
 export function clearCacheKey(key) {
     try {
         delete memoryCache[key];

@@ -101,6 +101,14 @@ export async function useSyncedCache({
         }
 
         const result = await cachedFetch(key, fetchFn, { ttl });
+
+        if (!result || !Array.isArray(result) || result.length === 0) {
+            console.error(
+                `❌ [${key}] No se pudieron cargar datos desde fetchFn.`
+            );
+            throw new Error("Falló el fetch inicial");
+        }
+
         await updateCache(key, result, localLastUpdate);
 
         console.log("🔁 useSyncedCache ejecutado (sin cambios)");
