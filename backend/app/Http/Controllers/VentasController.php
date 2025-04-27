@@ -161,6 +161,7 @@ class VentasController extends Controller
             'costo_original' => $request->costo_original,
         ]);
 
+        $venta->touch();
         // Cargar relaciones para que el frontend reciba la venta completa
         $venta->load('articulo', 'cliente');
 
@@ -239,6 +240,7 @@ class VentasController extends Controller
             'forma_pago' => $request->forma_pago,
         ]);
 
+        $venta->touch();
         // Recargar relaciones para devolver todo completo
         $venta->load('articulo', 'cliente');
 
