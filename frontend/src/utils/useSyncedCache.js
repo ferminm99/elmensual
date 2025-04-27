@@ -33,10 +33,19 @@ export async function useSyncedCache({
             notifyCacheChange(key);
             localLastUpdate = 0;
         } else if (!localLastUpdate && !noHayCache) {
-            console.info(
-                `ℹ️ No había localLastUpdate para ${key}, pero sí cache válido. Continuando.`
+            console.warn(
+                `⚠️ No había localLastUpdate para ${key} pero sí datos. Forzando refresh.`
             );
-            localLastUpdate = 0;
+            const result = await fetchFn();
+            if (Array.isArray(result) && result.length > 0) {
+                await updateCache(key, result, Date.now());
+                onData(result);
+                return;
+            } else {
+                throw new Error(
+                    "No se pudieron refrescar los datos para " + key
+                );
+            }
         } else if (
             isNaN(localLastUpdate) ||
             localLastUpdate > Date.now() + 60000
