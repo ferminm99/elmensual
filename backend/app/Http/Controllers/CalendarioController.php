@@ -53,7 +53,12 @@ class CalendarioController extends Controller
             $ultima = CompraCalendario::latest()->first();
             if ($ultima) $ultima->touch();
     
-            return response()->json(['message' => 'Compra eliminada correctamente.'], 200);
+            return response()->json([
+                'message' => 'Compra eliminada correctamente',
+                'deleted_id' => $compra->id,
+                'last_update' => now()->timestamp * 1000,
+            ]);
+            
         } catch (ModelNotFoundException $e) {
             return response()->json(['error' => 'Compra no encontrada.'], 404);
         } catch (\Exception $e) {
