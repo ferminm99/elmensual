@@ -201,8 +201,10 @@ class VentasController extends Controller
 
             return response()->json([
                 'message' => 'Venta eliminada exitosamente',
+                'deleted_id' => $venta->id, 
                 'last_update' => now()->timestamp * 1000,
             ]);
+            
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'La venta no existe'], 404);
         }

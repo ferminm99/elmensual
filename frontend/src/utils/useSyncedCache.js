@@ -27,7 +27,7 @@ export async function useSyncedCache({
 
         if (!localLastUpdate && noHayCache) {
             console.warn(
-                `⛔ No hay localLastUpdate y tampoco datos para ${key}. Borrando caché.`
+                `⛔ No hay localLastUpdate ni datos para ${key}. Borrando caché.`
             );
             clearCacheKey(key);
             notifyCacheChange(key);
@@ -43,7 +43,7 @@ export async function useSyncedCache({
                 return;
             } else {
                 throw new Error(
-                    "No se pudieron refrescar los datos para " + key
+                    `No se pudieron refrescar los datos para ${key}`
                 );
             }
         } else if (
@@ -89,39 +89,40 @@ export async function useSyncedCache({
                     console.warn(`♻️ Backend más nuevo detectado para ${key}`);
 
                     const nuevosDatos = data.data || [];
+                    const eliminados = data.deleted || [];
+
+                    let cacheActual = getMemoryCache(key, ttl) || [];
+
+                    // ➕ Primero agregamos/actualizamos
                     if (Array.isArray(nuevosDatos) && nuevosDatos.length) {
                         console.log(
-                            `➕ Agregando/Actualizando ${nuevosDatos.length} elementos nuevos a ${key}`
+                            `➕ Agregando/Actualizando ${nuevosDatos.length} elementos a ${key}`
                         );
-
-                        const cacheActual = getMemoryCache(key, ttl) || [];
-
-                        // Merge: actualizar si existe, agregar si no
-                        const actualizado = [...cacheActual];
                         nuevosDatos.forEach((nuevo) => {
-                            const index = actualizado.findIndex(
+                            const index = cacheActual.findIndex(
                                 (item) => item.id === nuevo.id
                             );
                             if (index !== -1) {
-                                actualizado[index] = nuevo;
+                                cacheActual[index] = nuevo;
                             } else {
-                                actualizado.push(nuevo);
+                                cacheActual.push(nuevo);
                             }
                         });
+                    }
 
-                        await updateCache(key, actualizado, backendLastUpdate);
-                        onData(actualizado);
-                        return;
-                    } else {
-                        console.warn(
-                            `⚠️ No llegaron nuevos datos para ${key}. Ignorando actualización.`
+                    // ➖ Ahora eliminamos
+                    if (Array.isArray(eliminados) && eliminados.length) {
+                        console.log(
+                            `➖ Eliminando ${eliminados.length} elementos de ${key}`
+                        );
+                        cacheActual = cacheActual.filter(
+                            (item) => !eliminados.includes(item.id)
                         );
                     }
 
-                    localStorage.setItem(
-                        `${key}_last_update`,
-                        backendLastUpdate
-                    );
+                    await updateCache(key, cacheActual, backendLastUpdate);
+                    onData(cacheActual);
+                    return;
                 } else {
                     localStorage.setItem(
                         `${key}_last_update`,
@@ -131,6 +132,7 @@ export async function useSyncedCache({
             }
         }
 
+        // Si no hubo cambios incrementales, hacemos fetch normal
         const result = await cachedFetch(key, fetchFn, { ttl });
 
         if (!result || !Array.isArray(result) || result.length === 0) {
