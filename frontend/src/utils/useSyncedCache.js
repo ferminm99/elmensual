@@ -5,8 +5,8 @@ import {
     clearCacheKey,
     cachedFetch,
 } from "@/utils/cacheFetch";
-
 import { notifyCacheChange } from "@/utils/cacheEvents";
+
 export async function useSyncedCache({
     key,
     apiPath,
@@ -22,22 +22,32 @@ export async function useSyncedCache({
         const cached = getMemoryCache(key, ttl);
         let localLastUpdate = getCacheLastUpdate(key);
 
-        if (
-            !localLastUpdate ||
+        const noHayCache =
+            !cached || !Array.isArray(cached) || cached.length === 0;
+
+        if (!localLastUpdate && noHayCache) {
+            console.warn(
+                `⛔ No hay localLastUpdate y tampoco datos para ${key}. Borrando caché.`
+            );
+            clearCacheKey(key);
+            notifyCacheChange(key);
+            localLastUpdate = 0;
+        } else if (!localLastUpdate && !noHayCache) {
+            console.info(
+                `ℹ️ No había localLastUpdate para ${key}, pero sí cache válido. Continuando.`
+            );
+            localLastUpdate = 0;
+        } else if (
             isNaN(localLastUpdate) ||
             localLastUpdate > Date.now() + 60000
         ) {
             console.warn(
-                `⛔ No hay localLastUpdate válido para ${key}. Borrando caché.`
+                `⚠️ LocalLastUpdate inválido para ${key}. Borrando caché.`
             );
-
             clearCacheKey(key);
             notifyCacheChange(key);
-            localLastUpdate = 0; // seteo en 0 explícitamente
+            localLastUpdate = 0;
         }
-
-        const noHayCache =
-            !cached || !Array.isArray(cached) || cached.length === 0;
 
         if (!noHayCache) {
             if (localLastUpdate > 0) {
@@ -90,7 +100,6 @@ export async function useSyncedCache({
             }
         }
 
-        // Si no había cache o ya está fresca
         const result = await cachedFetch(key, fetchFn, { ttl });
         await updateCache(key, result, localLastUpdate);
 
