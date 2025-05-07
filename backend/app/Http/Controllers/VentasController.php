@@ -88,7 +88,10 @@ class VentasController extends Controller
             ]);
             
             $articulo = Articulo::find($producto['articulo']['id']);
-            $articulo->talles()->where('talle', $producto['talle'])->decrement($producto['color'], 1);
+            $talle = $articulo->talles()->where('talle', $producto['talle'])->first();
+            $talle->{$producto['color']} = max(0, $talle->{$producto['color']} - 1);
+            $talle->save();
+
             
             // Cargar relaciones
             $venta->load('articulo', 'cliente');
@@ -229,7 +232,9 @@ class VentasController extends Controller
         // Descontar la nueva bombacha
         $articuloNuevo = Articulo::find($request->nueva['articulo_id']);
         $talleNuevo = $articuloNuevo->talles()->where('talle', $request->nueva['talle'])->first();
-        $talleNuevo->decrement($request->nueva['color'], 1);
+        $talleNuevo->{$request->nueva['color']} = max(0, $talleNuevo->{$request->nueva['color']} - 1);
+        $talleNuevo->save();
+
 
         // Actualizar la venta con los nuevos valores
         $venta->update([

@@ -77,16 +77,16 @@
         >
             <!-- Colores -->
             <template #item.marron="{ item }">
-                <span class="marron-text">{{ item.marron }}</span>
+                <span class="marron-text">{{ Number(item.marron) || 0 }}</span>
             </template>
             <template #item.negro="{ item }">
-                <span class="negro-text">{{ item.negro }}</span>
+                <span class="negro-text">{{ Number(item.negro) || 0 }}</span>
             </template>
             <template #item.verde="{ item }">
-                <span class="verde-text">{{ item.verde }}</span>
+                <span class="verde-text">{{ Number(item.verde) || 0 }}</span>
             </template>
             <template #item.azul="{ item }">
-                <span class="azul-text">{{ item.azul }}</span>
+                <span class="azul-text">{{ Number(item.azul) || 0 }}</span>
             </template>
             <template #item.celeste="{ item }">
                 <span
@@ -95,11 +95,13 @@
                         'rojo-text': esAlpargatas,
                     }"
                 >
-                    {{ item.celeste }}
+                    {{ Number(item.celeste) || 0 }}
                 </span>
             </template>
             <template #item.blancobeige="{ item }">
-                <span class="blanco-text">{{ item.blancobeige }}</span>
+                <span class="blanco-text">{{
+                    Number(item.blancobeige) || 0
+                }}</span>
             </template>
             <template #item.total_bombachas="{ item }">
                 {{ getTotalBombachas(item) }}
