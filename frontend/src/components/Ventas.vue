@@ -971,20 +971,20 @@ export default {
                     notifyCacheChange(VENTAS_KEY);
 
                     // 📦 Ajustar stock
-                    applyStockDelta(
-                        this.selectedVenta.articulo.id,
-                        this.selectedVenta.talle,
-                        this.selectedVenta.color,
-                        1,
-                        ARTICULOS_TALLES_KEY
-                    );
-                    applyStockDelta(
-                        this.cambioBombacha.articulo_id,
-                        this.cambioBombacha.talle,
-                        this.cambioBombacha.color,
-                        -1,
-                        ARTICULOS_TALLES_KEY
-                    );
+                    // applyStockDelta(
+                    //     this.selectedVenta.articulo.id,
+                    //     this.selectedVenta.talle,
+                    //     this.selectedVenta.color,
+                    //     1,
+                    //     ARTICULOS_TALLES_KEY
+                    // );
+                    // applyStockDelta(
+                    //     this.cambioBombacha.articulo_id,
+                    //     this.cambioBombacha.talle,
+                    //     this.cambioBombacha.color,
+                    //     -1,
+                    //     ARTICULOS_TALLES_KEY
+                    // );
                     notifyCacheChange(ARTICULOS_TALLES_KEY);
 
                     // Refrescar articulos desde memoria (stock ya ajustado)
@@ -1765,15 +1765,15 @@ export default {
                 this.tablaKey += 1;
 
                 // Restar stock en cache y local
-                this.productos.forEach((p) => {
-                    applyStockDelta(
-                        p.articulo.id,
-                        p.talle,
-                        p.color,
-                        -1,
-                        ARTICULOS_TALLES_KEY
-                    );
-                });
+                // this.productos.forEach((p) => {
+                //     applyStockDelta(
+                //         p.articulo.id,
+                //         p.talle,
+                //         p.color,
+                //         -1,
+                //         ARTICULOS_TALLES_KEY
+                //     );
+                // });
                 notifyCacheChange(ARTICULOS_TALLES_KEY);
                 this.articulos = getMemoryCache(ARTICULOS_TALLES_KEY, 86400); // refrescar desde memoria
 
