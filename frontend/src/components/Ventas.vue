@@ -1531,8 +1531,15 @@ export default {
                     // Cargar los colores originales basados en los talles disponibles activos
                     this.coloresDisponibles = Object.keys(talleSeleccionadoObj)
                         .filter(
-                            (color) =>
-                                !["id", "articulo_id", "talle"].includes(color)
+                            (key) =>
+                                ![
+                                    "id",
+                                    "articulo_id",
+                                    "talle",
+                                    "created_at",
+                                    "updated_at",
+                                ].includes(key) &&
+                                typeof talleSeleccionadoObj[key] === "number"
                         )
                         .map((color) => {
                             const stock = talleSeleccionadoObj[color];
