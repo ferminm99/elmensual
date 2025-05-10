@@ -50,7 +50,7 @@ class LocalidadController extends Controller
     }
     
     
-    public function localidadesActualizadosDesde(Request $request)
+    public function localidadesActualizadasDesde(Request $request)
     {
         try {
             $timestamp = $request->query('timestamp');
