@@ -54,14 +54,23 @@ class LocalidadController extends Controller
     {
         try {
             $timestamp = $request->query('timestamp');
+            \Log::info("🕒 Timestamp recibido:", ['timestamp' => $timestamp]);
+
             if (!$timestamp || !is_numeric($timestamp)) {
+                \Log::warning("❌ Timestamp inválido:", ['timestamp' => $timestamp]);
                 return response()->json(['error' => 'Falta el parámetro timestamp'], 400);
             }
 
             $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
+            \Log::info("🧮 Timestamp convertido:", ['desde' => $desde]);
 
             $localidades = \App\Models\Localidad::where('updated_at', '>', $desde)->get();
             $lastUpdate = DB::table('localidades')->max('updated_at') ?? now();
+
+            \Log::info("✅ Consulta exitosa", [
+                'cantidad' => $localidades->count(),
+                'last_update' => $lastUpdate,
+            ]);
 
             return response()->json([
                 'data' => $localidades,
@@ -69,6 +78,7 @@ class LocalidadController extends Controller
                 'last_update' => strtotime($lastUpdate),
             ]);
         } catch (\Exception $e) {
+            \Log::error("💥 Error al obtener localidades actualizadas: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
                 'error' => 'Error al obtener localidades actualizadas: ' . $e->getMessage(),
             ], 500);
