@@ -86,7 +86,7 @@ Route::middleware('token-auth')->group(function () {
     Route::put('/localidad/{id}', [LocalidadController::class, 'update']);
     Route::delete('/localidad/{id}', [LocalidadController::class, 'destroy']);
     Route::get('/localidad/ultima-actualizacion', [LocalidadController::class, 'ultimaActualizacionLocalidades']);
-    Route::get('/localidades/actualizadas-desde', [LocalidadController::class, 'localidadesActualizadasDesde']);
+    Route::get('/localidades/actualizados-desde', [LocalidadController::class, 'localidadesActualizadasDesde']);
 
     
     // Google Drive
