@@ -738,6 +738,15 @@ export default {
                     }
                 )
                 .then(() => {
+                    const asegurarColores = (talle) => ({
+                        ...talle,
+                        marron: parseInt(talle.marron) || 0,
+                        negro: parseInt(talle.negro) || 0,
+                        verde: parseInt(talle.verde) || 0,
+                        azul: parseInt(talle.azul) || 0,
+                        celeste: parseInt(talle.celeste) || 0,
+                        blancobeige: parseInt(talle.blancobeige) || 0,
+                    });
                     // Actualizar el cache con los nuevos valores absolutos
                     modifyInCache(ARTICULOS_TALLES_KEY, (articulos) => {
                         return articulos.map((articulo) => {
@@ -747,8 +756,10 @@ export default {
                                 ...articulo,
                                 talles: articulo.talles.map((t) =>
                                     t.talle === this.currentTalle.talle
-                                        ? { ...this.currentTalle }
-                                        : t
+                                        ? asegurarColores({
+                                              ...this.currentTalle,
+                                          })
+                                        : asegurarColores(t)
                                 ),
                             };
                         });

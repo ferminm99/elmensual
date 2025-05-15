@@ -63,6 +63,16 @@
                     <v-icon left>mdi-plus</v-icon> Agregar Pedido
                 </v-btn>
             </v-col>
+            <v-col cols="12" md="auto">
+                <v-btn color="blue" block @click="agregarVariacion('todo')">
+                    <v-icon left>mdi-content-duplicate</v-icon> Repetir Pedido
+                </v-btn>
+            </v-col>
+            <v-col cols="12" md="auto">
+                <v-btn color="teal" block @click="agregarVariacion('color')">
+                    <v-icon left>mdi-palette</v-icon> Variar Colores
+                </v-btn>
+            </v-col>
         </v-row>
 
         <ResponsiveTable
@@ -278,6 +288,7 @@ export default {
             );
 
             const nuevoPedido = {
+                id: Date.now() + Math.random(), // ID único
                 nombre: this.form.nombre,
                 articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
                 talle: this.form.talle,
@@ -304,32 +315,58 @@ export default {
                 colores: [],
             };
         },
-        editarPedido(pedido) {
-            const index = this.pedidos.findIndex(
-                (p) =>
-                    p.nombre === pedido.nombre &&
-                    p.articulo_nombre === pedido.articulo_nombre &&
-                    p.talle === pedido.talle
+        agregarVariacion(tipo) {
+            const articulo = this.articulos.find(
+                (a) => a.id === this.form.articulo_id
             );
+            if (!articulo) return;
 
-            if (index === -1) {
-                console.warn("❌ Pedido no encontrado");
-                return;
+            const base = {
+                nombre: this.form.nombre,
+                articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
+                talle: this.form.talle,
+            };
+
+            if (tipo === "color") {
+                this.colores.forEach((color) => {
+                    const nuevo = {
+                        ...base,
+                        id: Date.now() + Math.random(),
+                        colores: [color],
+                    };
+                    this.pedidos.push(nuevo);
+                });
+            } else if (tipo === "todo") {
+                const nuevo = {
+                    ...base,
+                    id: Date.now() + Math.random(),
+                    colores: [...this.form.colores],
+                };
+                this.pedidos.push(nuevo);
             }
 
+            updateCache("pedidos", this.pedidos);
+            localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
+            notifyCacheChange("pedidos");
+        },
+        editarPedido(pedido) {
             const articulo = this.articulos.find(
                 (a) => `${a.numero} - ${a.nombre}` === pedido.articulo_nombre
             );
 
             this.form = {
                 nombre: pedido.nombre,
-                articulo_id: articulo ? articulo.id : null,
+                articulo_id: articulo?.id ?? null,
                 talle: pedido.talle,
                 colores: [...pedido.colores],
+                id: pedido.id,
             };
 
+            this.pedidoEditIndex = this.pedidos.findIndex(
+                (p) => p.id === pedido.id
+            );
+
             this.cargarTalles();
-            this.pedidoEditIndex = index;
             this.dialogEditar = true;
         },
         guardarEdicionPedido() {
@@ -359,12 +396,8 @@ export default {
             };
         },
         eliminarPedido(pedido) {
-            const index = this.pedidos.findIndex(
-                (p) =>
-                    p.nombre === pedido.nombre &&
-                    p.articulo_nombre === pedido.articulo_nombre &&
-                    p.talle === pedido.talle
-            );
+            const index = this.pedidos.findIndex((p) => p.id === pedido.id);
+
             if (index !== -1) {
                 this.pedidos.splice(index, 1);
                 updateCache(PEDIDOS_KEY, this.pedidos);
