@@ -254,6 +254,11 @@
                             ></v-radio>
                         </v-radio-group>
 
+                        <Datepicker
+                            v-model="form.fecha"
+                            placeholder="Seleccione una fecha"
+                        ></Datepicker>
+
                         <!-- Selección de artículo -->
                         <v-autocomplete
                             v-model="form.articulo_id"
@@ -330,6 +335,9 @@
                                     }}
                                 </v-list-item-content>
                                 <v-list-item-action>
+                                    <v-btn icon @click="editarProducto(index)">
+                                        <v-icon color="blue">mdi-pencil</v-icon>
+                                    </v-btn>
                                     <v-btn
                                         icon
                                         @click="eliminarProducto(index)"
@@ -374,10 +382,7 @@
                             v-model="form.fecha"
                             placeholder="Seleccione una fecha"
                         ></v-text-field> -->
-                        <Datepicker
-                            v-model="form.fecha"
-                            placeholder="Seleccione una fecha"
-                        ></Datepicker>
+
                         <!-- <v-date-picker
                             v-model="form.fecha"
                             label="Seleccione una fecha"
@@ -619,6 +624,29 @@
             </v-card>
         </v-dialog>
 
+        <v-dialog v-model="editarProductoDialog" max-width="400">
+            <v-card>
+                <v-card-title>Editar Precio</v-card-title>
+                <v-card-text>
+                    <v-text-field
+                        v-model="productoEnEdicion.precio"
+                        label="Precio"
+                        type="number"
+                        min="0"
+                    ></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="editarProductoDialog = false"
+                        >Cancelar</v-btn
+                    >
+                    <v-btn color="green" text @click="guardarEdicionProducto"
+                        >Guardar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <v-snackbar
             v-model="snackbar"
             :timeout="3000"
@@ -683,6 +711,11 @@ export default {
             tablaKey: 0,
             loading: false,
             productoCargado: false,
+            editarProductoDialog: false,
+            productoEnEdicion: {
+                index: null,
+                precio: 0,
+            },
             ultimaFacturacion: null, // Para almacenar el último registro de facturación
             ventaUltimaFacturada: null, // Para almacenar el ID de la venta última facturada
             dialogCambioBombacha: false,
@@ -873,6 +906,26 @@ export default {
                 return "facturada-general"; // Clase para otras facturadas
             }
             return "";
+        },
+        editarProducto(index) {
+            const producto = this.productos[index];
+            this.productoEnEdicion = {
+                index,
+                precio: producto.precio,
+            };
+            this.editarProductoDialog = true;
+        },
+        guardarEdicionProducto() {
+            const { index, precio } = this.productoEnEdicion;
+
+            if (precio <= 0 || isNaN(precio)) {
+                this.snackbarText = "Precio inválido.";
+                this.snackbar = true;
+                return;
+            }
+
+            this.productos[index].precio = parseFloat(precio);
+            this.editarProductoDialog = false;
         },
         async fetchUltimaFacturacion() {
             this.loading = true;
@@ -1639,6 +1692,32 @@ export default {
 
                     costo_original: parseInt(articulo.costo_original),
                 });
+
+                const talleRestante = this.tallesDisponibles.find(
+                    (t) => t.talle === this.form.talle
+                );
+
+                const hayColoresConStock = talleRestante
+                    ? Object.keys(talleRestante)
+                          .filter(
+                              (key) =>
+                                  ![
+                                      "id",
+                                      "articulo_id",
+                                      "talle",
+                                      "created_at",
+                                      "updated_at",
+                                  ].includes(key)
+                          )
+                          .some((color) => parseInt(talleRestante[color]) > 0)
+                    : false;
+
+                if (!hayColoresConStock && mantener) {
+                    this.snackbarText =
+                        "⚠️ No hay más colores disponibles para este talle.";
+                    this.snackbar = true;
+                    return;
+                }
 
                 // Actualizar el stock localmente restando 1
                 const talleSeleccionado = this.tallesDisponibles.find(
