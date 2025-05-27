@@ -308,26 +308,27 @@
                         </v-row>
 
                         <!-- Agregar con y sin mantener selección -->
-                        <v-row class="mt-3" dense>
-                            <v-col cols="6">
-                                <v-btn
-                                    color="green"
-                                    block
-                                    @click="agregarProducto"
-                                >
-                                    Agregar y Limpiar
-                                </v-btn>
-                            </v-col>
-                            <v-col cols="6">
-                                <v-btn
-                                    color="blue"
-                                    block
-                                    @click="agregarProducto(true)"
-                                >
-                                    Agregar Manteniendo
-                                </v-btn>
-                            </v-col>
-                        </v-row>
+                        <!-- Agregar con y sin mantener selección -->
+<v-row class="mt-3" dense>
+  <v-col cols="12" md="6">
+    <v-btn
+      color="green"
+      block
+      @click="agregarProducto"
+    >
+      Agregar y Limpiar
+    </v-btn>
+  </v-col>
+  <v-col cols="12" md="6">
+    <v-btn
+      color="blue"
+      block
+      @click="agregarProducto(true)"
+    >
+      Agregar Manteniendo
+    </v-btn>
+  </v-col>
+</v-row>
 
                         <!-- Lista de productos agregados -->
                         <v-list dense>
