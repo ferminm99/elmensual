@@ -238,26 +238,35 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
-                        <!-- Forma de pago -->
-                        <v-radio-group
-                            v-model="form.forma_pago"
-                            label="Forma de Pago"
-                            :mandatory="true"
-                        >
-                            <v-radio
-                                label="Efectivo"
-                                value="efectivo"
-                            ></v-radio>
-                            <v-radio
-                                label="Transferencia"
-                                value="transferencia"
-                            ></v-radio>
-                        </v-radio-group>
+                        <v-row>
+                            <!-- Forma de pago -->
+                            <v-col cols="12" md="6">
+                                <v-radio-group
+                                    v-model="form.forma_pago"
+                                    label="Forma de Pago"
+                                    :mandatory="true"
+                                    class="pt-0"
+                                >
+                                    <v-radio
+                                        label="Efectivo"
+                                        value="efectivo"
+                                    ></v-radio>
+                                    <v-radio
+                                        label="Transferencia"
+                                        value="transferencia"
+                                    ></v-radio>
+                                </v-radio-group>
+                            </v-col>
 
-                        <Datepicker
-                            v-model="form.fecha"
-                            placeholder="Seleccione una fecha"
-                        ></Datepicker>
+                            <!-- Fecha -->
+                            <v-col cols="12" md="6" class="d-flex align-center">
+                                <Datepicker
+                                    v-model="form.fecha"
+                                    placeholder="Seleccione una fecha"
+                                    class="w-100"
+                                />
+                            </v-col>
+                        </v-row>
 
                         <!-- Selección de artículo -->
                         <v-autocomplete
