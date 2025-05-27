@@ -1725,6 +1725,8 @@ export default {
                                     }
                                     return color;
                                 });
+                            // 🧹 Limpiar color si ya no hay stock
+                            this.form.color = null;
                         }
                     }
                 }
