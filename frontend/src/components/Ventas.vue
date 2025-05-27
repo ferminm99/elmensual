@@ -1693,32 +1693,6 @@ export default {
                     costo_original: parseInt(articulo.costo_original),
                 });
 
-                const talleRestante = this.tallesDisponibles.find(
-                    (t) => t.talle === this.form.talle
-                );
-
-                const hayColoresConStock = talleRestante
-                    ? Object.keys(talleRestante)
-                          .filter(
-                              (key) =>
-                                  ![
-                                      "id",
-                                      "articulo_id",
-                                      "talle",
-                                      "created_at",
-                                      "updated_at",
-                                  ].includes(key)
-                          )
-                          .some((color) => parseInt(talleRestante[color]) > 0)
-                    : false;
-
-                if (!hayColoresConStock && mantener) {
-                    this.snackbarText =
-                        "⚠️ No hay más colores disponibles para este talle.";
-                    this.snackbar = true;
-                    return;
-                }
-
                 // Actualizar el stock localmente restando 1
                 const talleSeleccionado = this.tallesDisponibles.find(
                     (talle) => talle.talle === this.form.talle
@@ -1775,6 +1749,12 @@ export default {
                           .some((color) => parseInt(talleRestante[color]) > 0)
                     : false;
 
+                if (!hayColoresConStock && mantener) {
+                    this.snackbarText =
+                        "⚠️ No hay más colores disponibles para este talle.";
+                    this.snackbar = true;
+                    return;
+                }
                 // 🧹 Si no quedan colores para ese talle, limpiamos selección aunque pidió mantener
 
                 // 👇 Lógica después de agregar producto y reducir stock
