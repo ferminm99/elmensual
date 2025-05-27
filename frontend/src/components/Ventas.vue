@@ -238,6 +238,22 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
+                        <!-- Forma de pago -->
+                        <v-radio-group
+                            v-model="form.forma_pago"
+                            label="Forma de Pago"
+                            :mandatory="true"
+                        >
+                            <v-radio
+                                label="Efectivo"
+                                value="efectivo"
+                            ></v-radio>
+                            <v-radio
+                                label="Transferencia"
+                                value="transferencia"
+                            ></v-radio>
+                        </v-radio-group>
+
                         <!-- Selección de artículo -->
                         <v-autocomplete
                             v-model="form.articulo_id"
@@ -277,30 +293,27 @@
                             </v-col>
                         </v-row>
 
-                        <!-- Agregar Producto -->
-                        <v-btn color="green" @click="agregarProducto">
-                            Agregar Producto
-                        </v-btn>
-
-                        <v-chip-group
-                            column
-                            class="mt-3"
-                            v-if="productos.length"
-                        >
-                            <v-chip
-                                v-for="(producto, index) in productos"
-                                :key="index"
-                                closable
-                                @click:close="eliminarProducto(index)"
-                                class="ma-1"
-                                color="primary"
-                                text-color="white"
-                            >
-                                {{ producto.articulo.nombre }} - Talle
-                                {{ producto.talle }} - Color
-                                {{ producto.color }}
-                            </v-chip>
-                        </v-chip-group>
+                        <!-- Agregar con y sin mantener selección -->
+                        <v-row class="mt-3" dense>
+                            <v-col cols="6">
+                                <v-btn
+                                    color="green"
+                                    block
+                                    @click="agregarProducto"
+                                >
+                                    Agregar y Limpiar
+                                </v-btn>
+                            </v-col>
+                            <v-col cols="6">
+                                <v-btn
+                                    color="blue"
+                                    block
+                                    @click="agregarProducto(true)"
+                                >
+                                    Agregar Manteniendo
+                                </v-btn>
+                            </v-col>
+                        </v-row>
 
                         <!-- Lista de productos agregados -->
                         <v-list dense>
@@ -354,22 +367,6 @@
                             v-model="form.cliente_cbu"
                             label="CBU (opcional)"
                         ></v-text-field>
-
-                        <!-- Forma de pago -->
-                        <v-radio-group
-                            v-model="form.forma_pago"
-                            label="Forma de Pago"
-                            :mandatory="true"
-                        >
-                            <v-radio
-                                label="Efectivo"
-                                value="efectivo"
-                            ></v-radio>
-                            <v-radio
-                                label="Transferencia"
-                                value="transferencia"
-                            ></v-radio>
-                        </v-radio-group>
 
                         <!-- Selección de fecha -->
                         <!-- <v-text-field
@@ -645,6 +642,16 @@
             color="primary"
         />
     </v-overlay>
+    <v-alert
+        v-if="productoCargado"
+        type="success"
+        class="mt-2 mb-1"
+        dense
+        border="left"
+        text
+    >
+        Producto agregado correctamente ✔️
+    </v-alert>
 </template>
 
 <script>
@@ -675,6 +682,7 @@ export default {
         return {
             tablaKey: 0,
             loading: false,
+            productoCargado: false,
             ultimaFacturacion: null, // Para almacenar el último registro de facturación
             ventaUltimaFacturada: null, // Para almacenar el ID de la venta última facturada
             dialogCambioBombacha: false,
@@ -1668,61 +1676,44 @@ export default {
                     }
                 }
 
-                // Limpiar los campos del formulario para agregar más productos
-                this.form.articulo_id = null;
-                this.form.talle = null;
-                this.form.color = null;
-                // 👇 Lógica después de agregar producto y reducir stock
-                const talleObj = this.tallesDisponibles.find(
+                // 👁️ Revisar si ya no hay colores habilitados para ese talle
+                const talleRestante = this.tallesDisponibles.find(
                     (t) => t.talle === this.form.talle
                 );
-                if (talleObj) {
-                    const colorStock = talleObj[this.form.color];
-                    if (colorStock === 0) {
-                        // 🔴 Quitar color si ya no hay más stock
-                        this.coloresDisponibles =
-                            this.coloresDisponibles.filter(
-                                (color) => color.value !== this.form.color
-                            );
-                    }
 
-                    // 🔍 Verificamos si todos los colores del talle tienen 0 stock
-                    const coloresConStock = Object.entries(talleObj)
-                        .filter(
-                            ([k, v]) =>
-                                ![
-                                    "talle",
-                                    "id",
-                                    "articulo_id",
-                                    "created_at",
-                                    "updated_at",
-                                ].includes(k)
-                        )
-                        .some(([_, stock]) => parseInt(stock) > 0);
+                const coloresConStock = talleRestante
+                    ? Object.keys(talleRestante)
+                          .filter(
+                              (key) =>
+                                  ![
+                                      "id",
+                                      "articulo_id",
+                                      "talle",
+                                      "created_at",
+                                      "updated_at",
+                                  ].includes(key)
+                          )
+                          .some((color) => parseInt(talleRestante[color]) > 0)
+                    : false;
 
+                // 🧹 Si no quedan colores para ese talle, limpiamos selección aunque pidió mantener
+
+                // 👇 Lógica después de agregar producto y reducir stock
+                // 🧹 Limpiar si NO se desea mantener selección
+                if (!mantener) {
                     if (!coloresConStock) {
-                        // 🗑️ Eliminar talle si ya no tiene colores con stock
-                        this.tallesDisponibles = this.tallesDisponibles.filter(
-                            (t) => t.talle !== this.form.talle
-                        );
+                        this.form.talle = null;
+                        this.form.color = null;
+                    } else {
+                        this.form.articulo_id = null;
+                        this.form.talle = null;
+                        this.form.color = null;
                     }
                 }
-
-                // ✅ Mantener selección solo si aún hay stock
-                if (
-                    this.coloresDisponibles.some(
-                        (c) => c.value === this.form.color
-                    ) &&
-                    this.tallesDisponibles.some(
-                        (t) => t.talle === this.form.talle
-                    )
-                ) {
-                    // Dejar selección como está
-                } else {
-                    // Limpiar selección si ya no está disponible
-                    this.form.talle = null;
-                    this.form.color = null;
-                }
+                this.productoCargado = true;
+                setTimeout(() => {
+                    this.productoCargado = false;
+                }, 1000);
             }
         },
         eliminarProducto(index) {
