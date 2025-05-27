@@ -282,6 +282,26 @@
                             Agregar Producto
                         </v-btn>
 
+                        <v-chip-group
+                            column
+                            class="mt-3"
+                            v-if="productos.length"
+                        >
+                            <v-chip
+                                v-for="(producto, index) in productos"
+                                :key="index"
+                                closable
+                                @click:close="eliminarProducto(index)"
+                                class="ma-1"
+                                color="primary"
+                                text-color="white"
+                            >
+                                {{ producto.articulo.nombre }} - Talle
+                                {{ producto.talle }} - Color
+                                {{ producto.color }}
+                            </v-chip>
+                        </v-chip-group>
+
                         <!-- Lista de productos agregados -->
                         <v-list dense>
                             <v-list-item
@@ -1652,6 +1672,57 @@ export default {
                 this.form.articulo_id = null;
                 this.form.talle = null;
                 this.form.color = null;
+                // 👇 Lógica después de agregar producto y reducir stock
+                const talleObj = this.tallesDisponibles.find(
+                    (t) => t.talle === this.form.talle
+                );
+                if (talleObj) {
+                    const colorStock = talleObj[this.form.color];
+                    if (colorStock === 0) {
+                        // 🔴 Quitar color si ya no hay más stock
+                        this.coloresDisponibles =
+                            this.coloresDisponibles.filter(
+                                (color) => color.value !== this.form.color
+                            );
+                    }
+
+                    // 🔍 Verificamos si todos los colores del talle tienen 0 stock
+                    const coloresConStock = Object.entries(talleObj)
+                        .filter(
+                            ([k, v]) =>
+                                ![
+                                    "talle",
+                                    "id",
+                                    "articulo_id",
+                                    "created_at",
+                                    "updated_at",
+                                ].includes(k)
+                        )
+                        .some(([_, stock]) => parseInt(stock) > 0);
+
+                    if (!coloresConStock) {
+                        // 🗑️ Eliminar talle si ya no tiene colores con stock
+                        this.tallesDisponibles = this.tallesDisponibles.filter(
+                            (t) => t.talle !== this.form.talle
+                        );
+                    }
+                }
+
+                // ✅ Mantener selección solo si aún hay stock
+                if (
+                    this.coloresDisponibles.some(
+                        (c) => c.value === this.form.color
+                    ) &&
+                    this.tallesDisponibles.some(
+                        (t) => t.talle === this.form.talle
+                    )
+                ) {
+                    // Dejar selección como está
+                } else {
+                    // Limpiar selección si ya no está disponible
+                    this.form.talle = null;
+                    this.form.color = null;
+                }
             }
         },
         eliminarProducto(index) {
