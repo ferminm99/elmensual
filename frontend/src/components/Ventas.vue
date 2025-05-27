@@ -238,7 +238,7 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
-                        <v-row>
+                        <v-row dense>
                             <!-- Forma de pago -->
                             <v-col cols="12" md="6">
                                 <v-radio-group
@@ -259,10 +259,11 @@
                             </v-col>
 
                             <!-- Fecha -->
-                            <v-col cols="12" md="6" class="d-flex align-center">
+                            <v-col cols="12" md="6" class="d-flex align-end">
                                 <Datepicker
                                     v-model="form.fecha"
                                     placeholder="Seleccione una fecha"
+                                    :input-class="'v-input v-input--density-default'"
                                     class="w-100"
                                 />
                             </v-col>
@@ -309,26 +310,26 @@
 
                         <!-- Agregar con y sin mantener selección -->
                         <!-- Agregar con y sin mantener selección -->
-<v-row class="mt-3" dense>
-  <v-col cols="12" md="6">
-    <v-btn
-      color="green"
-      block
-      @click="agregarProducto"
-    >
-      Agregar y Limpiar
-    </v-btn>
-  </v-col>
-  <v-col cols="12" md="6">
-    <v-btn
-      color="blue"
-      block
-      @click="agregarProducto(true)"
-    >
-      Agregar Manteniendo
-    </v-btn>
-  </v-col>
-</v-row>
+                        <v-row class="mt-3" dense>
+                            <v-col cols="12" md="6">
+                                <v-btn
+                                    color="green"
+                                    block
+                                    @click="agregarProducto"
+                                >
+                                    Agregar y Limpiar
+                                </v-btn>
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-btn
+                                    color="blue"
+                                    block
+                                    @click="agregarProducto(true)"
+                                >
+                                    Agregar Manteniendo
+                                </v-btn>
+                            </v-col>
+                        </v-row>
 
                         <!-- Lista de productos agregados -->
                         <v-list dense>
