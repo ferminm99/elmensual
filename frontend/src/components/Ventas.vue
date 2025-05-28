@@ -238,7 +238,7 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
-                        <v-row dense class="align-end">
+                        <v-row class="d-flex flex-wrap align-end" dense>
                             <!-- Forma de Pago -->
                             <v-col cols="12" md="6">
                                 <v-radio-group
@@ -261,12 +261,14 @@
 
                             <!-- Fecha -->
                             <v-col cols="12" md="6">
-                                <Datepicker
-                                    v-model="form.fecha"
-                                    placeholder="Seleccione una fecha"
-                                    class="w-100"
-                                    :input-class="'v-input w-100'"
-                                />
+                                <div class="w-100">
+                                    <Datepicker
+                                        v-model="form.fecha"
+                                        placeholder="Seleccione una fecha"
+                                        class="w-100"
+                                        :input-class="'w-100'"
+                                    />
+                                </div>
                             </v-col>
                         </v-row>
 
