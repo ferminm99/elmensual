@@ -238,33 +238,34 @@
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
-                        <v-row dense>
-                            <!-- Forma de pago -->
+                        <v-row dense class="align-end">
+                            <!-- Forma de Pago -->
                             <v-col cols="12" md="6">
                                 <v-radio-group
                                     v-model="form.forma_pago"
                                     label="Forma de Pago"
                                     :mandatory="true"
                                     class="pt-0"
+                                    column
                                 >
                                     <v-radio
                                         label="Efectivo"
                                         value="efectivo"
-                                    ></v-radio>
+                                    />
                                     <v-radio
                                         label="Transferencia"
                                         value="transferencia"
-                                    ></v-radio>
+                                    />
                                 </v-radio-group>
                             </v-col>
 
                             <!-- Fecha -->
-                            <v-col cols="12" md="6" class="d-flex align-end">
+                            <v-col cols="12" md="6">
                                 <Datepicker
                                     v-model="form.fecha"
                                     placeholder="Seleccione una fecha"
-                                    :input-class="'v-input v-input--density-default'"
                                     class="w-100"
+                                    :input-class="'v-input w-100'"
                                 />
                             </v-col>
                         </v-row>
