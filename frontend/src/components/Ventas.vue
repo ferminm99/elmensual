@@ -2142,5 +2142,9 @@ export default {
     .v-card-actions .v-btn {
         font-size: 17px !important;
     }
+    /* Si Datepicker sigue chico */
+    .datepicker-wrapper {
+        width: 100%;
+    }
 }
 </style>
