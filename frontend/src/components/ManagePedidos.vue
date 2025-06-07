@@ -272,7 +272,10 @@ export default {
             } else {
                 this.talles = [];
             }
-            this.form.talle = null;
+            // Si el talle actual no está en la lista generada, reiniciar la selección
+            if (!this.talles.includes(this.form.talle)) {
+                this.form.talle = null;
+            }
         },
         agregarPedido() {
             if (
@@ -419,7 +422,11 @@ export default {
             const pedidosOrdenados = [...this.pedidos].sort((a, b) => {
                 const codA = parseInt(a.articulo_nombre.split(" - ")[0]);
                 const codB = parseInt(b.articulo_nombre.split(" - ")[0]);
-                return codB - codA || a.nombre.localeCompare(b.nombre);
+                return (
+                    codB - codA ||
+                    a.nombre.localeCompare(b.nombre) ||
+                    a.talle - b.talle
+                );
             });
 
             const texto = pedidosOrdenados
@@ -451,7 +458,11 @@ export default {
                 .sort((a, b) => {
                     const codA = parseInt(a.articulo_nombre.split(" - ")[0]);
                     const codB = parseInt(b.articulo_nombre.split(" - ")[0]);
-                    return codB - codA || a.nombre.localeCompare(b.nombre);
+                    return (
+                        codB - codA ||
+                        a.nombre.localeCompare(b.nombre) ||
+                        a.talle - b.talle
+                    );
                 })
                 .forEach((p) => {
                     sheet.addRow({
