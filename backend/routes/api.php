@@ -69,7 +69,7 @@ Route::middleware('token-auth')->group(function () {
     Route::post('/comprascalendario', [CalendarioController::class, 'store']);
     Route::put('/comprascalendario/{id}', [CalendarioController::class, 'update']);
     Route::delete('/comprascalendario/{id}', [CalendarioController::class, 'destroy']); 
-    Route::get('/comprascalendario/ultima-actualizacion', [CalendarioController::class, 'ultimaActualizacionVentas']);
+    Route::get('/comprascalendario/ultima-actualizacion', [CalendarioController::class, 'ultimaActualizacionCalendario']);
     Route::get('/calendario/actualizados-desde', [CalendarioController::class, 'calendarioActualizadosDesde']);
     
     // Clientes

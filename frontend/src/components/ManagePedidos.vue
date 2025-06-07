@@ -373,6 +373,14 @@ export default {
             this.dialogEditar = true;
         },
         guardarEdicionPedido() {
+            if (
+                !this.form.nombre ||
+                !this.form.articulo_id ||
+                !this.form.talle ||
+                !this.form.colores.length
+            )
+                return;
+
             const articulo = this.articulos.find(
                 (a) => a.id === this.form.articulo_id
             );
