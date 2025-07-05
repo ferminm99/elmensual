@@ -55,6 +55,7 @@ Route::middleware('token-auth')->group(function () {
     Route::get('/articulos/talles/actualizados-desde', [ArticuloController::class, 'articulosTallesActualizadosDesde']);
     // Ventas
     Route::post('/ventas', [VentasController::class, 'registrarVenta']);
+    Route::post('/ventas/sin-stock', [VentasController::class, 'registrarVentaSinStock']);
     Route::get('/ventas/listar', [VentasController::class, 'obtenerVentas']);
     Route::put('/ventas/{id}', [VentasController::class, 'update']);
     Route::post('/ventas/cambiar-bombachas', [VentasController::class, 'cambiarBombacha']);

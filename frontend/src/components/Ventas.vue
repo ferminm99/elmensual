@@ -25,6 +25,15 @@
                         </v-btn>
 
                         <v-btn
+                            color="black"
+                            class="mr-2"
+                            @click="openVentaSinStockDialog"
+                        >
+                            <v-icon left color="white">mdi-cart-plus</v-icon>
+                            Registrar Venta Sin Stock
+                        </v-btn>
+
+                        <v-btn
                             outlined
                             class="mr-2"
                             @click="openFacturarDialog"
@@ -766,6 +775,19 @@ export default {
             articulos: [], // Lista de artículos
             tallesDisponibles: [], // Talles para el artículo seleccionado
             coloresDisponibles: [], // Colores para el artículo seleccionado
+            sinStock: false,
+            tallesGenerales: [
+                0, 2, 4, 6, 8, 10, 12, 14, 16, 32, 34, 36, 38, 40, 42, 44, 46,
+                48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70,
+            ],
+            coloresGenerales: [
+                "verde",
+                "azul",
+                "marron",
+                "negro",
+                "celeste",
+                "blancobeige",
+            ],
             ventas: [], // Lista de ventas registradas
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
             confirmDeleteDialog: false, // Control para abrir/cerrar el diálogo de confirmación de eliminación
@@ -1509,6 +1531,11 @@ export default {
                 });
         },
         openVentaDialog() {
+            this.sinStock = false;
+            this.dialogVenta = true;
+        },
+        openVentaSinStockDialog() {
+            this.sinStock = true;
             this.dialogVenta = true;
         },
         resetStockLocal() {
@@ -1539,6 +1566,9 @@ export default {
         },
         closeDialogVenta() {
             this.resetStockLocal();
+            if (!this.sinStock) {
+                this.resetStockLocal();
+            }
 
             this.form = {
                 cliente_nombre: "",
@@ -1552,6 +1582,7 @@ export default {
             this.tallesDisponibles = [];
             this.coloresDisponibles = [];
             this.productos = [];
+            this.sinStock = false;
             this.dialogVenta = false;
         },
         // Cargar los artículos desde el backend
@@ -1581,6 +1612,13 @@ export default {
             this.ventasFiltradas = this.ventas;
         },
         onTalleChange(talleSeleccionado) {
+            if (this.sinStock) {
+                this.coloresDisponibles = this.coloresGenerales.map((c) => ({
+                    title: c,
+                    value: c,
+                }));
+                return;
+            }
             let articuloSeleccionado = null;
 
             // Determinar si estamos trabajando con una venta o un cambio de bombacha
@@ -1641,6 +1679,18 @@ export default {
             this.form.color = null;
             this.form.talle = null;
 
+            if (this.sinStock) {
+                // Mostrar todos los talles y colores disponibles sin verificar stock
+                this.tallesDisponibles = this.tallesGenerales.map((t) => ({
+                    talle: t,
+                }));
+                this.coloresDisponibles = this.coloresGenerales.map((c) => ({
+                    title: c,
+                    value: c,
+                }));
+                return;
+            }
+
             let articuloSeleccionado = null; // Cambiado a 'let' para permitir la reasignación
 
             // Determinar si la selección proviene de la venta o del cambio de bombacha
@@ -1690,7 +1740,7 @@ export default {
                 maximumFractionDigits: 2,
             });
         },
-        agregarProducto() {
+        agregarProducto(mantener = false) {
             const articulo = this.articulos.find(
                 (item) => item.id === this.form.articulo_id
             );
@@ -1707,6 +1757,16 @@ export default {
                     costo_original: parseInt(articulo.costo_original),
                 });
 
+                if (this.sinStock) {
+                    if (!mantener) {
+                        this.form.articulo_id = null;
+                        this.form.talle = null;
+                        this.form.color = null;
+                    }
+                    this.productoCargado = true;
+                    setTimeout(() => (this.productoCargado = false), 1000);
+                    return;
+                }
                 // Actualizar el stock localmente restando 1
                 const talleSeleccionado = this.tallesDisponibles.find(
                     (talle) => talle.talle === this.form.talle
@@ -1794,6 +1854,10 @@ export default {
         eliminarProducto(index) {
             const producto = this.productos[index];
 
+            if (this.sinStock) {
+                this.productos.splice(index, 1);
+                return;
+            }
             // Devolver el stock del talle y color eliminados
             const talleSeleccionado = this.tallesDisponibles.find(
                 (talle) => talle.talle === producto.talle
@@ -1868,7 +1932,10 @@ export default {
             };
 
             try {
-                const res = await axios.post("/api/ventas", ventaData);
+                const url = this.sinStock
+                    ? "/api/ventas/sin-stock"
+                    : "/api/ventas";
+                const res = await axios.post(url, ventaData);
 
                 // Las ventas que devuelve el backend ya vienen con articulo, cliente, id, etc.
                 const nuevasVentas = Array.isArray(res.data.ventas)
@@ -1893,6 +1960,7 @@ export default {
                 this.articulos = getMemoryCache(ARTICULOS_TALLES_KEY, 86400); // refrescar desde memoria
 
                 this.dialogVenta = false;
+                this.sinStock = false;
                 this.resetFormVenta?.();
                 this.fetchUltimaFacturacion();
             } catch (error) {

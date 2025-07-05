@@ -107,6 +107,28 @@ class VentasController extends Controller
         
     }
 
+    
+    public function registrarVentaSinStock(Request $request) {
+        foreach ($request->productos as $producto) {
+            $articulo = Articulo::findOrFail($producto['articulo']['id']);
+            $talle = $articulo->talles()->where('talle', $producto['talle'])->first();
+            if (!$talle) {
+                $talle = $articulo->talles()->create([
+                    'talle' => $producto['talle'],
+                    'verde' => 0,
+                    'azul' => 0,
+                    'marron' => 0,
+                    'negro' => 0,
+                    'celeste' => 0,
+                    'blancobeige' => 0,
+                ]);
+            }
+            $talle->increment($producto['color']);
+        }
+
+        return $this->registrarVenta($request);
+    }
+
     //Obtiene la ultima facturacion
     public function obtenerUltimaFacturacion()
     {
