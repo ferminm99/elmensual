@@ -73,6 +73,11 @@
                     <v-icon left>mdi-palette</v-icon> Variar Colores
                 </v-btn>
             </v-col>
+            <v-col cols="12" md="auto">
+                <v-btn color="indigo" block @click="cargarPedidos">
+                    <v-icon left>mdi-tray-arrow-down</v-icon> Cargar Pedidos
+                </v-btn>
+            </v-col>
         </v-row>
 
         <ResponsiveTable
@@ -182,8 +187,16 @@
 <script>
 import ExcelJS from "exceljs";
 import axios from "axios";
-import { getMemoryCache, updateCache } from "@/utils/cacheFetch";
-import { PEDIDOS_KEY, ARTICULOS_KEY } from "@/utils/cacheKeys";
+import {
+    getMemoryCache,
+    updateCache,
+    applyStockDelta,
+} from "@/utils/cacheFetch";
+import {
+    PEDIDOS_KEY,
+    ARTICULOS_KEY,
+    ARTICULOS_TALLES_KEY,
+} from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 
 export default {
@@ -296,6 +309,7 @@ export default {
                 id: Date.now() + Math.random(), // ID único
                 nombre: this.form.nombre,
                 articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
+                articulo_id: this.form.articulo_id,
                 talle: this.form.talle,
                 colores: [...this.form.colores],
             };
@@ -329,6 +343,7 @@ export default {
             const base = {
                 nombre: this.form.nombre,
                 articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
+                articulo_id: this.form.articulo_id,
                 talle: this.form.talle,
             };
 
@@ -390,6 +405,7 @@ export default {
             const actualizado = {
                 nombre: this.form.nombre,
                 articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
+                articulo_id: this.form.articulo_id,
                 talle: this.form.talle,
                 colores: [...this.form.colores],
             };
@@ -427,6 +443,40 @@ export default {
             localStorage.removeItem("pedidos");
             notifyCacheChange(PEDIDOS_KEY);
             this.dialogReinicio = false;
+        },
+        normalizarColor(color) {
+            const c = color.toLowerCase();
+            if (c === "beige clarito" || c === "tiza") return "blancobeige";
+            if (c === "gris") return "celeste";
+            if (c === "chocolate") return "marron";
+            return c;
+        },
+        async cargarPedidos() {
+            for (const pedido of this.pedidos) {
+                if (!pedido.articulo_id) continue;
+                for (const color of pedido.colores) {
+                    const colorBD = this.normalizarColor(color);
+                    try {
+                        await axios.post(
+                            `/api/articulo/${pedido.articulo_id}/agregar-bombachas`,
+                            {
+                                cantidades: { [colorBD]: 1 },
+                                talle: pedido.talle,
+                            }
+                        );
+                        applyStockDelta(
+                            pedido.articulo_id,
+                            pedido.talle,
+                            colorBD,
+                            1,
+                            ARTICULOS_TALLES_KEY
+                        );
+                    } catch (err) {
+                        console.error("Error cargando pedido", err);
+                    }
+                }
+            }
+            notifyCacheChange(ARTICULOS_TALLES_KEY);
         },
         copiarComoTexto() {
             const pedidosOrdenados = [...this.pedidos].sort((a, b) => {
@@ -507,9 +557,14 @@ export default {
             sheet.eachRow((row, idx) => {
                 if (idx === 1) return;
                 const [nombre, articulo, talle, colores] = row.values.slice(1);
+                const [numero] = String(articulo).split(" - ");
+                const art = this.articulos.find(
+                    (a) => String(a.numero) === String(numero)
+                );
                 nuevasFilas.push({
                     nombre,
                     articulo_nombre: articulo,
+                    articulo_id: art?.id ?? null,
                     talle,
                     colores: colores.split(" / "),
                 });
