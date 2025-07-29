@@ -74,7 +74,7 @@
                 </v-btn>
             </v-col>
             <v-col cols="12" md="auto">
-                <v-btn color="indigo" block @click="cargarPedidos">
+                <v-btn color="indigo" block @click="confirmarCarga">
                     <v-icon left>mdi-tray-arrow-down</v-icon> Cargar Pedidos
                 </v-btn>
             </v-col>
@@ -127,6 +127,18 @@
                     <v-spacer />
                     <v-btn text @click="dialogReinicio = false">Cancelar</v-btn>
                     <v-btn color="red" text @click="reiniciarPedidos"
+                        >Confirmar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+        <v-dialog v-model="dialogCargar" max-width="400px">
+            <v-card>
+                <v-card-title>¿Cargar todos los pedidos?</v-card-title>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn text @click="dialogCargar = false">Cancelar</v-btn>
+                    <v-btn color="green" text @click="cargarPedidosConfirm"
                         >Confirmar</v-btn
                     >
                 </v-card-actions>
@@ -198,6 +210,7 @@ import {
     ARTICULOS_TALLES_KEY,
 } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import { showToast } from "@/utils/toast";
 
 export default {
     data() {
@@ -231,6 +244,7 @@ export default {
             ],
             pedidos: [],
             dialogReinicio: false,
+            dialogCargar: false,
             headers: [
                 { title: "Nombre", key: "nombre" },
                 { title: "Artículo", key: "articulo_nombre" },
@@ -326,6 +340,7 @@ export default {
             updateCache(PEDIDOS_KEY, this.pedidos);
             localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
             notifyCacheChange(PEDIDOS_KEY);
+            showToast("Pedido agregado", "success");
 
             this.form = {
                 nombre: "",
@@ -415,6 +430,8 @@ export default {
             localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
             notifyCacheChange(PEDIDOS_KEY);
 
+            showToast("Pedido actualizado", "success");
+
             this.dialogEditar = false;
             this.pedidoEditIndex = null;
             this.form = {
@@ -432,6 +449,7 @@ export default {
                 updateCache(PEDIDOS_KEY, this.pedidos);
                 localStorage.setItem("pedidos", JSON.stringify(this.pedidos));
                 notifyCacheChange(PEDIDOS_KEY);
+                showToast("Pedido eliminado", "success");
             }
         },
         confirmarReinicio() {
@@ -443,6 +461,14 @@ export default {
             localStorage.removeItem("pedidos");
             notifyCacheChange(PEDIDOS_KEY);
             this.dialogReinicio = false;
+            showToast("Pedidos reiniciados", "success");
+        },
+        confirmarCarga() {
+            this.dialogCargar = true;
+        },
+        cargarPedidosConfirm() {
+            this.dialogCargar = false;
+            this.cargarPedidos();
         },
         normalizarColor(color) {
             const c = color.toLowerCase();
@@ -477,6 +503,11 @@ export default {
                 }
             }
             notifyCacheChange(ARTICULOS_TALLES_KEY);
+            this.pedidos = [];
+            updateCache(PEDIDOS_KEY, []);
+            localStorage.removeItem("pedidos");
+            notifyCacheChange(PEDIDOS_KEY);
+            showToast("Pedidos cargados correctamente", "success");
         },
         copiarComoTexto() {
             const pedidosOrdenados = [...this.pedidos].sort((a, b) => {

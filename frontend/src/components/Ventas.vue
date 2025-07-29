@@ -718,6 +718,7 @@ import {
     setSimpleCache,
 } from "@/utils/cacheFetch"; // ajustá la ruta si está en otro lado
 import { notifyCacheChange, onCacheChange } from "@/utils/cacheEvents";
+import { showToast } from "@/utils/toast";
 import {
     ARTICULOS_TALLES_KEY,
     VENTAS_KEY,
@@ -1744,7 +1745,12 @@ export default {
             const articulo = this.articulos.find(
                 (item) => item.id === this.form.articulo_id
             );
-            if (articulo && this.form.talle !== null && this.form.color) {
+            if (!articulo || this.form.talle === null || !this.form.color) {
+                showToast("No se pudo agregar el artículo", "error");
+                return;
+            }
+
+            if (articulo) {
                 this.productos.push({
                     articulo: articulo,
                     talle: this.form.talle,
@@ -1849,6 +1855,7 @@ export default {
                 setTimeout(() => {
                     this.productoCargado = false;
                 }, 1000);
+                showToast("Artículo agregado", "success");
             }
         },
         eliminarProducto(index) {
@@ -1963,8 +1970,10 @@ export default {
                 this.sinStock = false;
                 this.resetFormVenta?.();
                 this.fetchUltimaFacturacion();
+                showToast("Venta registrada correctamente", "success");
             } catch (error) {
                 console.error(error);
+                showToast("Error al registrar la venta", "error");
             } finally {
                 this.loading = false;
             }

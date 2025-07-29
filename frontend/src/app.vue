@@ -73,6 +73,14 @@
                 <router-view />
             </v-container>
         </v-main>
+        <v-snackbar
+            v-model="toast.show"
+            :color="toast.color"
+            timeout="3000"
+            location="bottom center"
+        >
+            {{ toast.text }}
+        </v-snackbar>
     </v-app>
 </template>
 
@@ -82,6 +90,11 @@ export default {
         return {
             drawer: true,
             isMobile: false,
+            toast: {
+                show: false,
+                text: "",
+                color: "success",
+            },
         };
     },
     computed: {
@@ -92,13 +105,23 @@ export default {
     mounted() {
         this.isMobile = window.innerWidth < 768;
         window.addEventListener("resize", this.checkSize);
+        window.addEventListener("show-toast", this.handleToast);
     },
     beforeUnmount() {
         window.removeEventListener("resize", this.checkSize);
+        window.removeEventListener("show-toast", this.handleToast);
     },
     methods: {
         checkSize() {
             this.isMobile = window.innerWidth < 768;
+        },
+        handleToast(e) {
+            const { text, color } = e.detail || {};
+            this.toast = {
+                show: true,
+                text: text || "",
+                color: color || "success",
+            };
         },
         logout() {
             axios.post("/logout").finally(() => {

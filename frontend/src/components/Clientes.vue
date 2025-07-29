@@ -172,7 +172,7 @@ export default {
     },
     mounted() {
         this.loading = true;
-        window.addEventListener("notifyCacheChange", this.cacheListener);
+        window.addEventListener("cache-updated", this.cacheListener);
 
         Promise.all([
             useSyncedCache({
@@ -202,13 +202,15 @@ export default {
     },
 
     beforeUnmount() {
-        window.removeEventListener("notifyCacheChange", this.cacheListener);
+        window.removeEventListener("cache-updated", this.cacheListener);
     },
 
     methods: {
         cacheListener(e) {
             if (e?.detail?.key === CLIENTES_KEY) {
                 this.fetchClientes();
+            } else if (e?.detail?.key === VENTAS_KEY) {
+                this.fetchVentas();
             }
         },
 

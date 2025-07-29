@@ -182,6 +182,7 @@ import {
     getMemoryCache,
 } from "@/utils/cacheFetch";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import { showToast } from "@/utils/toast";
 import ExcelJS from "exceljs";
 import { ARTICULOS_KEY } from "@/utils/cacheKeys";
 import { useSyncedCache } from "@/utils/useSyncedCache";
@@ -378,13 +379,20 @@ export default {
                 this.searchNombre = "";
                 this.searchNumero = "";
                 this.loading = false;
+                showToast(
+                    this.isEdit ? "Artículo actualizado" : "Artículo agregado",
+                    "success"
+                );
             }).catch((err) => {
                 this.loading = false;
                 if (err.response?.status === 422) {
-                    alert("❌ Ya existe un artículo con ese número.");
+                    showToast("Ya existe un artículo con ese número", "error");
                 } else {
                     console.error("❌ Error inesperado:", err);
-                    alert("Ocurrió un error al guardar el artículo.");
+                    showToast(
+                        "Ocurrió un error al guardar el artículo",
+                        "error"
+                    );
                 }
             });
         },
@@ -404,6 +412,7 @@ export default {
                     notifyCacheChange(ARTICULOS_KEY);
                     this.confirmDeleteDialog = false;
                     this.loading = false;
+                    showToast("Artículo eliminado", "success");
                 });
         },
         recalcularPrecios() {
@@ -420,7 +429,7 @@ export default {
 
                 notifyCacheChange(ARTICULOS_KEY);
                 this.loading = false;
-                alert("Precios recalculados correctamente.");
+                showToast("Precios recalculados correctamente", "success");
             });
         },
         abrirDialogoAumento() {
@@ -448,7 +457,7 @@ export default {
                     notifyCacheChange(ARTICULOS_KEY);
                     this.dialogoAumento = false;
                     this.loading = false;
-                    alert("Costos actualizados correctamente.");
+                    showToast("Precios recalculados correctamente", "success");
                 });
         },
         async exportarExcel() {

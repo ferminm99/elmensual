@@ -425,6 +425,7 @@ import {
 import { ARTICULOS_KEY, ARTICULOS_TALLES_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import { useSyncedCache } from "@/utils/useSyncedCache";
+import { showToast } from "@/utils/toast";
 
 export default {
     data() {
@@ -767,6 +768,7 @@ export default {
                     notifyCacheChange(ARTICULOS_TALLES_KEY);
                     this.editDialog = false;
                     this.fetchTalles();
+                    showToast("Inventario actualizado", "success");
                 });
         },
         openDialog(action) {
@@ -905,8 +907,10 @@ export default {
                 this.confirmAddDialog = false;
                 this.fetchTalles(this.selectedArticuloDialog);
                 this.resetQuantities();
+                showToast("Bombachas agregadas", "success");
             } catch (err) {
                 console.error("Error agregando bombachas:", err);
+                showToast("Error agregando bombachas", "error");
             } finally {
                 this.loading = false;
             }
@@ -948,8 +952,10 @@ export default {
                 this.confirmDeleteDialog = false;
                 this.fetchTalles(this.selectedArticuloDialog);
                 this.resetQuantities();
+                showToast("Bombachas eliminadas", "success");
             } catch (err) {
                 console.error("Error eliminando bombachas:", err);
+                showToast("Error eliminando bombachas", "error");
             } finally {
                 this.loading = false;
             }
@@ -1008,6 +1014,7 @@ export default {
 
                     this.confirmFullDeleteDialog = false;
                     this.loading = false;
+                    showToast("Talle eliminado", "success");
                 })
                 .catch((error) => {
                     console.error(
@@ -1015,6 +1022,7 @@ export default {
                         error
                     );
                     this.loading = false;
+                    showToast("Error al eliminar talle", "error");
                 });
         },
         getRangoTalles(nombre) {
