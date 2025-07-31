@@ -76,7 +76,7 @@
         <v-snackbar
             v-model="toast.show"
             :color="toast.color"
-            timeout="3000"
+            timeout="1500"
             location="bottom center"
         >
             {{ toast.text }}
