@@ -179,6 +179,8 @@
             :item-class="getItemClass"
             class="elevation-1 mt-4"
             show-select
+            item-value="id"
+            return-object
             v-model:selected="selectedVentas"
         >
             <!-- Formato de la Fecha -->
