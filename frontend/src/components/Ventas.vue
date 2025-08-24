@@ -44,6 +44,18 @@
                         <v-btn outlined @click="openFechaDialog">
                             <v-icon left>mdi-calendar</v-icon> Filtrar por Fecha
                         </v-btn>
+
+                        <v-btn
+                            v-if="selectedVentas.length"
+                            color="black"
+                            class="ml-2"
+                            @click="openEditSelectedDialog"
+                        >
+                            <v-icon left color="white"
+                                >mdi-pencil-multiple</v-icon
+                            >
+                            Editar seleccionadas
+                        </v-btn>
                     </v-row>
                 </div>
                 <div class="facturacion-text mt-2">
@@ -518,6 +530,54 @@
             </v-card>
         </v-dialog>
 
+        <!-- Diálogo para editar ventas seleccionadas -->
+        <v-dialog v-model="editSelectedDialog" max-width="500px">
+            <v-card>
+                <v-card-title class="d-flex justify-space-between align-center">
+                    Editar Ventas
+                    <v-btn flat icon @click="editSelectedDialog = false">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
+
+                <v-card-text>
+                    <v-text-field
+                        v-model="editSelected.precio"
+                        label="Precio"
+                        type="number"
+                    ></v-text-field>
+
+                    <v-radio-group
+                        v-model="editSelected.forma_pago"
+                        label="Forma de Pago"
+                    >
+                        <v-radio label="Efectivo" value="efectivo"></v-radio>
+                        <v-radio
+                            label="Transferencia"
+                            value="transferencia"
+                        ></v-radio>
+                    </v-radio-group>
+
+                    <Datepicker
+                        v-model="editSelected.fecha"
+                        placeholder="Seleccione una fecha"
+                        class="w-100"
+                        :input-class="'w-100'"
+                    ></Datepicker>
+                </v-card-text>
+
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="editSelectedDialog = false"
+                        >Cancelar</v-btn
+                    >
+                    <v-btn color="green" text @click="confirmEditSelected"
+                        >Guardar</v-btn
+                    >
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <!-- Diálogo de confirmación para eliminar -->
         <v-dialog v-model="confirmDeleteDialog" max-width="400px">
             <v-card>
@@ -818,6 +878,12 @@ export default {
             clienteSeleccionado: null,
             clienteExistente: false,
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
+            editSelectedDialog: false,
+            editSelected: {
+                precio: null,
+                forma_pago: null,
+                fecha: null,
+            },
             confirmDeleteDialog: false, // Control para abrir/cerrar el diálogo de confirmación de eliminación
             productos: [], // Lista de productos agregados en la venta
             snackbar: false,
@@ -1492,6 +1558,85 @@ export default {
                 .catch((error) => {
                     console.error(error);
                     this.snackbarText = "Error al actualizar la venta.";
+                    this.snackbar = true;
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+        openEditSelectedDialog() {
+            this.editSelected = {
+                precio: null,
+                forma_pago: null,
+                fecha: null,
+            };
+            this.editSelectedDialog = true;
+        },
+        confirmEditSelected() {
+            const payload = {
+                ids: this.selectedVentas.map((v) => v.id),
+            };
+            if (
+                this.editSelected.precio !== null &&
+                this.editSelected.precio !== ""
+            ) {
+                payload.precio = this.editSelected.precio;
+            }
+            if (this.editSelected.forma_pago) {
+                payload.forma_pago = this.editSelected.forma_pago;
+            }
+            if (this.editSelected.fecha) {
+                payload.fecha = moment(this.editSelected.fecha).format(
+                    "YYYY-MM-DD"
+                );
+            }
+            if (Object.keys(payload).length === 1) {
+                this.editSelectedDialog = false;
+                return;
+            }
+            this.loading = true;
+            axios
+                .put("/api/ventas/editar-multiples", payload)
+                .then((res) => {
+                    const ventasActualizadas = res.data.ventas || [];
+                    const updatedAtMs = res.data.last_update
+                        ? Number(res.data.last_update)
+                        : Date.now();
+                    modifyInCache(
+                        VENTAS_KEY,
+                        (ventas) =>
+                            ventas.map((v) => {
+                                const nv = ventasActualizadas.find(
+                                    (u) => u.id === v.id
+                                );
+                                return nv ? nv : v;
+                            }),
+                        updatedAtMs
+                    );
+                    notifyCacheChange(VENTAS_KEY);
+                    ventasActualizadas.forEach((venta) => {
+                        const idx = this.ventas.findIndex(
+                            (v) => v.id === venta.id
+                        );
+                        if (idx !== -1) {
+                            this.ventas[idx] = venta;
+                        } else {
+                            this.ventas.push(venta);
+                        }
+                    });
+                    this.ventas.sort(
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                    );
+                    this.ventasFiltradas = [...this.ventas];
+                    this.tablaKey += 1;
+                    this.snackbarText = "Ventas actualizadas correctamente.";
+                    this.snackbar = true;
+                    this.editSelectedDialog = false;
+                    this.selectedVentas = [];
+                })
+                .catch((error) => {
+                    console.error(error);
+                    this.snackbarText = "Error al actualizar las ventas.";
                     this.snackbar = true;
                 })
                 .finally(() => {
