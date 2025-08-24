@@ -11,7 +11,7 @@
             class="elevation-1 mt-2"
             dense
             :show-select="showSelect"
-            v-model:selected="internalSelected"
+            v-model="internalSelected"
         >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
                 <slot :name="slotName" v-bind="slotProps" />
