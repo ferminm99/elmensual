@@ -379,24 +379,45 @@
                         ></v-text-field>
 
                         <!-- Información del cliente -->
-                        <v-text-field
-                            v-model="form.cliente_nombre"
-                            label="Nombre del cliente"
-                            required
-                        ></v-text-field>
-                        <v-text-field
-                            v-model="form.cliente_apellido"
-                            label="Apellido"
-                            required
-                        ></v-text-field>
+                        <v-switch
+                            v-model="clienteExistente"
+                            label="Cliente existente"
+                            class="mb-2"
+                            @update:modelValue="toggleClienteExistente"
+                        ></v-switch>
+                        <v-autocomplete
+                            v-if="clienteExistente"
+                            v-model="clienteSeleccionado"
+                            :items="clientes"
+                            :item-title="
+                                (item) => `\${item.nombre} \${item.apellido}`
+                            "
+                            label="Selecciona un cliente"
+                            clearable
+                            @update:modelValue="onClienteSelect"
+                        ></v-autocomplete>
+                        <template v-else>
+                            <v-text-field
+                                v-model="form.cliente_nombre"
+                                label="Nombre del cliente"
+                                required
+                            ></v-text-field>
+                            <v-text-field
+                                v-model="form.cliente_apellido"
+                                label="Apellido"
+                                required
+                            ></v-text-field>
+                        </template>
                         <v-text-field
                             v-model="form.cliente_cuit"
                             label="CUIT (opcional)"
                             type="number"
+                            :readonly="clienteExistente"
                         ></v-text-field>
                         <v-text-field
                             v-model="form.cliente_cbu"
                             label="CBU (opcional)"
+                            :readonly="clienteExistente"
                         ></v-text-field>
 
                         <!-- Selección de fecha -->
@@ -790,6 +811,9 @@ export default {
                 "blancobeige",
             ],
             ventas: [], // Lista de ventas registradas
+            clientes: [], // Lista de clientes disponibles
+            clienteSeleccionado: null,
+            clienteExistente: false,
             editDialog: false, // Control para abrir/cerrar el diálogo de edición
             confirmDeleteDialog: false, // Control para abrir/cerrar el diálogo de confirmación de eliminación
             productos: [], // Lista de productos agregados en la venta
@@ -936,6 +960,28 @@ export default {
     },
 
     methods: {
+        toggleClienteExistente() {
+            if (!this.clienteExistente) {
+                this.clienteSeleccionado = null;
+                this.form.cliente_nombre = "";
+                this.form.cliente_apellido = "";
+                this.form.cliente_cuit = "";
+                this.form.cliente_cbu = "";
+            }
+        },
+        onClienteSelect(cliente) {
+            if (cliente) {
+                this.form.cliente_nombre = cliente.nombre;
+                this.form.cliente_apellido = cliente.apellido;
+                this.form.cliente_cuit = cliente.cuit || "";
+                this.form.cliente_cbu = cliente.cbu || "";
+            } else {
+                this.form.cliente_nombre = "";
+                this.form.cliente_apellido = "";
+                this.form.cliente_cuit = "";
+                this.form.cliente_cbu = "";
+            }
+        },
         getItemClass(item) {
             if (item.id === this.ventaUltimaFacturada) {
                 return "ultima-facturada"; // Clase para la última facturada
@@ -1579,6 +1625,8 @@ export default {
                 fecha: moment().format("YYYY-MM-DD"),
                 forma_pago: "efectivo",
             };
+            this.clienteSeleccionado = null;
+            this.clienteExistente = false;
             this.articuloActual = null;
             this.tallesDisponibles = [];
             this.coloresDisponibles = [];
@@ -1920,6 +1968,14 @@ export default {
                 return;
             }
 
+            if (this.clienteExistente && !this.clienteSeleccionado) {
+                this.snackbarText =
+                    "Por favor selecciona un cliente existente.";
+                this.snackbar = true;
+                this.loading = false;
+                return;
+            }
+
             if (!this.form.cliente_nombre || !this.form.cliente_apellido) {
                 this.snackbarText =
                     "Por favor ingresa el nombre y apellido del cliente.";
@@ -1980,6 +2036,9 @@ export default {
         },
         resetFormVenta() {
             this.form = {
+                articulo_id: null,
+                talle: null,
+                color: null,
                 cliente_nombre: "",
                 cliente_apellido: "",
                 cliente_cuit: "",
@@ -1991,6 +2050,8 @@ export default {
             this.articuloActual = null;
             this.tallesDisponibles = [];
             this.coloresDisponibles = [];
+            this.clienteSeleccionado = null;
+            this.clienteExistente = false;
         },
         calcularPrecioTotal() {
             // Recalcula el precio total
