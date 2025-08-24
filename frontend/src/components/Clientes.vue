@@ -245,11 +245,11 @@ export default {
 
             this.ventas.forEach((venta) => {
                 const cliente = this.clientes.find(
-                    (c) => c.id === venta.cliente_id
+                    (c) => Number(c.id) === Number(venta.cliente_id)
                 );
                 if (cliente) {
                     cliente.totalVentas += 1;
-                    cliente.totalPago += parseFloat(venta.precio || 0);
+                    cliente.totalPago += Number(venta.precio) || 0;
                 }
             });
         },

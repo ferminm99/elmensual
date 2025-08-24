@@ -3,12 +3,15 @@
         <!-- Escritorio -->
         <v-data-table
             v-if="!isMobile"
+            v-bind="$attrs"
             :headers="headers"
             :items="items"
             :search="search"
             :custom-filter="customFilter"
             class="elevation-1 mt-2"
             dense
+            :show-select="showSelect"
+            v-model:selected="internalSelected"
         >
             <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
                 <slot :name="slotName" v-bind="slotProps" />
@@ -25,6 +28,13 @@
                 elevation="2"
             >
                 <v-card-text>
+                    <v-checkbox
+                        v-if="showSelect"
+                        v-model="internalSelected"
+                        :value="item"
+                        density="compact"
+                        class="mb-2"
+                    />
                     <div
                         v-for="(header, index) in headers"
                         :key="header?.key || index"
@@ -65,12 +75,22 @@
 import { useDisplay } from "vuetify";
 
 export default {
+    inheritAttrs: false,
     props: {
         headers: Array,
         items: Array,
         search: String,
         customFilter: Function,
+        showSelect: {
+            type: Boolean,
+            default: false,
+        },
+        selected: {
+            type: Array,
+            default: () => [],
+        },
     },
+    emits: ["update:selected"],
     computed: {
         isMobile() {
             const { mdAndDown } = useDisplay();
@@ -95,6 +115,14 @@ export default {
                     String(val).toLowerCase().includes(searchLower)
                 )
             );
+        },
+        internalSelected: {
+            get() {
+                return this.selected;
+            },
+            set(val) {
+                this.$emit("update:selected", val);
+            },
         },
     },
     watch: {

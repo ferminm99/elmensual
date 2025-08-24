@@ -166,6 +166,8 @@
             :options.sync="options"
             :item-class="getItemClass"
             class="elevation-1 mt-4"
+            show-select
+            v-model:selected="selectedVentas"
         >
             <!-- Formato de la Fecha -->
             <template v-slot:item.fecha="{ item }">
@@ -390,7 +392,7 @@
                             v-model="clienteSeleccionado"
                             :items="clientes"
                             :item-title="
-                                (item) => `\${item.nombre} \${item.apellido}`
+                                (item) => `${item.nombre} ${item.apellido}`
                             "
                             label="Selecciona un cliente"
                             clearable
@@ -785,6 +787,7 @@ export default {
                 sortBy: ["fecha"],
                 sortDesc: [true], // true para orden descendente (de más nueva a más antigua)
             },
+            selectedVentas: [],
             selectedVenta: {
                 forma_pago: null,
                 fecha: null,
