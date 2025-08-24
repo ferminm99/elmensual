@@ -1882,7 +1882,7 @@ export default {
                           .some((color) => parseInt(talleRestante[color]) > 0)
                     : false;
 
-                if (!hayColoresConStock && mantener) {
+                if (!coloresConStock && mantener) {
                     this.snackbarText =
                         "⚠️ No hay más colores disponibles para este talle.";
                     this.snackbar = true;
@@ -2063,7 +2063,7 @@ export default {
             }, 0);
         },
         capitalizarPalabras(texto) {
-            return texto
+            return (texto || "")
                 .toLowerCase()
                 .split(" ")
                 .map(
