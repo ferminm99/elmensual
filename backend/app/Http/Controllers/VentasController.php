@@ -168,7 +168,7 @@ class VentasController extends Controller
     }
 
      // Actualizar el precio de una venta
-     public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $request->validate([
             'precio' => 'required|numeric|min:0',
@@ -194,8 +194,39 @@ class VentasController extends Controller
             'venta' => $venta,
             'last_update' => now()->timestamp * 1000,
         ]);
-        
+
     }
+
+    public function updateMultiple(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:ventas,id',
+            'precio' => 'sometimes|numeric|min:0',
+            'costo_original' => 'sometimes|numeric|min:0',
+            'fecha' => 'sometimes|date',
+            'forma_pago' => 'sometimes|in:efectivo,transferencia',
+        ]);
+
+        $data = $request->only(['precio', 'costo_original', 'fecha', 'forma_pago']);
+        if (empty($data)) {
+            return response()->json(['error' => 'No hay campos para actualizar'], 400);
+        }
+
+        $ventas = Venta::whereIn('id', $request->ids)->get();
+
+        foreach ($ventas as $venta) {
+            $venta->update($data);
+            $venta->touch();
+            $venta->load('articulo', 'cliente');
+        }
+
+        return response()->json([
+            'ventas' => $ventas,
+            'last_update' => now()->timestamp * 1000,
+        ]);
+    }
+
 
 
  
