@@ -406,6 +406,8 @@
                             :item-title="
                                 (item) => `${item.nombre} ${item.apellido}`
                             "
+                            item-value="id"
+                            return-object
                             label="Selecciona un cliente"
                             clearable
                             @update:modelValue="onClienteSelect"
@@ -2124,7 +2126,10 @@ export default {
                 return;
             }
 
-            if (!this.form.cliente_nombre || !this.form.cliente_apellido) {
+            if (
+                !this.clienteExistente &&
+                (!this.form.cliente_nombre || !this.form.cliente_apellido)
+            ) {
                 this.snackbarText =
                     "Por favor ingresa el nombre y apellido del cliente.";
                 this.snackbar = true;
