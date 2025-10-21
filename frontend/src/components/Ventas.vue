@@ -16,23 +16,20 @@
                         class="acciones-top d-flex align-center mb-2"
                     >
                         <v-btn
-                            color="black"
-                            class="mr-2"
+                            class="mr-2 registrar-venta-btn"
                             @click="openVentaDialog"
                         >
-                            <v-icon left color="white">mdi-cash</v-icon>
+                            <v-icon left>mdi-cash</v-icon>
                             Registrar Venta
                         </v-btn>
 
                         <v-btn
-                            color="black"
-                            class="mr-2"
+                            class="mr-2 sin-stock-btn"
                             @click="openVentaSinStockDialog"
                         >
-                            <v-icon left color="white">mdi-cart-plus</v-icon>
+                            <v-icon left>mdi-cart-plus</v-icon>
                             Registrar Venta Sin Stock
                         </v-btn>
-
                         <v-btn
                             outlined
                             class="mr-2"
@@ -254,12 +251,26 @@
 
         <!-- Diálogo para registrar ventas -->
         <v-dialog v-model="dialogVenta" max-width="600px">
-            <v-card>
+            <v-card
+                :class="[
+                    'venta-dialog-card',
+                    sinStock
+                        ? 'venta-dialog-card--sin-stock'
+                        : 'venta-dialog-card--regular',
+                ]"
+            >
                 <v-card-title class="d-flex justify-space-between align-center">
-                    <span class="headline">Registrar Venta</span>
-                    <v-btn flat icon @click="closeDialogVenta">
-                        <v-icon color="red">mdi-close</v-icon>
-                    </v-btn>
+                    <span
+                        class="headline"
+                        :class="[
+                            sinStock
+                                ? 'venta-dialog-title--sin-stock'
+                                : 'venta-dialog-title--regular',
+                        ]"
+                    >
+                        Registrar Venta
+                        <template v-if="sinStock"> Sin Stock</template>
+                    </span>
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
@@ -2263,6 +2274,34 @@ export default {
     background-color: #f5f5f5;
 }
 
+.registrar-venta-btn {
+    border: 2px solid #2e7d32 !important;
+    color: #2e7d32 !important;
+    font-weight: 600;
+}
+
+.registrar-venta-btn:hover {
+    background-color: rgba(46, 125, 50, 0.12) !important;
+}
+
+.registrar-venta-btn .v-icon {
+    color: #2e7d32 !important;
+}
+
+.sin-stock-btn {
+    border: 2px solid #d32f2f !important;
+    color: #d32f2f !important;
+    font-weight: 600;
+}
+
+.sin-stock-btn:hover {
+    background-color: rgba(211, 47, 47, 0.12) !important;
+}
+
+.sin-stock-btn .v-icon {
+    color: #d32f2f !important;
+}
+
 /* Color para el texto del precio */
 .precio-text {
     color: black;
@@ -2359,6 +2398,31 @@ export default {
 
 .rounded {
     border-radius: 12px;
+}
+
+.venta-dialog-card {
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.venta-dialog-card--regular {
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 1px rgba(46, 125, 50, 0.1);
+}
+
+.venta-dialog-card--sin-stock {
+    border-color: #d32f2f;
+    box-shadow: 0 0 0 1px rgba(211, 47, 47, 0.15);
+}
+
+.venta-dialog-title--regular {
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.venta-dialog-title--sin-stock {
+    color: #d32f2f;
+    font-weight: 800;
 }
 
 /* Escala general para evitar "todo mini" */
