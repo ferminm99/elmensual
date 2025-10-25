@@ -6,6 +6,7 @@ use App\Models\Articulo;
 use App\Models\Venta;
 use App\Models\Cliente;
 use App\Models\Talle;
+use App\Models\Cuota;
 use Carbon\Carbon;
 use App\Models\Facturacion; // Importamos el modelo Facturacion
 use Illuminate\Support\Facades\DB;
@@ -74,30 +75,55 @@ class VentasController extends Controller
         // Lista para guardar las ventas registradas
         $ventasRegistradas = [];
         // Registrar cada producto en la venta
-        foreach ($request->productos as $producto) {
+       foreach ($request->productos as $producto) {
+            $precioProducto = (float) ($producto['precio'] ?? 0);
+            $cuotaId = data_get($producto, 'cuota.id', data_get($producto, 'cuota_id'));
+            $cuota = null;
+            $cantidadCuotas = null;
+            $totalFinanciado = null;
+            $importeCuota = null;
+
+            if ($cuotaId) {
+                $cuota = Cuota::find($cuotaId);
+
+                if (!$cuota) {
+                    return response()->json([
+                        'message' => 'Plan de cuotas inválido.',
+                    ], 422);
+                }
+
+                $cantidadCuotas = $cuota->cantidad_cuotas;
+                $totalFinanciado = round($precioProducto * (float) $cuota->factor_total, 2);
+                $importeCuota = $cantidadCuotas ? round($totalFinanciado / $cantidadCuotas, 2) : null;
+            }
+
             // Crear una venta por cada producto
             $venta = Venta::create([
                 'articulo_id' => $producto['articulo']['id'],
                 'cliente_id' => $cliente->id,
                 'talle' => $producto['talle'],
                 'color' => $producto['color'],
-                'precio' => $producto['precio'],
+                'precio' => $precioProducto,
                 'fecha' => $request->fecha,
                 'forma_pago' => $request->forma_pago,
-                'costo_original' => $producto['costo_original'],
+                'costo_original' => (float) ($producto['costo_original'] ?? 0),
+                'cuota_id' => $cuota?->id,
+                'cantidad_cuotas' => $cantidadCuotas,
+                'total_financiado' => $totalFinanciado,
+                'importe_cuota' => $importeCuota,
             ]);
-            
+
             $articulo = Articulo::find($producto['articulo']['id']);
             $talle = $articulo->talles()->where('talle', $producto['talle'])->first();
             $talle->{$producto['color']} = max(0, $talle->{$producto['color']} - 1);
             $talle->save();
 
-            
+
             // Cargar relaciones
-            $venta->load('articulo', 'cliente');
-            
+            $venta->load('articulo', 'cliente', 'cuota');
+
             $ventasRegistradas[] = $venta;
-            
+
         }
     
         return response()->json([
@@ -163,7 +189,7 @@ class VentasController extends Controller
     // Obtener las ventas para visualizarlas
     public function obtenerVentas()
     {
-        $ventas = Venta::with('articulo', 'cliente')->get();
+        $ventas = Venta::with('articulo', 'cliente', 'cuota')->get();
         return response()->json($ventas);
     }
 
@@ -175,20 +201,36 @@ class VentasController extends Controller
             'costo_original' => 'required|numeric|min:0',
             'fecha' => 'required|date',
             'forma_pago' => 'required|in:efectivo,transferencia',
+            'cuota_id' => 'nullable|exists:cuotas,id',
         ]);
 
         $venta = Venta::findOrFail($id);
 
-        $venta->update([
+        $data = [
             'precio' => $request->precio,
             'fecha' => $request->fecha,
             'forma_pago' => $request->forma_pago,
             'costo_original' => $request->costo_original,
-        ]);
+        ];
+
+        if ($request->filled('cuota_id')) {
+            $cuota = Cuota::findOrFail($request->cuota_id);
+            $data['cuota_id'] = $cuota->id;
+            $data['cantidad_cuotas'] = $cuota->cantidad_cuotas;
+            $data['total_financiado'] = round($request->precio * (float) $cuota->factor_total, 2);
+            $data['importe_cuota'] = $data['cantidad_cuotas'] ? round($data['total_financiado'] / $data['cantidad_cuotas'], 2) : null;
+        } else {
+            $data['cuota_id'] = null;
+            $data['cantidad_cuotas'] = null;
+            $data['total_financiado'] = null;
+            $data['importe_cuota'] = null;
+        }
+
+        $venta->update($data);
 
         $venta->touch();
         // Cargar relaciones para que el frontend reciba la venta completa
-        $venta->load('articulo', 'cliente');
+        $venta->load('articulo', 'cliente', 'cuota');
 
         return response()->json([
             'venta' => $venta,
@@ -218,7 +260,7 @@ class VentasController extends Controller
         foreach ($ventas as $venta) {
             $venta->update($data);
             $venta->touch();
-            $venta->load('articulo', 'cliente');
+            $venta->load('articulo', 'cliente', 'cuota');
         }
 
         return response()->json([
@@ -226,9 +268,6 @@ class VentasController extends Controller
             'last_update' => now()->timestamp * 1000,
         ]);
     }
-
-
-
  
     // Eliminar una venta
     public function destroy($id)
@@ -302,7 +341,7 @@ class VentasController extends Controller
 
         $venta->touch();
         // Recargar relaciones para devolver todo completo
-        $venta->load('articulo', 'cliente');
+        $venta->load('articulo', 'cliente', 'cuota');
 
         return response()->json([
             'venta' => $venta,
@@ -325,7 +364,7 @@ class VentasController extends Controller
     
             $desde = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
     
-            $ventas = Venta::with('articulo', 'cliente')
+            $ventas = Venta::with('articulo', 'cliente', 'cuota')
                 ->where('updated_at', '>', $desde)
                 ->get();
     

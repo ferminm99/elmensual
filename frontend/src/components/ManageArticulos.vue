@@ -57,6 +57,27 @@
 
         <!-- Tabla -->
         <ResponsiveTable :headers="headers" :items="articulosFiltrados">
+            <template #item.cuotas="{ item }">
+                <div class="cuotas-chips">
+                    <v-chip
+                        v-for="cuota in item.cuotas"
+                        :key="cuota.id"
+                        size="small"
+                        color="primary"
+                        variant="tonal"
+                        class="ma-0"
+                    >
+                        {{ formatCuotaLabel(cuota) }}
+                    </v-chip>
+                    <span
+                        v-if="!item.cuotas || !item.cuotas.length"
+                        class="text-caption text-grey"
+                    >
+                        Sin cuotas
+                    </span>
+                </div>
+            </template>
+
             <template #item.actions="{ item }">
                 <v-btn flat icon @click="openEditDialog(item)">
                     <v-icon color="black">mdi-pencil-outline</v-icon>
@@ -115,6 +136,12 @@
                         <v-text-field
                             v-model="form.precio"
                             label="Precio"
+                            type="number"
+                            required
+                        ></v-text-field>
+                        <v-text-field
+                            v-model="form.costo_original"
+                            label="Costo Original"
                             type="number"
                             required
                         ></v-text-field>
@@ -184,7 +211,7 @@ import {
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import { showToast } from "@/utils/toast";
 import ExcelJS from "exceljs";
-import { ARTICULOS_KEY } from "@/utils/cacheKeys";
+import { ARTICULOS_KEY, CUOTAS_KEY } from "@/utils/cacheKeys";
 import { useSyncedCache } from "@/utils/useSyncedCache";
 
 export default {
@@ -266,6 +293,43 @@ export default {
         window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
     methods: {
+        async fetchCuotas() {
+            this.loadingCuotas = true;
+
+            try {
+                const cuotas = await cachedFetch(
+                    CUOTAS_KEY,
+                    () => axios.get("/api/cuotas").then((res) => res.data),
+                    { ttl: 86400 }
+                );
+
+                this.cuotasDisponibles = Array.isArray(cuotas)
+                    ? cuotas.map((cuota) => ({
+                          ...cuota,
+                          label: this.formatCuotaLabel(cuota),
+                      }))
+                    : [];
+            } catch (error) {
+                console.error("Error al cargar las cuotas:", error);
+                this.cuotasDisponibles = [];
+            } finally {
+                this.loadingCuotas = false;
+            }
+        },
+        formatCuotaLabel(cuota) {
+            if (!cuota) return "Sin cuotas";
+            const cantidad = Number(cuota.cantidad_cuotas) || 0;
+            const tipo = cuota.es_con_interes ? "con interés" : "sin interés";
+            const factor = Number(cuota.factor_total || 0).toFixed(2);
+            const plural = cantidad === 1 ? "" : "s";
+            return `${cantidad} cuota${plural} ${tipo} (x${factor})`;
+        },
+        formatCuotasList(cuotas) {
+            if (!Array.isArray(cuotas) || !cuotas.length) {
+                return "Sin cuotas";
+            }
+            return cuotas.map((c) => this.formatCuotaLabel(c)).join(", ");
+        },
         handleCacheSync(e) {
             if (e.detail === ARTICULOS_KEY) {
                 this.fetchArticulos();
@@ -343,58 +407,81 @@ export default {
                 nombre: "",
                 precio: 0,
                 costo_original: 0,
+                cuotas: [],
             };
             this.dialog = true;
         },
         openEditDialog(item) {
             this.isEdit = true;
-            this.form = { ...item };
+            this.form = {
+                id: item.id,
+                numero: item.numero,
+                nombre: item.nombre,
+                precio: item.precio,
+                costo_original: item.costo_original,
+                cuotas: Array.isArray(item.cuotas)
+                    ? item.cuotas.map((c) => c.id)
+                    : [],
+            };
             this.dialog = true;
         },
         saveArticulo() {
             if (!this.validateForm()) return;
             this.loading = true;
-            this.form.precio = parseInt(this.form.precio);
-            this.form.costo_original = parseInt(this.form.costo_original);
 
-            const req = this.isEdit
-                ? axios.put(`/api/articulo/${this.form.id}`, this.form)
-                : axios.post("/api/articulo", this.form);
+            const payload = {
+                numero: Number(this.form.numero),
+                nombre: this.form.nombre,
+                precio: Number(this.form.precio),
+                costo_original: Number(this.form.costo_original),
+                cuotas: this.form.cuotas,
+            };
 
-            req.then((res) => {
-                const nuevo = res.data.articulo;
+            const request = this.isEdit
+                ? axios.put(`/api/articulo/${this.form.id}`, payload)
+                : axios.post("/api/articulo", payload);
 
-                // Usamos append o modify y luego recuperamos el array actualizado
-                const updated = this.isEdit
-                    ? modifyInCache(ARTICULOS_KEY, (articulos) =>
-                          articulos.map((a) =>
-                              a.id === nuevo.id ? { ...nuevo } : a
+            request
+                .then((res) => {
+                    const nuevo = res.data.articulo;
+
+                    // Usamos append o modify y luego recuperamos el array actualizado
+                    const updated = this.isEdit
+                        ? modifyInCache(ARTICULOS_KEY, (articulos) =>
+                              articulos.map((a) =>
+                                  a.id === nuevo.id ? { ...nuevo } : a
+                              )
                           )
-                      )
-                    : appendToCache(ARTICULOS_KEY, nuevo);
+                        : appendToCache(ARTICULOS_KEY, nuevo);
 
-                this.articulos = updated || [];
-                notifyCacheChange(ARTICULOS_KEY);
-                this.dialog = false;
-                this.searchNombre = "";
-                this.searchNumero = "";
-                this.loading = false;
-                showToast(
-                    this.isEdit ? "Artículo actualizado" : "Artículo agregado",
-                    "success"
-                );
-            }).catch((err) => {
-                this.loading = false;
-                if (err.response?.status === 422) {
-                    showToast("Ya existe un artículo con ese número", "error");
-                } else {
-                    console.error("❌ Error inesperado:", err);
+                    this.articulos = updated || [];
+                    notifyCacheChange(ARTICULOS_KEY);
+                    this.dialog = false;
+                    this.searchNombre = "";
+                    this.searchNumero = "";
+                    this.loading = false;
                     showToast(
-                        "Ocurrió un error al guardar el artículo",
-                        "error"
+                        this.isEdit
+                            ? "Artículo actualizado"
+                            : "Artículo agregado",
+                        "success"
                     );
-                }
-            });
+                })
+                .catch((err) => {
+                    this.loading = false;
+                    if (err.response?.status === 422) {
+                        showToast(
+                            "Ya existe un artículo con ese número",
+                            "error"
+                        );
+                    } else {
+                        console.error("❌ Error inesperado:", err);
+                        showToast(
+                            "Ocurrió un error al guardar el artículo",
+                            "error"
+                        );
+                    }
+                });
         },
         openDeleteConfirm(item) {
             this.articuloAEliminar = item;
@@ -472,6 +559,7 @@ export default {
                 { header: "Costo Original", key: "costo_original", width: 20 },
                 { header: "Efectivo", key: "efectivo", width: 15 },
                 { header: "Transferencia", key: "transferencia", width: 20 },
+                { header: "Planes de cuotas", key: "cuotas", width: 40 },
             ];
 
             this.articulosFiltrados.forEach((item) => {
@@ -482,6 +570,7 @@ export default {
                     costo_original: item.costo_original,
                     efectivo: item.precio_efectivo,
                     transferencia: item.precio_transferencia,
+                    cuotas: this.formatCuotasList(item.cuotas),
                 });
             });
 
@@ -510,6 +599,15 @@ export default {
 </script>
 
 <style scoped>
+.cuotas-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cuotas-chips .v-chip {
+    margin: 0;
+}
 @media (max-width: 768px) {
     h1.title {
         font-size: 24px !important;

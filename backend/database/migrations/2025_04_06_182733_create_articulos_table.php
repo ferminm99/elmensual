@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('articulos', function (Blueprint $table) {
             $table->id();
+            $table->unsignedInteger('numero')->unique();
+            $table->string('nombre');
+            $table->decimal('precio', 12, 2);
+            $table->decimal('costo_original', 12, 2);
+            $table->decimal('precio_efectivo', 12, 2);
+            $table->decimal('precio_transferencia', 12, 2);
             $table->timestamps();
         });
     }

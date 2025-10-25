@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Articulo;
+use App\Models\Cuota;
 use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use App\Http\Controllers\Traits\ActualizaMetaTrait;
 
 class ArticuloController extends Controller
@@ -12,7 +14,7 @@ class ArticuloController extends Controller
     use ActualizaMetaTrait;
      // Método para listar todos los artículos
     public function index() {
-        $articulos = Articulo::orderBy('nombre')->get(); // Ordena por nombre
+        $articulos = Articulo::with('cuotas')->orderBy('nombre')->get(); // Ordena por nombre
         return response()->json($articulos);
     }
     
@@ -26,6 +28,8 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
+            'cuotas' => 'nullable|array',
+            'cuotas.*' => 'integer|exists:cuotas,id',
         ]);
 
         
@@ -38,6 +42,8 @@ class ArticuloController extends Controller
             'precio_transferencia' => $precios['precio_transferencia'],
         ]);
 
+        $articulo->cuotas()->sync($request->input('cuotas', []));
+        $articulo->load('cuotas');
 
         return response()->json([
             'message' => 'Artículo creado correctamente',
@@ -56,6 +62,8 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
+            'cuotas' => 'nullable|array',
+            'cuotas.*' => 'integer|exists:cuotas,id',
         ]);
     
         $articulo->update([
@@ -66,9 +74,12 @@ class ArticuloController extends Controller
             'precio_efectivo' => $precios['precio_efectivo'],
             'precio_transferencia' => $precios['precio_transferencia'],
         ]);
-    
+
+        $articulo->cuotas()->sync($request->input('cuotas', []));
+        $articulo->load('cuotas');
+
         return response()->json([
-            'message' => 'Artículo creado correctamente',
+            'message' => 'Artículo actualizado correctamente',
             'articulo' => $articulo
         ]);
     }
@@ -111,7 +122,7 @@ class ArticuloController extends Controller
     public function mostrarArticulo($id)
     {
         // Obtener el artículo y sus talles
-        $articulo = Articulo::with('talles')->find($id);
+        $articulo = Articulo::with(['talles', 'cuotas'])->find($id);
 
         if (!$articulo) {
             return response()->json(['message' => 'Artículo no encontrado'], 404);
@@ -123,7 +134,7 @@ class ArticuloController extends Controller
 
     public function listarArticulosConTalles()
     {
-        $articulos = Articulo::with('talles')->get();
+        $articulos = Articulo::with(['talles', 'cuotas'])->get();
 
         // Devolver los artículos en formato JSON
         return response()->json($articulos);
@@ -132,13 +143,13 @@ class ArticuloController extends Controller
     public function listarArticulos()
     {
         // Devuelve todos los artículos en formato JSON
-        return response()->json(Articulo::all());
+        return response()->json(Articulo::with('cuotas')->get());
     }
     
     public function totalBombachas($id)
     {
         // Obtener el artículo y sus talles
-        $articulo = Articulo::with('talles')->find($id);
+        $articulo = Articulo::with(['talles', 'cuotas'])->find($id);
 
         if (!$articulo) {
             return response()->json(['message' => 'Artículo no encontrado'], 404);
@@ -154,6 +165,7 @@ class ArticuloController extends Controller
         // Devolver el total de bombachas en JSON
         return response()->json(['total_bombachas' => $totalBombachas]);
     }
+
 
     public function agregarBombachas(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
@@ -297,7 +309,6 @@ class ArticuloController extends Controller
         ];
     }
 
-    
     // Recalcular precios en base al costo original actual
     public function recalcularPreciosMasivamente()
     {
@@ -314,7 +325,7 @@ class ArticuloController extends Controller
 
         return response()->json([
             'message' => 'Precios recalculados correctamente.',
-            'articulos' => Articulo::orderBy('nombre')->get()
+            'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get()
         ]);
     }
 
@@ -348,7 +359,7 @@ class ArticuloController extends Controller
 
         return response()->json([
             'message' => "Costos y precios actualizados con un incremento del $porcentaje%.",
-            'articulos' => Articulo::orderBy('nombre')->get()
+            'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get()
         ]);
     }
 
@@ -364,18 +375,28 @@ class ArticuloController extends Controller
 
         $from = now()->createFromTimestampMs($timestamp);
 
-        $articulos = Articulo::with('talles')
+        $articulos = Articulo::with(['talles', 'cuotas'])
             ->where('updated_at', '>', $from)
             ->orWhereHas('talles', function ($q) use ($from) {
                 $q->where('updated_at', '>', $from);
             })
+            ->orWhereHas('cuotas', function ($q) use ($from) {
+                $q->wherePivot('updated_at', '>', $from);
+            })
             ->get();
 
-        $lastUpdate = DB::table('talles')->max('updated_at') ?? now();
+        $lastTalleUpdate = DB::table('talles')->max('updated_at');
+        $lastArticuloUpdate = DB::table('articulos')->max('updated_at');
+        $lastPivotUpdate = DB::table('articulo_cuota')->max('updated_at');
+
+        $lastUpdate = collect([$lastTalleUpdate, $lastArticuloUpdate, $lastPivotUpdate])
+            ->filter()
+            ->map(fn ($value) => Carbon::parse($value)->timestamp)
+            ->max() ?? time();
 
         return response()->json([
             'data' => $articulos,
-            'last_update' => strtotime($lastUpdate),
+            'last_update' => $lastUpdate,
         ]);
     }
 
@@ -388,22 +409,40 @@ class ArticuloController extends Controller
             return response()->json(['message' => 'Parámetro timestamp inválido.'], 400);
         }
 
-        $fecha = \Carbon\Carbon::createFromTimestamp(floor($timestamp / 1000));
+        $fecha = Carbon::createFromTimestamp(floor($timestamp / 1000));
 
-        $articulos = Articulo::where('updated_at', '>', $fecha)->get();
+        $articulos = Articulo::with('cuotas')
+            ->where('updated_at', '>', $fecha)
+            ->orWhereHas('cuotas', function ($query) use ($fecha) {
+                $query->wherePivot('updated_at', '>', $fecha);
+            })
+            ->get();
 
-        $lastUpdate = DB::table('articulos')->max('updated_at') ?? now();
+        $lastArticuloUpdate = DB::table('articulos')->max('updated_at');
+        $lastPivotUpdate = DB::table('articulo_cuota')->max('updated_at');
+
+        $lastUpdate = collect([$lastArticuloUpdate, $lastPivotUpdate])
+            ->filter()
+            ->map(fn ($value) => Carbon::parse($value)->timestamp)
+            ->max() ?? time();
 
         return response()->json([
             'data' => $articulos,
-            'last_update' => strtotime($lastUpdate),
+            'last_update' => $lastUpdate,
         ]);
     }
 
 
     public function ultimaActualizacionArticulos() {
-        $lastUpdate = DB::table('articulos')->max('updated_at');
-        return response()->json(['last_update' => strtotime($lastUpdate)]);
+        $lastArticulo = DB::table('articulos')->max('updated_at');
+        $lastPivot = DB::table('articulo_cuota')->max('updated_at');
+
+        $lastUpdate = collect([$lastArticulo, $lastPivot])
+            ->filter()
+            ->map(fn ($value) => Carbon::parse($value)->timestamp)
+            ->max();
+
+        return response()->json(['last_update' => $lastUpdate ?? time()]);
     }
 
     public function ultimaActualizacionTallesArticulos() {

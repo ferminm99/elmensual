@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Models;
 
@@ -12,9 +12,21 @@ class Articulo extends Model
 
     protected $fillable = ['numero', 'nombre', 'precio','costo_original','precio_efectivo','precio_transferencia'];
 
+    protected $casts = [
+        'precio' => 'float',
+        'costo_original' => 'float',
+        'precio_efectivo' => 'float',
+        'precio_transferencia' => 'float',
+    ];
+
     public function talles()
     {
         return $this->hasMany(Talle::class, 'articulo_id');
+    }
+
+    public function cuotas()
+    {
+        return $this->belongsToMany(Cuota::class)->withTimestamps();
     }
 
     // Relación con CompraCalendario
@@ -22,5 +34,5 @@ class Articulo extends Model
     {
         return $this->hasMany(CompraCalendario::class, 'articulo_id');
     }
-    
+
 }

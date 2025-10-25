@@ -6,6 +6,7 @@ use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\GoogleDriveController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\LocalidadController;
+use App\Http\Controllers\CuotaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Middleware\TokenAuthMiddleware;
 use Illuminate\Http\Request;
@@ -53,6 +54,13 @@ Route::middleware('token-auth')->group(function () {
     Route::get('/articulos/talles/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionTallesArticulos']);
     Route::get('/articulos/actualizados-desde', [ArticuloController::class, 'articulosActualizadosDesde']);
     Route::get('/articulos/talles/actualizados-desde', [ArticuloController::class, 'articulosTallesActualizadosDesde']);
+
+    // Cuotas
+    Route::get('/cuotas', [CuotaController::class, 'index']);
+    Route::post('/cuotas', [CuotaController::class, 'store']);
+    Route::put('/cuotas/{cuota}', [CuotaController::class, 'update']);
+    Route::delete('/cuotas/{cuota}', [CuotaController::class, 'destroy']);
+    
     // Ventas
     Route::post('/ventas', [VentasController::class, 'registrarVenta']);
     Route::post('/ventas/sin-stock', [VentasController::class, 'registrarVentaSinStock']);

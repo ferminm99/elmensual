@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Venta extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'articulo_id',
         'cliente_id',
@@ -15,14 +17,34 @@ class Venta extends Model
         'precio',
         'fecha',
         'forma_pago',
-        'costo_original'
+        'costo_original',
+        'cuota_id',
+        'cantidad_cuotas',
+        'total_financiado',
+        'importe_cuota',
     ];
 
-    public function articulo() {
+    protected $casts = [
+        'precio' => 'float',
+        'costo_original' => 'float',
+        'fecha' => 'date',
+        'total_financiado' => 'float',
+        'importe_cuota' => 'float',
+        'cantidad_cuotas' => 'integer',
+    ];
+
+    public function articulo()
+    {
         return $this->belongsTo(Articulo::class);
     }
 
-    public function cliente() {
+    public function cliente()
+    {
         return $this->belongsTo(Cliente::class);
+    }
+
+    public function cuota()
+    {
+        return $this->belongsTo(Cuota::class);
     }
 }

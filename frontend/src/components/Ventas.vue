@@ -103,6 +103,12 @@
                         >${{ calcularTotalGastado() }}</span
                     >
                 </h4>
+                <h4>
+                    Total Financiado:
+                    <span class="blue--text text--darken-2"
+                        >${{ totalFinanciadoGeneral }}</span
+                    >
+                </h4>
             </v-col>
         </v-row>
 
@@ -141,6 +147,17 @@
                         </div>
                         <div class="font-weight-bold text-h6 green--text">
                             ${{ gananciasNetasFiltradas }}
+                        </div>
+                    </div>
+
+                    <div class="mt-2 mt-md-0">
+                        <div class="text-caption grey--text text--darken-1">
+                            Total financiado del período
+                        </div>
+                        <div
+                            class="font-weight-bold text-h6 blue--text text--darken-2"
+                        >
+                            ${{ totalFinanciadoFiltrado }}
                         </div>
                     </div>
 
@@ -233,6 +250,48 @@
                             : "💳 Transferencia"
                     }}
                 </span>
+            </template>
+
+            <template v-slot:item.plan="{ item }">
+                <div v-if="item.cuota">
+                    <div class="font-weight-medium">
+                        {{ formatCuotaLabel(item.cuota) }}
+                    </div>
+                    <div class="text-caption grey--text">
+                        {{
+                            item.cuota.es_con_interes
+                                ? "Con interés"
+                                : "Sin interés"
+                        }}
+                    </div>
+                </div>
+                <span v-else>Contado</span>
+            </template>
+
+            <template v-slot:item.total_financiado="{ item }">
+                <span>
+                    $
+                    {{
+                        formatCurrency(
+                            item.total_financiado ?? item.precio ?? 0
+                        )
+                    }}
+                </span>
+            </template>
+
+            <template v-slot:item.importe_cuota="{ item }">
+                <span v-if="item.importe_cuota">
+                    $
+                    {{ formatCurrency(item.importe_cuota) }}
+                </span>
+                <span v-else>—</span>
+            </template>
+
+            <template v-slot:item.cantidad_cuotas="{ item }">
+                <span v-if="item.cantidad_cuotas">
+                    {{ item.cantidad_cuotas }}
+                </span>
+                <span v-else>—</span>
             </template>
 
             <!-- Botones de acciones -->
@@ -347,6 +406,55 @@
                             </v-col>
                         </v-row>
 
+                        <v-row>
+                            <v-col cols="12">
+                                <v-select
+                                    v-model="form.cuota_id"
+                                    :items="cuotasDisponiblesVenta"
+                                    item-title="label"
+                                    item-value="id"
+                                    label="Plan de cuotas"
+                                    :disabled="!cuotasDisponiblesVenta.length"
+                                    clearable
+                                    persistent-hint
+                                    :hint="
+                                        cuotasDisponiblesVenta.length
+                                            ? 'Los montos finales se calculan automáticamente al agregar el producto.'
+                                            : 'Selecciona un artículo para ver los planes disponibles.'
+                                    "
+                                ></v-select>
+                            </v-col>
+                        </v-row>
+
+                        <v-alert
+                            v-if="totalFinanciadoActual"
+                            type="info"
+                            variant="tonal"
+                            color="blue"
+                            class="mb-4"
+                            border="start"
+                        >
+                            <div class="font-weight-medium">
+                                Monto final estimado: $
+                                {{
+                                    formatCurrency(totalFinanciadoActual.total)
+                                }}
+                            </div>
+                            <div class="text-caption">
+                                {{ totalFinanciadoActual.cantidad }} cuota{{
+                                    totalFinanciadoActual.cantidad === 1
+                                        ? ""
+                                        : "s"
+                                }}
+                                de $
+                                {{
+                                    formatCurrency(
+                                        totalFinanciadoActual.importe
+                                    )
+                                }}
+                            </div>
+                        </v-alert>
+
                         <!-- Agregar con y sin mantener selección -->
                         <!-- Agregar con y sin mantener selección -->
                         <v-row class="mt-3" dense>
@@ -378,11 +486,36 @@
                                 class="d-flex align-center"
                             >
                                 <v-list-item-content>
-                                    {{ producto.articulo.nombre }} - Talle
-                                    {{ producto.talle }} - Color
-                                    {{ producto.color }} - Precio ${{
-                                        producto.precio
-                                    }}
+                                    <div class="font-weight-medium">
+                                        {{ producto.articulo.nombre }} - Talle
+                                        {{ producto.talle }} - Color
+                                        {{ producto.color }} - Precio ${{
+                                            formatCurrency(producto.precio)
+                                        }}
+                                    </div>
+                                    <div class="text-caption grey--text">
+                                        <template v-if="producto.cuota">
+                                            {{
+                                                producto.cuota.label ||
+                                                formatCuotaLabel(producto.cuota)
+                                            }}
+                                            — Total: $
+                                            {{
+                                                formatCurrency(
+                                                    producto.total_financiado
+                                                )
+                                            }}
+                                            — Cuota: $
+                                            {{
+                                                formatCurrency(
+                                                    producto.importe_cuota
+                                                )
+                                            }}
+                                        </template>
+                                        <template v-else
+                                            >Venta al contado</template
+                                        >
+                                    </div>
                                 </v-list-item-content>
                                 <v-list-item-action>
                                     <v-btn icon @click="editarProducto(index)">
@@ -402,6 +535,12 @@
                         <v-text-field
                             label="Precio Total"
                             v-model="precioTotal"
+                            readonly
+                        ></v-text-field>
+
+                        <v-text-field
+                            label="Total Financiado (productos)"
+                            :model-value="totalFinanciadoSeleccionado"
                             readonly
                         ></v-text-field>
 
@@ -528,6 +667,43 @@
                             value="transferencia"
                         ></v-radio>
                     </v-radio-group>
+
+                    <v-select
+                        v-if="cuotasDisponiblesEdicion.length"
+                        v-model="selectedVenta.cuota_id"
+                        :items="cuotasDisponiblesEdicion"
+                        item-title="label"
+                        item-value="id"
+                        label="Plan de cuotas"
+                        class="mt-3"
+                        clearable
+                    ></v-select>
+                    <div
+                        v-else-if="selectedVenta.articulo"
+                        class="text-caption grey--text mt-3"
+                    >
+                        Este artículo no tiene planes de cuotas configurados.
+                    </div>
+                    <v-alert
+                        v-if="resumenCuotaEdicion"
+                        type="info"
+                        variant="tonal"
+                        color="blue"
+                        border="start"
+                        class="mt-2"
+                    >
+                        <div class="font-weight-medium">
+                            Monto final: $
+                            {{ formatCurrency(resumenCuotaEdicion.total) }}
+                        </div>
+                        <div class="text-caption">
+                            {{ resumenCuotaEdicion.cantidad }} cuota{{
+                                resumenCuotaEdicion.cantidad === 1 ? "" : "s"
+                            }}
+                            de $
+                            {{ formatCurrency(resumenCuotaEdicion.importe) }}
+                        </div>
+                    </v-alert>
 
                     <!-- Campo para la fecha -->
                     <Datepicker
@@ -804,6 +980,7 @@
 </template>
 
 <script>
+import axios from "axios";
 import Datepicker from "./components/datepicker.vue";
 import moment from "moment";
 import {
@@ -868,6 +1045,7 @@ export default {
                 fecha: null,
                 precio: null,
                 costo_original: null,
+                cuota_id: null,
             },
             snackbarColor: "success",
             dialogVenta: false,
@@ -875,6 +1053,7 @@ export default {
             articulos: [], // Lista de artículos
             tallesDisponibles: [], // Talles para el artículo seleccionado
             coloresDisponibles: [], // Colores para el artículo seleccionado
+            cuotasDisponiblesVenta: [],
             sinStock: false,
             tallesGenerales: [
                 0, 2, 4, 6, 8, 10, 12, 14, 16, 32, 34, 36, 38, 40, 42, 44, 46,
@@ -915,6 +1094,7 @@ export default {
                 costo_original: 0,
                 fecha: moment().toDate(),
                 forma_pago: "efectivo",
+                cuota_id: null,
             },
             headers: [
                 { title: "Fecha", key: "fecha", sortable: true }, // Solo la fecha es ordenable
@@ -931,6 +1111,22 @@ export default {
                     sortable: false,
                 },
                 { title: "Forma de Pago", key: "forma_pago", sortable: false },
+                { title: "Plan", key: "plan", sortable: false },
+                {
+                    title: "Total Financiado",
+                    key: "total_financiado",
+                    sortable: false,
+                },
+                {
+                    title: "Importe de Cuota",
+                    key: "importe_cuota",
+                    sortable: false,
+                },
+                {
+                    title: "Cuotas",
+                    key: "cantidad_cuotas",
+                    sortable: false,
+                },
                 { title: "Acciones", key: "actions", sortable: false },
             ],
         };
@@ -987,30 +1183,104 @@ export default {
             };
         },
         precioTotal() {
-            return this.productos
-                .reduce((total, producto) => {
-                    const precio =
-                        this.form.forma_pago === "efectivo"
-                            ? parseFloat(producto.articulo.precio_efectivo)
-                            : parseFloat(
-                                  producto.articulo.precio_transferencia
-                              );
-                    return total + (isNaN(precio) ? 0 : precio);
-                }, 0)
-                .toLocaleString("es-AR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                });
+            const total = this.productos.reduce((acc, producto) => {
+                return acc + Number(producto.precio || 0);
+            }, 0);
+
+            return this.formatCurrency(total);
+        },
+        totalFinanciadoSeleccionado() {
+            const total = this.productos.reduce((acc, producto) => {
+                if (producto.total_financiado) {
+                    return acc + Number(producto.total_financiado || 0);
+                }
+                return acc + Number(producto.precio || 0);
+            }, 0);
+
+            return this.formatCurrency(total);
+        },
+        cuotaSeleccionada() {
+            if (!this.form.cuota_id) return null;
+            return (
+                this.cuotasDisponiblesVenta.find(
+                    (cuota) => cuota.id === this.form.cuota_id
+                ) || null
+            );
+        },
+        totalFinanciadoActual() {
+            const cuota = this.cuotaSeleccionada;
+            if (!cuota || !this.articuloActual) return null;
+
+            const base =
+                this.form.forma_pago === "efectivo"
+                    ? Number(this.articuloActual.precio_efectivo || 0)
+                    : Number(this.articuloActual.precio_transferencia || 0);
+
+            const total = Number(
+                (base * Number(cuota.factor_total || 0)).toFixed(2)
+            );
+            const cantidad = Number(cuota.cantidad_cuotas || 0);
+            const importe = cantidad
+                ? Number((total / cantidad).toFixed(2))
+                : 0;
+
+            return {
+                total,
+                cantidad,
+                importe,
+            };
+        },
+        cuotasDisponiblesEdicion() {
+            const cuotas = this.selectedVenta?.articulo?.cuotas;
+            if (!Array.isArray(cuotas)) {
+                return [];
+            }
+            return cuotas.map((cuota) => ({
+                ...cuota,
+                label: this.formatCuotaLabel(cuota),
+            }));
+        },
+        resumenCuotaEdicion() {
+            if (!this.selectedVenta?.cuota_id) {
+                return null;
+            }
+            const cuota = this.cuotasDisponiblesEdicion.find(
+                (item) => item.id === this.selectedVenta.cuota_id
+            );
+            if (!cuota) {
+                return null;
+            }
+            const base = Number(this.selectedVenta?.precio || 0);
+            const total = Number(
+                (base * Number(cuota.factor_total || 0)).toFixed(2)
+            );
+            const cantidad = Number(cuota.cantidad_cuotas || 0);
+            const importe = cantidad
+                ? Number((total / cantidad).toFixed(2))
+                : 0;
+
+            return {
+                total,
+                cantidad,
+                importe,
+            };
         },
         totalVentas() {
             const total = this.ventas.reduce((total, venta) => {
                 return total + parseFloat(venta.precio || 0); // Suma los precios
             }, 0);
-            // Formatear el número con separador de miles sin usar toFixed, ya que toLocaleString se encarga de los decimales
             return total.toLocaleString("es-AR", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             });
+        },
+        totalFinanciadoGeneral() {
+            const total = this.ventas.reduce((acc, venta) => {
+                const final = venta.total_financiado ?? venta.precio ?? 0;
+                return acc + Number(final);
+            }, 0);
+
+            return this.formatCurrency(total);
         },
         totalVentasFiltradas() {
             const total = this.ventasFiltradas.reduce((total, venta) => {
@@ -1020,6 +1290,14 @@ export default {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             });
+        },
+        totalFinanciadoFiltrado() {
+            const total = this.ventasFiltradas.reduce((acc, venta) => {
+                const final = venta.total_financiado ?? venta.precio ?? 0;
+                return acc + Number(final);
+            }, 0);
+
+            return this.formatCurrency(total);
         },
         gananciasNetasFiltradas() {
             const total = this.ventasFiltradas.reduce((total, venta) => {
@@ -1044,6 +1322,32 @@ export default {
     },
 
     methods: {
+        formatCurrency(value) {
+            const number = Number(value ?? 0);
+            if (!isFinite(number)) {
+                return "0,00";
+            }
+            return number.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        },
+        formatCuotaLabel(cuota) {
+            if (!cuota) {
+                return "Venta al contado";
+            }
+            const cantidad =
+                Number(
+                    cuota.cantidad_cuotas ?? cuota?.pivot?.cantidad_cuotas ?? 0
+                ) || 1;
+            const plural = cantidad === 1 ? "cuota" : "cuotas";
+            const tipo = cuota.es_con_interes ? "con interés" : "sin interés";
+            const factor = Number(cuota.factor_total ?? 1);
+            const factorTexto = Number.isFinite(factor)
+                ? factor.toFixed(2)
+                : "1.00";
+            return `${cantidad} ${plural} ${tipo} (${factorTexto}x)`;
+        },
         toggleClienteExistente() {
             if (!this.clienteExistente) {
                 this.clienteSeleccionado = null;
@@ -1092,6 +1396,20 @@ export default {
             }
 
             this.productos[index].precio = parseFloat(precio);
+            const cuota = this.productos[index].cuota;
+            if (cuota) {
+                const total = Number(
+                    (
+                        this.productos[index].precio *
+                        Number(cuota.factor_total || 0)
+                    ).toFixed(2)
+                );
+                const cantidad = Number(cuota.cantidad_cuotas || 0);
+                this.productos[index].total_financiado = total;
+                this.productos[index].importe_cuota = cantidad
+                    ? Number((total / cantidad).toFixed(2))
+                    : null;
+            }
             this.editarProductoDialog = false;
         },
         async fetchUltimaFacturacion() {
@@ -1428,6 +1746,21 @@ export default {
             const precio = (item.raw.precio || "").toString(); // Convertimos a string
             const costoOriginal = (item.raw.costo_original || "").toString(); // Convertimos a string
 
+            const cuota = item.raw.cuota || {};
+            const planLabel = cuota.id
+                ? this.formatCuotaLabel(cuota).toLowerCase()
+                : "";
+            const interesTexto = cuota.id
+                ? cuota.es_con_interes
+                    ? "con interes"
+                    : "sin interes"
+                : "";
+            const totalFinanciado = (
+                item.raw.total_financiado || ""
+            ).toString();
+            const importeCuota = (item.raw.importe_cuota || "").toString();
+            const cantidadCuotas = (item.raw.cantidad_cuotas || "").toString();
+
             // Ver si alguno de estos campos coincide con el texto de búsqueda
             const matchesCliente = clienteNombreCompleto.includes(searchText);
             const matchesCBU = cbu.includes(searchText);
@@ -1437,6 +1770,11 @@ export default {
             const matchesColor = color.includes(searchText);
             const matchesPrecio = precio.includes(searchText);
             const matchesCostoOriginal = costoOriginal.includes(searchText);
+            const matchesPlan = planLabel.includes(searchText);
+            const matchesInteres = interesTexto.includes(searchText);
+            const matchesTotalFinanciado = totalFinanciado.includes(searchText);
+            const matchesImporteCuota = importeCuota.includes(searchText);
+            const matchesCantidadCuotas = cantidadCuotas.includes(searchText);
 
             // Retornamos true si alguna de estas condiciones se cumple
             return (
@@ -1447,7 +1785,12 @@ export default {
                 matchesTalle ||
                 matchesColor ||
                 matchesPrecio ||
-                matchesCostoOriginal
+                matchesCostoOriginal ||
+                matchesPlan ||
+                matchesInteres ||
+                matchesTotalFinanciado ||
+                matchesImporteCuota ||
+                matchesCantidadCuotas
             );
         },
         buscarPorProducto(value, search, item) {
@@ -1487,12 +1830,26 @@ export default {
             const precio = (item.raw.precio || "").toString(); // Convertimos a string
             const costoOriginal = (item.raw.costo_original || "").toString(); // Convertimos a string
 
+            const cuota = item.raw.cuota || {};
+            const planLabel = cuota.id
+                ? this.formatCuotaLabel(cuota).toLowerCase()
+                : "";
+            const totalFinanciado = (
+                item.raw.total_financiado || ""
+            ).toString();
+            const importeCuota = (item.raw.importe_cuota || "").toString();
+            const cantidadCuotas = (item.raw.cantidad_cuotas || "").toString();
+
             // Ver si alguno de estos campos coincide con el texto de búsqueda
             const matchesCliente = clienteNombreCompleto.includes(searchText);
             const matchesCBU = cbu.includes(searchText);
             const matchesCUIT = cuit.includes(searchText);
             const matchesPrecio = precio.includes(searchText);
             const matchesCostoOriginal = costoOriginal.includes(searchText);
+            const matchesPlan = planLabel.includes(searchText);
+            const matchesTotalFinanciado = totalFinanciado.includes(searchText);
+            const matchesImporteCuota = importeCuota.includes(searchText);
+            const matchesCantidadCuotas = cantidadCuotas.includes(searchText);
 
             // Retornamos true si alguna de estas condiciones se cumple
             return (
@@ -1500,7 +1857,11 @@ export default {
                 matchesCBU ||
                 matchesCUIT ||
                 matchesPrecio ||
-                matchesCostoOriginal
+                matchesCostoOriginal ||
+                matchesPlan ||
+                matchesTotalFinanciado ||
+                matchesImporteCuota ||
+                matchesCantidadCuotas
             );
         },
         formatFecha(fecha) {
@@ -1516,6 +1877,8 @@ export default {
             this.selectedVenta = { ...item };
             this.selectedVenta.cliente_nombre = item.cliente.nombre;
             this.selectedVenta.cliente_apellido = item.cliente.apellido;
+            this.selectedVenta.cuota_id =
+                item.cuota?.id ?? item.cuota_id ?? null;
             this.editDialog = true;
         },
         // Actualizar el precio de la venta
@@ -1529,6 +1892,7 @@ export default {
                         "YYYY-MM-DD"
                     ),
                     forma_pago: this.selectedVenta.forma_pago,
+                    cuota_id: this.selectedVenta.cuota_id,
                 })
                 .then((res) => {
                     const ventaActualizada = res.data.venta || res.data;
@@ -1890,6 +2254,7 @@ export default {
             // Resetear los campos
             this.form.color = null;
             this.form.talle = null;
+            this.form.cuota_id = null;
 
             if (this.sinStock) {
                 // Mostrar todos los talles y colores disponibles sin verificar stock
@@ -1900,6 +2265,7 @@ export default {
                     title: c,
                     value: c,
                 }));
+                this.cuotasDisponiblesVenta = [];
                 return;
             }
 
@@ -1925,9 +2291,19 @@ export default {
                 this.tallesDisponibles = [...this.articuloActual.talles].sort(
                     (a, b) => a.talle - b.talle
                 );
+                this.cuotasDisponiblesVenta = Array.isArray(
+                    this.articuloActual.cuotas
+                )
+                    ? this.articuloActual.cuotas.map((cuota) => ({
+                          ...cuota,
+                          label: this.formatCuotaLabel(cuota),
+                      }))
+                    : [];
+                this.form.cuota_id = null;
             } else {
                 // Limpiar si no se selecciona un artículo válido
                 this.tallesDisponibles = [];
+                this.cuotasDisponiblesVenta = [];
             }
         },
 
@@ -1962,16 +2338,39 @@ export default {
             }
 
             if (articulo) {
+                const precioBase =
+                    this.form.forma_pago === "efectivo"
+                        ? Number(articulo.precio_efectivo || 0)
+                        : Number(articulo.precio_transferencia || 0);
+
+                const cuotaSeleccionada = this.cuotaSeleccionada;
+                const totalFinanciado = cuotaSeleccionada
+                    ? Number(
+                          (
+                              precioBase *
+                              Number(cuotaSeleccionada.factor_total || 0)
+                          ).toFixed(2)
+                      )
+                    : null;
+                const cantidadCuotas = cuotaSeleccionada
+                    ? Number(cuotaSeleccionada.cantidad_cuotas || 0)
+                    : null;
+                const importeCuota =
+                    cuotaSeleccionada && cantidadCuotas
+                        ? Number((totalFinanciado / cantidadCuotas).toFixed(2))
+                        : null;
+
                 this.productos.push({
                     articulo: articulo,
                     talle: this.form.talle,
                     color: this.form.color,
-                    precio:
-                        this.form.forma_pago === "efectivo"
-                            ? parseInt(articulo.precio_efectivo)
-                            : parseInt(articulo.precio_transferencia),
-
-                    costo_original: parseInt(articulo.costo_original),
+                    precio: precioBase,
+                    costo_original: Number(articulo.costo_original || 0),
+                    cuota: cuotaSeleccionada ? { ...cuotaSeleccionada } : null,
+                    cuota_id: cuotaSeleccionada ? cuotaSeleccionada.id : null,
+                    cantidad_cuotas: cantidadCuotas,
+                    total_financiado: totalFinanciado,
+                    importe_cuota: importeCuota,
                 });
 
                 if (this.sinStock) {
@@ -1979,6 +2378,7 @@ export default {
                         this.form.articulo_id = null;
                         this.form.talle = null;
                         this.form.color = null;
+                        this.form.cuota_id = null;
                     }
                     this.productoCargado = true;
                     setTimeout(() => (this.productoCargado = false), 1000);
@@ -2060,7 +2460,9 @@ export default {
                         this.form.articulo_id = null;
                         this.form.talle = null;
                         this.form.color = null;
+                        this.cuotasDisponiblesVenta = [];
                     }
+                    this.form.cuota_id = null;
                 }
                 this.productoCargado = true;
                 setTimeout(() => {
@@ -2209,13 +2611,17 @@ export default {
                 cliente_apellido: "",
                 cliente_cuit: "",
                 cliente_cbu: "",
+                precio: 0,
+                costo_original: 0,
                 fecha: moment().format("YYYY-MM-DD"),
                 forma_pago: "efectivo",
+                cuota_id: null,
             };
             this.productos = [];
             this.articuloActual = null;
             this.tallesDisponibles = [];
             this.coloresDisponibles = [];
+            this.cuotasDisponiblesVenta = [];
             this.clienteSeleccionado = null;
             this.clienteExistente = false;
         },

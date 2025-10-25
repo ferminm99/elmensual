@@ -5,3 +5,4 @@ export const VENTAS_KEY = "ventas";
 export const CLIENTES_KEY = "clientes";
 export const LOCALIDADES_KEY = "localidades";
 export const PEDIDOS_KEY = "pedidos";
+export const CUOTAS_KEY = "cuotas";
