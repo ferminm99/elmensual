@@ -1214,17 +1214,13 @@ export default {
             const cuota = this.cuotaSeleccionada;
             if (!cuota || !this.articuloActual) return null;
 
-            const base =
-                this.form.forma_pago === "efectivo"
-                    ? Number(this.articuloActual.precio_efectivo || 0)
-                    : Number(this.articuloActual.precio_transferencia || 0);
-
-            const total = Number(
-                (base * Number(cuota.factor_total || 0)).toFixed(2)
+            const base = Number(this.articuloActual.precio_transferencia || 0);
+            const total = this.redondearPrecio(
+                base * Number(cuota.factor_total || 0)
             );
             const cantidad = Number(cuota.cantidad_cuotas || 0);
             const importe = cantidad
-                ? Number((total / cantidad).toFixed(2))
+                ? this.redondearPrecio(total / cantidad)
                 : 0;
 
             return {
@@ -1238,7 +1234,11 @@ export default {
             if (!Array.isArray(cuotas)) {
                 return [];
             }
-            return cuotas.map((cuota) => ({
+            const filtradas = this.filtrarCuotasPorFormaPago(
+                cuotas,
+                this.selectedVenta?.forma_pago || null
+            );
+            return filtradas.map((cuota) => ({
                 ...cuota,
                 label: this.formatCuotaLabel(cuota),
             }));
@@ -1254,12 +1254,12 @@ export default {
                 return null;
             }
             const base = Number(this.selectedVenta?.precio || 0);
-            const total = Number(
-                (base * Number(cuota.factor_total || 0)).toFixed(2)
+            const total = this.redondearPrecio(
+                base * Number(cuota.factor_total || 0)
             );
             const cantidad = Number(cuota.cantidad_cuotas || 0);
             const importe = cantidad
-                ? Number((total / cantidad).toFixed(2))
+                ? this.redondearPrecio(total / cantidad)
                 : 0;
 
             return {
@@ -1322,9 +1322,35 @@ export default {
         ventas(newVentas) {
             this.ventasFiltradas = [...newVentas];
         },
+        "form.forma_pago"() {
+            this.actualizarCuotasPorFormaPago();
+        },
+        "form.cuota_id"(nuevo) {
+            if (nuevo && this.form.forma_pago !== "transferencia") {
+                this.form.forma_pago = "transferencia";
+            }
+        },
+        "selectedVenta.forma_pago"() {
+            this.validarCuotaSeleccionadaEdicion();
+        },
+        "selectedVenta.cuota_id"(nuevo) {
+            if (!this.selectedVenta) {
+                return;
+            }
+            if (nuevo && this.selectedVenta.forma_pago !== "transferencia") {
+                this.selectedVenta.forma_pago = "transferencia";
+            }
+        },
     },
 
     methods: {
+        redondearPrecio(valor) {
+            const numero = Number(valor || 0);
+            if (!numero) {
+                return 0;
+            }
+            return Math.round(numero / 500) * 500;
+        },
         formatCurrency(value) {
             const number = Number(value ?? 0);
             if (!isFinite(number)) {
@@ -1358,6 +1384,66 @@ export default {
                 this.form.cliente_apellido = "";
                 this.form.cliente_cuit = "";
                 this.form.cliente_cbu = "";
+            }
+        },
+        filtrarCuotasPorFormaPago(cuotas, formaPago) {
+            if (!Array.isArray(cuotas)) {
+                return [];
+            }
+
+            if (formaPago !== "transferencia") {
+                return [];
+            }
+
+            return cuotas.filter((cuota) => Boolean(cuota));
+        },
+        mapearCuotasParaSelect(cuotas) {
+            return cuotas.map((cuota) => ({
+                ...cuota,
+                label: this.formatCuotaLabel(cuota),
+            }));
+        },
+        actualizarCuotasPorFormaPago() {
+            if (
+                !this.articuloActual ||
+                !Array.isArray(this.articuloActual.cuotas)
+            ) {
+                this.cuotasDisponiblesVenta = [];
+                this.form.cuota_id = null;
+                return;
+            }
+
+            const filtradas = this.filtrarCuotasPorFormaPago(
+                this.articuloActual.cuotas,
+                this.form.forma_pago
+            );
+            const mapeadas = this.mapearCuotasParaSelect(filtradas);
+            this.cuotasDisponiblesVenta = mapeadas;
+
+            if (!mapeadas.some((cuota) => cuota.id === this.form.cuota_id)) {
+                this.form.cuota_id = null;
+            }
+        },
+        validarCuotaSeleccionadaEdicion() {
+            if (
+                !this.selectedVenta ||
+                !this.selectedVenta.articulo ||
+                !Array.isArray(this.selectedVenta.articulo.cuotas)
+            ) {
+                return;
+            }
+
+            const filtradas = this.filtrarCuotasPorFormaPago(
+                this.selectedVenta.articulo.cuotas,
+                this.selectedVenta.forma_pago
+            );
+
+            if (
+                !filtradas.some(
+                    (cuota) => cuota.id === this.selectedVenta.cuota_id
+                )
+            ) {
+                this.selectedVenta.cuota_id = null;
             }
         },
         onClienteSelect(cliente) {
@@ -1398,19 +1484,17 @@ export default {
                 return;
             }
 
-            this.productos[index].precio = parseFloat(precio);
+            const precioRedondeado = this.redondearPrecio(parseFloat(precio));
+            this.productos[index].precio = precioRedondeado;
             const cuota = this.productos[index].cuota;
             if (cuota) {
-                const total = Number(
-                    (
-                        this.productos[index].precio *
-                        Number(cuota.factor_total || 0)
-                    ).toFixed(2)
+                const total = this.redondearPrecio(
+                    precioRedondeado * Number(cuota.factor_total || 0)
                 );
                 const cantidad = Number(cuota.cantidad_cuotas || 0);
                 this.productos[index].total_financiado = total;
                 this.productos[index].importe_cuota = cantidad
-                    ? Number((total / cantidad).toFixed(2))
+                    ? this.redondearPrecio(total / cantidad)
                     : null;
             }
             this.editarProductoDialog = false;
@@ -1890,11 +1974,15 @@ export default {
             this.selectedVenta.cliente_apellido = item.cliente.apellido;
             this.selectedVenta.cuota_id =
                 item.cuota?.id ?? item.cuota_id ?? null;
+            this.validarCuotaSeleccionadaEdicion();
             this.editDialog = true;
         },
         // Actualizar el precio de la venta
         updateVenta() {
             this.loading = true;
+            this.selectedVenta.precio = this.redondearPrecio(
+                this.selectedVenta.precio
+            );
             axios
                 .put(`/api/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
@@ -2302,14 +2390,8 @@ export default {
                 this.tallesDisponibles = [...this.articuloActual.talles].sort(
                     (a, b) => a.talle - b.talle
                 );
-                this.cuotasDisponiblesVenta = Array.isArray(
-                    this.articuloActual.cuotas
-                )
-                    ? this.articuloActual.cuotas.map((cuota) => ({
-                          ...cuota,
-                          label: this.formatCuotaLabel(cuota),
-                      }))
-                    : [];
+                this.actualizarCuotasPorFormaPago();
+
                 this.form.cuota_id = null;
             } else {
                 // Limpiar si no se selecciona un artículo válido
@@ -2349,18 +2431,19 @@ export default {
             }
 
             if (articulo) {
-                const precioBase =
-                    this.form.forma_pago === "efectivo"
-                        ? Number(articulo.precio_efectivo || 0)
-                        : Number(articulo.precio_transferencia || 0);
-
                 const cuotaSeleccionada = this.cuotaSeleccionada;
+                const esVentaEnCuotas = Boolean(cuotaSeleccionada);
+                const precioReferencia = esVentaEnCuotas
+                    ? Number(articulo.precio_transferencia || 0)
+                    : this.form.forma_pago === "efectivo"
+                    ? Number(articulo.precio_efectivo || 0)
+                    : Number(articulo.precio_transferencia || 0);
+                const precioBase = this.redondearPrecio(precioReferencia);
+
                 const totalFinanciado = cuotaSeleccionada
-                    ? Number(
-                          (
-                              precioBase *
+                    ? this.redondearPrecio(
+                          precioBase *
                               Number(cuotaSeleccionada.factor_total || 0)
-                          ).toFixed(2)
                       )
                     : null;
                 const cantidadCuotas = cuotaSeleccionada
@@ -2368,7 +2451,7 @@ export default {
                     : null;
                 const importeCuota =
                     cuotaSeleccionada && cantidadCuotas
-                        ? Number((totalFinanciado / cantidadCuotas).toFixed(2))
+                        ? this.redondearPrecio(totalFinanciado / cantidadCuotas)
                         : null;
 
                 this.productos.push({

@@ -157,14 +157,6 @@
                                 $
                                 {{ formatCurrency(plan.cuotaTransferencia) }}
                             </td>
-                            <td class="text-right">
-                                $
-                                {{ formatCurrency(plan.totalEfectivo) }}
-                            </td>
-                            <td class="text-right">
-                                $
-                                {{ formatCurrency(plan.cuotaEfectivo) }}
-                            </td>
                             <td class="text-center">
                                 <v-btn
                                     icon
@@ -609,8 +601,6 @@ export default {
                     baseTransfer,
                     cuota
                 ),
-                totalEfectivo: this.calcularTotalCuota(baseEfectivo, cuota),
-                cuotaEfectivo: this.calcularImporteCuota(baseEfectivo, cuota),
             }));
         },
     },
@@ -743,7 +733,7 @@ export default {
                 return 0;
             }
 
-            return Number((montoBase * factor).toFixed(2));
+            return this.redondearPrecio(montoBase * factor);
         },
         calcularImporteCuota(base, cuota) {
             const total = this.calcularTotalCuota(base, cuota);
@@ -753,7 +743,7 @@ export default {
                 return 0;
             }
 
-            return Number((total / cantidad).toFixed(2));
+            return this.redondearPrecio(total / cantidad);
         },
         resetCuotaForm() {
             this.cuotaForm = {
