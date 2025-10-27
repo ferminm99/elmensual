@@ -381,7 +381,7 @@ class ArticuloController extends Controller
                 $q->where('updated_at', '>', $from);
             })
             ->orWhereHas('cuotas', function ($q) use ($from) {
-                $q->wherePivot('updated_at', '>', $from);
+                $q->where('articulo_cuota.updated_at', '>', $from);
             })
             ->get();
 
@@ -414,7 +414,7 @@ class ArticuloController extends Controller
         $articulos = Articulo::with('cuotas')
             ->where('updated_at', '>', $fecha)
             ->orWhereHas('cuotas', function ($query) use ($fecha) {
-                $query->wherePivot('updated_at', '>', $fecha);
+                $query->where('articulo_cuota.updated_at', '>', $fecha);
             })
             ->get();
 
