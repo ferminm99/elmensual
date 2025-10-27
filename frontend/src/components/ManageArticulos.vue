@@ -54,9 +54,17 @@
                 </v-btn>
             </v-col>
         </v-row>
-
         <!-- Tabla -->
         <ResponsiveTable :headers="headers" :items="articulosFiltrados">
+            <template #item.costo_original="{ item }">
+                ${{ formatCurrency(item.costo_original) }}
+            </template>
+            <template #item.precio_efectivo="{ item }">
+                ${{ formatCurrency(item.precio_efectivo) }}
+            </template>
+            <template #item.precio_transferencia="{ item }">
+                ${{ formatCurrency(item.precio_transferencia) }}
+            </template>
             <template #item.cuotas="{ item }">
                 <div class="cuotas-chips">
                     <v-chip
@@ -87,6 +95,107 @@
                 </v-btn>
             </template>
         </ResponsiveTable>
+
+        <v-card class="mt-6">
+            <v-card-title class="d-flex justify-space-between align-center">
+                Planes de cuotas
+                <v-btn color="black" @click="openCuotaDialog()">
+                    <v-icon left>mdi-plus</v-icon>
+                    Cargar plan
+                </v-btn>
+            </v-card-title>
+            <v-card-text>
+                <v-progress-linear
+                    v-if="loadingCuotas"
+                    indeterminate
+                    color="primary"
+                    class="mb-3"
+                />
+                <div v-else class="text-caption grey--text mb-3">
+                    Valores estimados según precio transferencia $
+                    {{ formatCurrency(preciosCalculados.transferencia) }}.
+                </div>
+                <v-table
+                    v-if="!loadingCuotas && cuotasDisponibles.length"
+                    density="compact"
+                    class="planes-table"
+                >
+                    <thead>
+                        <tr>
+                            <th class="text-left">Plan</th>
+                            <th class="text-left">Tipo</th>
+                            <th class="text-right">Factor</th>
+                            <th class="text-right">Total transf.</th>
+                            <th class="text-right">Cuota transf.</th>
+                            <th class="text-right">Total efectivo</th>
+                            <th class="text-right">Cuota efectivo</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="plan in simulacionCuotas" :key="plan.id">
+                            <td>
+                                {{ plan.cantidad_cuotas }} cuota{{
+                                    plan.cantidad_cuotas === 1 ? "" : "s"
+                                }}
+                            </td>
+                            <td>
+                                {{
+                                    plan.es_con_interes
+                                        ? "Con interés"
+                                        : "Sin interés"
+                                }}
+                            </td>
+                            <td class="text-right">
+                                x{{ Number(plan.factor_total || 0).toFixed(2) }}
+                            </td>
+                            <td class="text-right">
+                                $
+                                {{ formatCurrency(plan.totalTransferencia) }}
+                            </td>
+                            <td class="text-right">
+                                $
+                                {{ formatCurrency(plan.cuotaTransferencia) }}
+                            </td>
+                            <td class="text-right">
+                                $
+                                {{ formatCurrency(plan.totalEfectivo) }}
+                            </td>
+                            <td class="text-right">
+                                $
+                                {{ formatCurrency(plan.cuotaEfectivo) }}
+                            </td>
+                            <td class="text-center">
+                                <v-btn
+                                    icon
+                                    variant="text"
+                                    @click="openCuotaDialog(plan)"
+                                >
+                                    <v-icon color="black"
+                                        >mdi-pencil-outline</v-icon
+                                    >
+                                </v-btn>
+                                <v-btn
+                                    icon
+                                    variant="text"
+                                    @click="deleteCuota(plan)"
+                                >
+                                    <v-icon color="red">mdi-delete</v-icon>
+                                </v-btn>
+                            </td>
+                        </tr>
+                    </tbody>
+                </v-table>
+                <v-alert
+                    v-else-if="!loadingCuotas"
+                    type="info"
+                    variant="tonal"
+                    density="comfortable"
+                >
+                    Todavía no cargaste planes de cuotas.
+                </v-alert>
+            </v-card-text>
+        </v-card>
 
         <!-- Dialogos existentes (agregar/editar/eliminar) -->
         <!-- ... (los dejás como ya están) ... -->
@@ -134,23 +243,177 @@
                             required
                         ></v-text-field>
                         <v-text-field
-                            v-model="form.precio"
-                            label="Precio"
-                            type="number"
-                            required
-                        ></v-text-field>
-                        <v-text-field
                             v-model="form.costo_original"
-                            label="Costo Original"
+                            label="Costo original"
                             type="number"
                             required
+                            @wheel.prevent
                         ></v-text-field>
-                        <v-text-field
-                            v-model="form.costo_original"
-                            label="Costo Original"
-                            type="number"
-                            required
-                        ></v-text-field>
+
+                        <v-row dense>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    :model-value="`$${formatCurrency(
+                                        preciosCalculados.efectivo
+                                    )}`"
+                                    label="Precio en efectivo"
+                                    readonly
+                                ></v-text-field>
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    :model-value="`$${formatCurrency(
+                                        preciosCalculados.transferencia
+                                    )}`"
+                                    label="Precio transferencia"
+                                    readonly
+                                ></v-text-field>
+                            </v-col>
+                        </v-row>
+
+                        <v-select
+                            v-model="form.cuotas"
+                            :items="cuotasDisponibles"
+                            item-title="label"
+                            item-value="id"
+                            label="Planes de cuotas disponibles"
+                            multiple
+                            chips
+                            closable-chips
+                            clearable
+                            :loading="loadingCuotas"
+                            :disabled="
+                                loadingCuotas || !cuotasDisponibles.length
+                            "
+                            hint="Seleccioná los planes habilitados para este artículo"
+                            persistent-hint
+                        ></v-select>
+
+                        <div class="cuotas-preview mt-4">
+                            <h3 class="text-subtitle-1 font-weight-medium mb-2">
+                                Simulación de cuotas
+                                <span class="text-body-2 grey--text">
+                                    (base transferencia $
+                                    {{
+                                        formatCurrency(
+                                            preciosCalculados.transferencia
+                                        )
+                                    }})
+                                </span>
+                            </h3>
+                            <v-progress-linear
+                                v-if="loadingCuotas"
+                                indeterminate
+                                color="primary"
+                                class="mb-3"
+                            />
+                            <v-table
+                                v-else-if="simulacionCuotas.length"
+                                density="compact"
+                                class="cuotas-preview__table"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th class="text-left">Plan</th>
+                                        <th class="text-left">Tipo</th>
+                                        <th class="text-right">
+                                            Total transf.
+                                        </th>
+                                        <th class="text-right">
+                                            Cuota transf.
+                                        </th>
+                                        <th class="text-right">
+                                            Total efectivo
+                                        </th>
+                                        <th class="text-right">
+                                            Cuota efectivo
+                                        </th>
+                                        <th class="text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="plan in simulacionCuotas"
+                                        :key="plan.id"
+                                    >
+                                        <td>
+                                            {{ plan.cantidad_cuotas }} cuota{{
+                                                plan.cantidad_cuotas === 1
+                                                    ? ""
+                                                    : "s"
+                                            }}
+                                        </td>
+                                        <td>
+                                            {{
+                                                plan.es_con_interes
+                                                    ? "Con interés"
+                                                    : "Sin interés"
+                                            }}
+                                        </td>
+                                        <td class="text-right">
+                                            $
+                                            {{
+                                                formatCurrency(
+                                                    plan.totalTransferencia
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="text-right">
+                                            $
+                                            {{
+                                                formatCurrency(
+                                                    plan.cuotaTransferencia
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="text-right">
+                                            $
+                                            {{
+                                                formatCurrency(
+                                                    plan.totalEfectivo
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="text-right">
+                                            $
+                                            {{
+                                                formatCurrency(
+                                                    plan.cuotaEfectivo
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="text-center">
+                                            <v-chip
+                                                v-if="
+                                                    form.cuotas.includes(
+                                                        plan.id
+                                                    )
+                                                "
+                                                color="green"
+                                                size="small"
+                                                variant="tonal"
+                                            >
+                                                Asignado
+                                            </v-chip>
+                                            <span
+                                                v-else
+                                                class="text-caption grey--text"
+                                            >
+                                                Disponible
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </v-table>
+                            <v-alert
+                                v-else
+                                type="info"
+                                variant="tonal"
+                                density="comfortable"
+                            >
+                                Todavía no cargaste planes de cuotas.
+                            </v-alert>
+                        </div>
                     </v-form>
                 </v-card-text>
                 <v-card-actions>
@@ -158,6 +421,47 @@
                     <v-btn color="black" text @click="saveArticulo">
                         {{ isEdit ? "Guardar" : "Agregar" }}
                     </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogCuota" max-width="400px">
+            <v-card>
+                <v-card-title class="d-flex justify-space-between align-center">
+                    {{ isEditCuota ? "Editar" : "Nueva" }} cuota
+                    <v-btn flat icon @click="closeCuotaDialog">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
+                <v-card-text>
+                    <v-form>
+                        <v-text-field
+                            v-model="cuotaForm.cantidad_cuotas"
+                            label="Cantidad de cuotas"
+                            type="number"
+                            min="1"
+                            required
+                            @wheel.prevent
+                        ></v-text-field>
+                        <v-text-field
+                            v-model="cuotaForm.factor_total"
+                            label="Factor total"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            required
+                            @wheel.prevent
+                        ></v-text-field>
+                        <v-switch
+                            v-model="cuotaForm.es_con_interes"
+                            label="Tiene interés"
+                        ></v-switch>
+                    </v-form>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="closeCuotaDialog">Cancelar</v-btn>
+                    <v-btn color="black" text @click="saveCuota">Guardar</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -200,15 +504,16 @@
 </template>
 
 <script>
+import axios from "axios";
 import {
     cachedFetch,
     updateCache,
     appendToCache,
     removeFromCache,
     modifyInCache,
-    getMemoryCache,
+    getCacheLastUpdate,
 } from "@/utils/cacheFetch";
-import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
+import { notifyCacheChange } from "@/utils/cacheEvents";
 import { showToast } from "@/utils/toast";
 import ExcelJS from "exceljs";
 import { ARTICULOS_KEY, CUOTAS_KEY } from "@/utils/cacheKeys";
@@ -218,6 +523,7 @@ export default {
     data() {
         return {
             loading: false,
+            loadingCuotas: false,
             dialog: false,
             dialogoAumento: false,
             confirmDeleteDialog: false,
@@ -232,15 +538,29 @@ export default {
                 nombre: "",
                 precio: 0,
                 costo_original: 0,
+                cuotas: [],
+            },
+            preciosCalculados: {
+                efectivo: 0,
+                transferencia: 0,
             },
             articulos: [],
+            cuotasDisponibles: [],
+            dialogCuota: false,
+            isEditCuota: false,
+            cuotaForm: {
+                id: null,
+                cantidad_cuotas: 1,
+                factor_total: 1,
+                es_con_interes: false,
+            },
             headers: [
                 { title: "Número", key: "numero" },
                 { title: "Nombre", key: "nombre" },
-                { title: "Precio", key: "precio" },
                 { title: "Costo Original", key: "costo_original" },
                 { title: "Efectivo", key: "precio_efectivo" },
                 { title: "Transferencia", key: "precio_transferencia" },
+                { title: "Planes", key: "cuotas" },
                 {
                     title: "Acciones",
                     key: "actions",
@@ -266,6 +586,40 @@ export default {
                 );
             });
         },
+        simulacionCuotas() {
+            const baseTransfer = Number(
+                this.preciosCalculados.transferencia || 0
+            );
+            const baseEfectivo = Number(this.preciosCalculados.efectivo || 0);
+
+            if (
+                !Array.isArray(this.cuotasDisponibles) ||
+                !this.cuotasDisponibles.length
+            ) {
+                return [];
+            }
+
+            return this.cuotasDisponibles.map((cuota) => ({
+                ...cuota,
+                totalTransferencia: this.calcularTotalCuota(
+                    baseTransfer,
+                    cuota
+                ),
+                cuotaTransferencia: this.calcularImporteCuota(
+                    baseTransfer,
+                    cuota
+                ),
+                totalEfectivo: this.calcularTotalCuota(baseEfectivo, cuota),
+                cuotaEfectivo: this.calcularImporteCuota(baseEfectivo, cuota),
+            }));
+        },
+    },
+    watch: {
+        "form.costo_original": {
+            handler(valor) {
+                this.actualizarPreciosCalculados(valor);
+            },
+        },
     },
     mounted() {
         window.addEventListener("notifyCacheChange", this.handleCacheSync);
@@ -287,20 +641,22 @@ export default {
             },
             setLoading: (val) => (this.loading = val),
         });
+
+        this.fetchCuotas();
     },
 
     beforeUnmount() {
         window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
     methods: {
-        async fetchCuotas() {
+        async fetchCuotas(force = false) {
             this.loadingCuotas = true;
 
             try {
                 const cuotas = await cachedFetch(
                     CUOTAS_KEY,
                     () => axios.get("/api/cuotas").then((res) => res.data),
-                    { ttl: 86400 }
+                    { ttl: 86400, forceRefresh: force }
                 );
 
                 this.cuotasDisponibles = Array.isArray(cuotas)
@@ -330,9 +686,168 @@ export default {
             }
             return cuotas.map((c) => this.formatCuotaLabel(c)).join(", ");
         },
+        formatCurrency(valor) {
+            const numero = Number(valor || 0);
+            return numero.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+        },
+        redondearPrecio(valor) {
+            const numero = Number(valor || 0);
+            if (!numero) return 0;
+            return Math.round(numero / 500) * 500;
+        },
+        calcularPreciosDesdeCosto(costo) {
+            const base = Number(costo || 0);
+
+            if (!base) {
+                return {
+                    efectivo: 0,
+                    transferencia: 0,
+                };
+            }
+
+            let precioEfectivo = 0;
+            let precioTransferencia = 0;
+
+            if (base >= 25000) {
+                precioEfectivo = base * 1.74;
+                precioTransferencia = base * 1.89;
+            } else if (base < 15750) {
+                precioEfectivo = base * 1.8;
+                precioTransferencia = base * 1.95;
+            } else {
+                precioEfectivo = base * 1.74;
+                precioTransferencia = base * 1.89;
+            }
+
+            precioEfectivo = this.redondearPrecio(precioEfectivo);
+            precioTransferencia = this.redondearPrecio(precioTransferencia);
+
+            return {
+                efectivo: precioEfectivo,
+                transferencia: precioTransferencia,
+            };
+        },
+        actualizarPreciosCalculados(costo) {
+            const precios = this.calcularPreciosDesdeCosto(costo);
+            this.preciosCalculados = { ...precios };
+            this.form.precio = Number(precios.transferencia || 0);
+        },
+        calcularTotalCuota(base, cuota) {
+            const montoBase = Number(base || 0);
+            const factor = Number(cuota?.factor_total || 0);
+
+            if (!montoBase || !factor) {
+                return 0;
+            }
+
+            return Number((montoBase * factor).toFixed(2));
+        },
+        calcularImporteCuota(base, cuota) {
+            const total = this.calcularTotalCuota(base, cuota);
+            const cantidad = Number(cuota?.cantidad_cuotas || 0);
+
+            if (!total || !cantidad) {
+                return 0;
+            }
+
+            return Number((total / cantidad).toFixed(2));
+        },
+        resetCuotaForm() {
+            this.cuotaForm = {
+                id: null,
+                cantidad_cuotas: 1,
+                factor_total: 1,
+                es_con_interes: false,
+            };
+        },
+        openCuotaDialog(cuota = null) {
+            if (cuota) {
+                this.isEditCuota = true;
+                this.cuotaForm = {
+                    id: cuota.id,
+                    cantidad_cuotas: Number(cuota.cantidad_cuotas || 1),
+                    factor_total: Number(cuota.factor_total || 1),
+                    es_con_interes: Boolean(cuota.es_con_interes),
+                };
+            } else {
+                this.isEditCuota = false;
+                this.resetCuotaForm();
+            }
+
+            this.dialogCuota = true;
+        },
+        closeCuotaDialog() {
+            this.dialogCuota = false;
+            this.resetCuotaForm();
+        },
+        async saveCuota() {
+            const payload = {
+                cantidad_cuotas: Number(this.cuotaForm.cantidad_cuotas || 0),
+                factor_total: Number(this.cuotaForm.factor_total || 0),
+                es_con_interes: Boolean(this.cuotaForm.es_con_interes),
+            };
+
+            if (!payload.cantidad_cuotas || !payload.factor_total) {
+                showToast("Completá los datos del plan", "error");
+                return;
+            }
+
+            try {
+                this.loadingCuotas = true;
+                if (this.isEditCuota && this.cuotaForm.id) {
+                    await axios.put(
+                        `/api/cuotas/${this.cuotaForm.id}`,
+                        payload
+                    );
+                    showToast("Plan de cuotas actualizado", "success");
+                } else {
+                    await axios.post("/api/cuotas", payload);
+                    showToast("Plan de cuotas creado", "success");
+                }
+
+                this.closeCuotaDialog();
+                await this.fetchCuotas(true);
+                notifyCacheChange(CUOTAS_KEY);
+            } catch (error) {
+                console.error("Error al guardar el plan de cuotas:", error);
+                showToast("No se pudo guardar el plan de cuotas", "error");
+            } finally {
+                this.loadingCuotas = false;
+            }
+        },
+        async deleteCuota(cuota) {
+            if (!cuota) return;
+
+            const confirmado = confirm(
+                "¿Seguro que querés eliminar este plan de cuotas?"
+            );
+
+            if (!confirmado) {
+                return;
+            }
+
+            try {
+                this.loadingCuotas = true;
+                await axios.delete(`/api/cuotas/${cuota.id}`);
+                showToast("Plan de cuotas eliminado", "success");
+                await this.fetchCuotas(true);
+                notifyCacheChange(CUOTAS_KEY);
+            } catch (error) {
+                console.error("Error al eliminar el plan de cuotas:", error);
+                showToast("No se pudo eliminar el plan de cuotas", "error");
+            } finally {
+                this.loadingCuotas = false;
+            }
+        },
         handleCacheSync(e) {
             if (e.detail === ARTICULOS_KEY) {
                 this.fetchArticulos();
+            }
+            if (e.detail === CUOTAS_KEY) {
+                this.fetchCuotas(true);
             }
         },
 
@@ -409,6 +924,11 @@ export default {
                 costo_original: 0,
                 cuotas: [],
             };
+            this.preciosCalculados = {
+                efectivo: 0,
+                transferencia: 0,
+            };
+            this.actualizarPreciosCalculados(this.form.costo_original);
             this.dialog = true;
         },
         openEditDialog(item) {
@@ -423,11 +943,20 @@ export default {
                     ? item.cuotas.map((c) => c.id)
                     : [],
             };
+            this.preciosCalculados = {
+                efectivo: Number(item.precio_efectivo || 0),
+                transferencia: Number(item.precio_transferencia || 0),
+            };
+            this.actualizarPreciosCalculados(this.form.costo_original);
             this.dialog = true;
         },
         saveArticulo() {
             if (!this.validateForm()) return;
             this.loading = true;
+
+            this.form.precio = Number(
+                this.preciosCalculados.transferencia || 0
+            );
 
             const payload = {
                 numero: Number(this.form.numero),
@@ -597,7 +1126,6 @@ export default {
     },
 };
 </script>
-
 <style scoped>
 .cuotas-chips {
     display: flex;
@@ -607,6 +1135,18 @@ export default {
 
 .cuotas-chips .v-chip {
     margin: 0;
+}
+
+.cuotas-preview__table th,
+.cuotas-preview__table td,
+.planes-table th,
+.planes-table td {
+    white-space: nowrap;
+}
+
+.planes-table {
+    border-radius: 8px;
+    overflow: hidden;
 }
 @media (max-width: 768px) {
     h1.title {

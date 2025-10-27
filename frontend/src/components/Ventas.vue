@@ -330,6 +330,9 @@
                         Registrar Venta
                         <template v-if="sinStock"> Sin Stock</template>
                     </span>
+                    <v-btn flat icon @click="closeDialogVenta">
+                        <v-icon color="red">mdi-close</v-icon>
+                    </v-btn>
                 </v-card-title>
                 <v-card-text>
                     <v-form ref="form">
@@ -1865,12 +1868,20 @@ export default {
             );
         },
         formatFecha(fecha) {
-            const [year, month, day] = fecha.split("-");
-            return `${day}-${month}-${year}`; // Formato DD-MM-YYYY
+            if (!fecha) return "-";
+            const fechaMoment = moment(fecha);
+            if (!fechaMoment.isValid()) {
+                return fecha;
+            }
+            return fechaMoment.format("DD/MM/YYYY");
         },
         formatFechaMoment(fecha) {
-            // Usar moment para formatear la fecha en el formato que desees
-            return moment(fecha).format("DD-MM-YYYY");
+            if (!fecha) return "-";
+            const fechaMoment = moment(fecha);
+            if (!fechaMoment.isValid()) {
+                return fecha;
+            }
+            return fechaMoment.format("DD/MM/YYYY");
         },
         // Abrir el diálogo de edición con la venta seleccionada
         openEditDialog(item) {
