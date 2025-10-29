@@ -127,8 +127,6 @@
                             <th class="text-right">Factor</th>
                             <th class="text-right">Total transf.</th>
                             <th class="text-right">Cuota transf.</th>
-                            <th class="text-right">Total efectivo</th>
-                            <th class="text-right">Cuota efectivo</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -314,12 +312,6 @@
                                         <th class="text-right">
                                             Cuota transf.
                                         </th>
-                                        <th class="text-right">
-                                            Total efectivo
-                                        </th>
-                                        <th class="text-right">
-                                            Cuota efectivo
-                                        </th>
                                         <th class="text-center">Estado</th>
                                     </tr>
                                 </thead>
@@ -355,22 +347,6 @@
                                             {{
                                                 formatCurrency(
                                                     plan.cuotaTransferencia
-                                                )
-                                            }}
-                                        </td>
-                                        <td class="text-right">
-                                            $
-                                            {{
-                                                formatCurrency(
-                                                    plan.totalEfectivo
-                                                )
-                                            }}
-                                        </td>
-                                        <td class="text-right">
-                                            $
-                                            {{
-                                                formatCurrency(
-                                                    plan.cuotaEfectivo
                                                 )
                                             }}
                                         </td>
@@ -743,7 +719,7 @@ export default {
                 return 0;
             }
 
-            return this.redondearPrecio(total / cantidad);
+            return total / cantidad;
         },
         resetCuotaForm() {
             this.cuotaForm = {

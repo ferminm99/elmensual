@@ -1219,9 +1219,7 @@ export default {
                 base * Number(cuota.factor_total || 0)
             );
             const cantidad = Number(cuota.cantidad_cuotas || 0);
-            const importe = cantidad
-                ? this.redondearPrecio(total / cantidad)
-                : 0;
+            const importe = cantidad ? total / cantidad : 0;
 
             return {
                 total,
@@ -1258,9 +1256,7 @@ export default {
                 base * Number(cuota.factor_total || 0)
             );
             const cantidad = Number(cuota.cantidad_cuotas || 0);
-            const importe = cantidad
-                ? this.redondearPrecio(total / cantidad)
-                : 0;
+            const importe = cantidad ? total / cantidad : 0;
 
             return {
                 total,
@@ -1494,7 +1490,7 @@ export default {
                 const cantidad = Number(cuota.cantidad_cuotas || 0);
                 this.productos[index].total_financiado = total;
                 this.productos[index].importe_cuota = cantidad
-                    ? this.redondearPrecio(total / cantidad)
+                    ? total / cantidad
                     : null;
             }
             this.editarProductoDialog = false;
@@ -2451,7 +2447,7 @@ export default {
                     : null;
                 const importeCuota =
                     cuotaSeleccionada && cantidadCuotas
-                        ? this.redondearPrecio(totalFinanciado / cantidadCuotas)
+                        ? totalFinanciado / cantidadCuotas
                         : null;
 
                 this.productos.push({
