@@ -72,16 +72,20 @@ class VentasController extends Controller
             ]);
         }
     
-        // Lista para guardar las ventas registradas
+     // Lista para guardar las ventas registradas
         $ventasRegistradas = [];
+
         // Registrar cada producto en la venta
-       foreach ($request->productos as $producto) {
+        foreach ($request->productos as $producto) {
             $precioProducto = (float) ($producto['precio'] ?? 0);
             $cuotaId = data_get($producto, 'cuota.id', data_get($producto, 'cuota_id'));
             $cuota = null;
             $cantidadCuotas = null;
             $totalFinanciado = null;
             $importeCuota = null;
+
+            $color = $producto['color'] ?? null;
+            $colorStock = $this->resolverColorStock($color);
 
             if ($cuotaId) {
                 $cuota = Cuota::find($cuotaId);
@@ -115,8 +119,23 @@ class VentasController extends Controller
 
             $articulo = Articulo::find($producto['articulo']['id']);
             $talle = $articulo->talles()->where('talle', $producto['talle'])->first();
-            $talle->{$producto['color']} = max(0, $talle->{$producto['color']} - 1);
-            $talle->save();
+
+            if (!$talle) {
+                $talle = $articulo->talles()->create([
+                    'talle' => $producto['talle'],
+                    'marron' => 0,
+                    'negro' => 0,
+                    'verde' => 0,
+                    'azul' => 0,
+                    'celeste' => 0,
+                    'blancobeige' => 0,
+                ]);
+            }
+
+            if ($colorStock) {
+                $talle->{$colorStock} = max(0, (int) $talle->{$colorStock} - 1);
+                $talle->save();
+            }
 
 
             // Cargar relaciones
@@ -136,6 +155,8 @@ class VentasController extends Controller
     
     public function registrarVentaSinStock(Request $request) {
         foreach ($request->productos as $producto) {
+            $colorStock = $this->resolverColorStock($producto['color'] ?? null);
+
             $articulo = Articulo::findOrFail($producto['articulo']['id']);
             $talle = $articulo->talles()->where('talle', $producto['talle'])->first();
             if (!$talle) {
@@ -149,12 +170,38 @@ class VentasController extends Controller
                     'blancobeige' => 0,
                 ]);
             }
-            $talle->increment($producto['color']);
+            if ($colorStock) {
+                $talle->increment($colorStock);
+            }
         }
 
         return $this->registrarVenta($request);
     }
 
+    private function resolverColorStock(?string $color): ?string
+    {
+        if (!$color) {
+            return null;
+        }
+
+        $colorNormalizado = strtolower(trim($color));
+
+        $mapa = [
+            'beige clarito' => 'blancobeige',
+            'tiza' => 'blancobeige',
+            'gris' => 'celeste',
+            'chocolate' => 'marron',
+        ];
+
+        if (array_key_exists($colorNormalizado, $mapa)) {
+            $colorNormalizado = $mapa[$colorNormalizado];
+        }
+
+        $coloresValidos = ['marron', 'negro', 'verde', 'azul', 'celeste', 'blancobeige'];
+
+        return in_array($colorNormalizado, $coloresValidos, true) ? $colorNormalizado : null;
+    }
+    
     //Obtiene la ultima facturacion
     public function obtenerUltimaFacturacion()
     {
