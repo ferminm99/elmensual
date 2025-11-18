@@ -38,7 +38,7 @@ class Articulo extends Model
         return $this->hasMany(CriticalStockAlert::class, 'articulo_id');
     }
 
-     public function cuotas()
+    public function cuotas()
     {
         return $this->belongsToMany(Cuota::class)->withTimestamps();
     }
