@@ -185,17 +185,17 @@ const sortedAlerts = computed(() => {
 });
 
 const criticidadLabel = (nivel) => {
-    if (nivel >= 4) return "Crítica";
-    if (nivel >= 3) return "Alta";
-    if (nivel === 2) return "Media";
-    return "Baja";
+    if (nivel >= 4) return "Agotado";
+    if (nivel >= 3) return "Stock muy bajo";
+    if (nivel === 2) return "Stock bajo";
+    return "Monitorear";
 };
 
 const criticidadColor = (nivel) => {
     if (nivel >= 4) return "red";
-    if (nivel >= 3) return "orange";
-    if (nivel === 2) return "amber";
-    return "green";
+    if (nivel >= 3) return "deep-orange-darken-2";
+    if (nivel === 2) return "amber-darken-2";
+    return "blue";
 };
 
 const estadoColor = (estado) => {
