@@ -9,6 +9,12 @@
             </v-col>
         </v-row>
 
+        <v-row class="mt-2">
+            <v-col cols="12">
+                <CriticalAlertsWidget />
+            </v-col>
+        </v-row>
+
         <!-- Selector de artículos y botones -->
         <v-row>
             <v-col cols="12" md="8">
@@ -426,8 +432,12 @@ import { ARTICULOS_KEY, ARTICULOS_TALLES_KEY } from "@/utils/cacheKeys";
 import { onCacheChange, notifyCacheChange } from "@/utils/cacheEvents";
 import { useSyncedCache } from "@/utils/useSyncedCache";
 import { showToast } from "@/utils/toast";
+import CriticalAlertsWidget from "./dashboard/CriticalAlertWidget.vue";
 
 export default {
+    components: {
+        CriticalAlertsWidget,
+    },
     data() {
         return {
             loading: false,

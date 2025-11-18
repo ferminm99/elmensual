@@ -1,22 +1,30 @@
-<?php
+<?php 
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\CriticalStockAlert;
 
 class Articulo extends Model
 {
     use HasFactory;
     public $timestamps = true; // Desactiva las marcas de tiempo
 
-    protected $fillable = ['numero', 'nombre', 'precio','costo_original','precio_efectivo','precio_transferencia'];
+    protected $fillable = [
+        'numero',
+        'nombre',
+        'precio',
+        'costo_original',
+        'precio_efectivo',
+        'precio_transferencia',
+        'es_importante',
+        'prioridad_alerta',
+    ];
 
     protected $casts = [
-        'precio' => 'float',
-        'costo_original' => 'float',
-        'precio_efectivo' => 'float',
-        'precio_transferencia' => 'float',
+        'es_importante' => 'boolean',
+        'prioridad_alerta' => 'integer',
     ];
 
     public function talles()
@@ -24,9 +32,9 @@ class Articulo extends Model
         return $this->hasMany(Talle::class, 'articulo_id');
     }
 
-    public function cuotas()
+    public function criticalAlerts()
     {
-        return $this->belongsToMany(Cuota::class)->withTimestamps();
+        return $this->hasMany(CriticalStockAlert::class, 'articulo_id');
     }
 
     // Relación con CompraCalendario
@@ -34,5 +42,5 @@ class Articulo extends Model
     {
         return $this->hasMany(CompraCalendario::class, 'articulo_id');
     }
-
+    
 }

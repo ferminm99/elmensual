@@ -3,18 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Articulo;
-use App\Models\Cuota;
-use Illuminate\Http\Request; 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use App\Http\Controllers\Traits\ActualizaMetaTrait;
+use App\Services\CriticalStockAlertService;
 
 class ArticuloController extends Controller
 {
     use ActualizaMetaTrait;
+
+    public function __construct(private CriticalStockAlertService $alertService)
+    {
+    }
+
      // Método para listar todos los artículos
     public function index() {
-        $articulos = Articulo::with('cuotas')->orderBy('nombre')->get(); // Ordena por nombre
+        $articulos = Articulo::orderBy('nombre')->get(); // Ordena por nombre
         return response()->json($articulos);
     }
     
@@ -28,8 +32,8 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
-            'cuotas' => 'nullable|array',
-            'cuotas.*' => 'integer|exists:cuotas,id',
+            'es_importante' => 'sometimes|boolean',
+            'prioridad_alerta' => 'sometimes|integer|min:1|max:5',
         ]);
 
         
@@ -40,10 +44,10 @@ class ArticuloController extends Controller
             'costo_original' => $request->input('costo_original'),
             'precio_efectivo' => $precios['precio_efectivo'],
             'precio_transferencia' => $precios['precio_transferencia'],
+            'es_importante' => $request->boolean('es_importante'),
+            'prioridad_alerta' => $request->input('prioridad_alerta', 1),
         ]);
 
-        $articulo->cuotas()->sync($request->input('cuotas', []));
-        $articulo->load('cuotas');
 
         return response()->json([
             'message' => 'Artículo creado correctamente',
@@ -62,8 +66,8 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
-            'cuotas' => 'nullable|array',
-            'cuotas.*' => 'integer|exists:cuotas,id',
+            'es_importante' => 'sometimes|boolean',
+            'prioridad_alerta' => 'sometimes|integer|min:1|max:5',
         ]);
     
         $articulo->update([
@@ -73,11 +77,10 @@ class ArticuloController extends Controller
             'costo_original' => $request->input('costo_original'),
             'precio_efectivo' => $precios['precio_efectivo'],
             'precio_transferencia' => $precios['precio_transferencia'],
+            'es_importante' => $request->boolean('es_importante', $articulo->es_importante),
+            'prioridad_alerta' => $request->input('prioridad_alerta', $articulo->prioridad_alerta),
         ]);
-
-        $articulo->cuotas()->sync($request->input('cuotas', []));
-        $articulo->load('cuotas');
-
+        
         return response()->json([
             'message' => 'Artículo actualizado correctamente',
             'articulo' => $articulo
@@ -188,15 +191,16 @@ class ArticuloController extends Controller
                 'blancobeige' => 0,
             ]);
         }
-    
-        // Aplicar las cantidades enviadas en la solicitud
+     // Aplicar las cantidades enviadas en la solicitud
         foreach ($request->input('cantidades') as $color => $cantidad) {
             $talle->increment($color, $cantidad);
         }
-    
+
+        $this->alertService->synchronizeForArticulo($articulo->id);
+
         return response()->json(['message' => 'Bombachas agregadas correctamente']);
     }
-    
+
     public function eliminarBombachas(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
         $talle = $articulo->talles()->where('talle', $request->input('talle'))->first();
@@ -220,10 +224,12 @@ class ArticuloController extends Controller
             $deletedIds[] = $talle->id;
             $talle->delete();
         }
-    
+
         $ultimoTalle = $articulo->talles()->latest()->first();
         if ($ultimoTalle) $ultimoTalle->touch();
-    
+
+        $this->alertService->synchronizeForArticulo($articulo->id);
+
         return response()->json([
             'message' => 'Bombachas eliminadas correctamente',
             'deleted_ids' => $deletedIds,
@@ -239,21 +245,25 @@ class ArticuloController extends Controller
     
         if ($talle) {
             $talle->delete();
-    
+
             $ultimoTalle = $articulo->talles()->latest()->first();
             if ($ultimoTalle) $ultimoTalle->touch();
-    
+
+            $this->alertService->synchronizeForArticulo($articulo->id);
+
             return response()->json([
                 'message' => 'Talle eliminado correctamente',
                 'deleted_ids' => [$talle->id],  // aunque sea 1 id, devolvemos array
                 'last_update' => now()->timestamp * 1000,
             ]);
         }
-    
+
+        $this->alertService->synchronizeForArticulo($articulo->id);
+
         return response()->json(['message' => 'Talle no encontrado'], 404);
     }
-    
-    
+
+
 
     public function editarBombachas(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
@@ -264,9 +274,13 @@ class ArticuloController extends Controller
     
         if ($talle) {
             $talle->update($request->input('cantidades'));
+            $this->alertService->synchronizeForArticulo($articulo->id);
+
             return response()->json(['message' => 'Cantidades actualizadas correctamente']);
         }
-    
+
+        $this->alertService->synchronizeForArticulo($articulo->id);
+
         return response()->json(['message' => 'Talle no encontrado'], 404);
     }
 

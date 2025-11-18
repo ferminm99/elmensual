@@ -17,6 +17,11 @@ export default defineConfig({
             input: "index.html", // ⚠️ Usá el path real de tu app
         },
     },
+    test: {
+        environment: "jsdom",
+        globals: true,
+        setupFiles: "src/test/setup.js",
+    },
     // server: {
     //   host: "localhost",
     //   port: 5173,

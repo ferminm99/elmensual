@@ -228,6 +228,8 @@ export default {
                 articulo_id: null,
                 talle: null,
                 colores: [],
+                alertaId: null,
+                pedidoReferencia: null,
             },
             pedidoEditIndex: null, // Nuevo: índice si estamos editando
             articulos: [],
@@ -245,6 +247,7 @@ export default {
             pedidos: [],
             dialogReinicio: false,
             dialogCargar: false,
+            alertaContexto: null,
             headers: [
                 { title: "Nombre", key: "nombre" },
                 { title: "Artículo", key: "articulo_nombre" },
@@ -276,11 +279,67 @@ export default {
                 }
             }
         });
+
+        this.prepararAlertaDesdeQuery();
+    },
+    watch: {
+        articulos(nuevos) {
+            if (nuevos.length) {
+                this.aplicarContextoAlertaSiDisponible();
+            }
+        },
+        "$route.query"() {
+            this.prepararAlertaDesdeQuery();
+        },
     },
     beforeUnmount() {
         window.removeEventListener("notifyCacheChange", this.handleCacheSync);
     },
     methods: {
+        prepararAlertaDesdeQuery() {
+            const { alertId, articuloId, talle, pedidoRef } = this.$route.query;
+            if (alertId && articuloId) {
+                this.alertaContexto = {
+                    id: Number(alertId),
+                    articuloId: Number(articuloId),
+                    talle: talle ? Number(talle) : null,
+                    pedidoReferencia: pedidoRef || null,
+                };
+                this.aplicarContextoAlertaSiDisponible();
+            } else {
+                this.limpiarContextoAlerta();
+            }
+        },
+        aplicarContextoAlertaSiDisponible() {
+            if (!this.alertaContexto) return;
+
+            const articuloObjetivo = this.articulos.find(
+                (a) => Number(a.id) === Number(this.alertaContexto.articuloId)
+            );
+
+            if (!articuloObjetivo) return;
+
+            this.form.articulo_id = Number(this.alertaContexto.articuloId);
+            this.cargarTalles();
+            if (this.alertaContexto.talle) {
+                this.form.talle = Number(this.alertaContexto.talle);
+            }
+            this.form.alertaId = this.alertaContexto.id;
+            this.form.pedidoReferencia = this.alertaContexto.pedidoReferencia;
+        },
+        limpiarParametrosAlertaDeRuta() {
+            const query = { ...this.$route.query };
+            delete query.alertId;
+            delete query.articuloId;
+            delete query.talle;
+            delete query.pedidoRef;
+            this.$router.replace({ path: this.$route.path, query });
+        },
+        limpiarContextoAlerta() {
+            this.alertaContexto = null;
+            this.form.alertaId = null;
+            this.form.pedidoReferencia = null;
+        },
         obtenerIndiceGlobal(indexLocal) {
             const { page, itemsPerPage } = this.options;
             return indexLocal + (page - 1) * itemsPerPage;
@@ -319,6 +378,7 @@ export default {
                 (a) => a.id === this.form.articulo_id
             );
 
+            const teniaAlerta = Boolean(this.form.alertaId);
             const nuevoPedido = {
                 id: Date.now() + Math.random(), // ID único
                 nombre: this.form.nombre,
@@ -326,6 +386,8 @@ export default {
                 articulo_id: this.form.articulo_id,
                 talle: this.form.talle,
                 colores: [...this.form.colores],
+                alertaId: this.form.alertaId,
+                pedidoReferencia: this.form.pedidoReferencia,
             };
 
             if (this.pedidoEditIndex !== null) {
@@ -342,11 +404,18 @@ export default {
             notifyCacheChange(PEDIDOS_KEY);
             showToast("Pedido agregado", "success");
 
+            if (teniaAlerta) {
+                this.limpiarParametrosAlertaDeRuta();
+                this.limpiarContextoAlerta();
+            }
+
             this.form = {
                 nombre: "",
                 articulo_id: null,
                 talle: null,
                 colores: [],
+                alertaId: null,
+                pedidoReferencia: null,
             };
         },
         agregarVariacion(tipo) {
@@ -360,6 +429,8 @@ export default {
                 articulo_nombre: `${articulo.numero} - ${articulo.nombre}`,
                 articulo_id: this.form.articulo_id,
                 talle: this.form.talle,
+                alertaId: this.form.alertaId,
+                pedidoReferencia: this.form.pedidoReferencia,
             };
 
             if (tipo === "color") {
@@ -395,6 +466,8 @@ export default {
                 talle: pedido.talle,
                 colores: [...pedido.colores],
                 id: pedido.id,
+                alertaId: pedido.alertaId ?? null,
+                pedidoReferencia: pedido.pedidoReferencia ?? null,
             };
 
             this.pedidoEditIndex = this.pedidos.findIndex(
@@ -423,6 +496,8 @@ export default {
                 articulo_id: this.form.articulo_id,
                 talle: this.form.talle,
                 colores: [...this.form.colores],
+                alertaId: this.form.alertaId,
+                pedidoReferencia: this.form.pedidoReferencia,
             };
 
             this.pedidos.splice(this.pedidoEditIndex, 1, actualizado);
@@ -439,6 +514,8 @@ export default {
                 articulo_id: null,
                 talle: null,
                 colores: [],
+                alertaId: null,
+                pedidoReferencia: null,
             };
         },
         eliminarPedido(pedido) {
@@ -462,6 +539,8 @@ export default {
             notifyCacheChange(PEDIDOS_KEY);
             this.dialogReinicio = false;
             showToast("Pedidos reiniciados", "success");
+            this.limpiarContextoAlerta();
+            this.limpiarParametrosAlertaDeRuta();
         },
         confirmarCarga() {
             this.dialogCargar = true;
@@ -501,6 +580,21 @@ export default {
                         console.error("Error cargando pedido", err);
                     }
                 }
+                if (pedido.alertaId) {
+                    try {
+                        await axios.post(
+                            `/api/alertas/${pedido.alertaId}/marcar-resuelto`,
+                            {
+                                pedido_referencia: pedido.pedidoReferencia,
+                            }
+                        );
+                    } catch (err) {
+                        console.error(
+                            "No se pudo marcar la alerta como resuelta",
+                            err
+                        );
+                    }
+                }
             }
             notifyCacheChange(ARTICULOS_TALLES_KEY);
             this.pedidos = [];
@@ -508,6 +602,8 @@ export default {
             localStorage.removeItem("pedidos");
             notifyCacheChange(PEDIDOS_KEY);
             showToast("Pedidos cargados correctamente", "success");
+            this.limpiarContextoAlerta();
+            this.limpiarParametrosAlertaDeRuta();
         },
         copiarComoTexto() {
             const pedidosOrdenados = [...this.pedidos].sort((a, b) => {
