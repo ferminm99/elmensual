@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\CriticalStockAlert;
+use App\Models\Cuota;
 
 class Articulo extends Model
 {
@@ -37,6 +38,10 @@ class Articulo extends Model
         return $this->hasMany(CriticalStockAlert::class, 'articulo_id');
     }
 
+     public function cuotas()
+    {
+        return $this->belongsToMany(Cuota::class)->withTimestamps();
+    }
     // Relación con CompraCalendario
     public function comprasCalendario()
     {

@@ -18,7 +18,7 @@ class ArticuloController extends Controller
 
      // Método para listar todos los artículos
     public function index() {
-        $articulos = Articulo::orderBy('nombre')->get(); // Ordena por nombre
+        $articulos = Articulo::with('cuotas')->orderBy('nombre')->get();// Ordena por nombre
         return response()->json($articulos);
     }
     
@@ -32,6 +32,8 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
+            'cuotas' => 'nullable|array',
+            'cuotas.*' => 'integer|exists:cuotas,id',
             'es_importante' => 'sometimes|boolean',
             'prioridad_alerta' => 'sometimes|integer|min:1|max:5',
         ]);
@@ -66,6 +68,8 @@ class ArticuloController extends Controller
             'nombre' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'costo_original' => 'required|numeric|min:0',
+            'cuotas' => 'nullable|array',
+            'cuotas.*' => 'integer|exists:cuotas,id',
             'es_importante' => 'sometimes|boolean',
             'prioridad_alerta' => 'sometimes|integer|min:1|max:5',
         ]);
@@ -80,6 +84,9 @@ class ArticuloController extends Controller
             'es_importante' => $request->boolean('es_importante', $articulo->es_importante),
             'prioridad_alerta' => $request->input('prioridad_alerta', $articulo->prioridad_alerta),
         ]);
+
+        $articulo->cuotas()->sync($request->input('cuotas', []));
+        $articulo->load('cuotas');
         
         return response()->json([
             'message' => 'Artículo actualizado correctamente',
