@@ -6,11 +6,16 @@ use App\Models\Articulo;
 use App\Models\CriticalStockAlert;
 use App\Models\Talle;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class CriticalStockAlertService
 {
     public function synchronize(?int $articuloId = null): Collection
     {
+        if (! $this->isSchemaReady()) {
+            return collect();
+        }
+
         $articles = Articulo::query()
             ->where('es_importante', true)
             ->when($articuloId, fn ($query) => $query->where('id', $articuloId))
@@ -77,6 +82,10 @@ class CriticalStockAlertService
 
     public function activeAlerts(string $sort = 'criticidad'): Collection
     {
+        if (! $this->isSchemaReady()) {
+            return collect();
+        }
+
         $query = CriticalStockAlert::with('articulo')
             ->where('estado', '!=', 'resuelto');
 
@@ -119,5 +128,14 @@ class CriticalStockAlertService
             + (int) $talle->azul
             + (int) $talle->celeste
             + (int) $talle->blancobeige;
+    }
+
+    private function isSchemaReady(): bool
+    {
+        return Schema::hasTable('articulos')
+            && Schema::hasColumn('articulos', 'es_importante')
+            && Schema::hasColumn('articulos', 'prioridad_alerta')
+            && Schema::hasTable('talles')
+            && Schema::hasTable('critical_stock_alerts');
     }
 }

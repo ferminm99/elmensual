@@ -139,4 +139,15 @@ class CriticalStockAlertServiceTest extends TestCase
         $this->assertSame('resuelto', $resolved->estado);
         $this->assertNotNull($resolved->resuelto_en);
     }
+
+    public function test_returns_empty_when_schema_missing(): void
+    {
+        Schema::dropIfExists('critical_stock_alerts');
+        Schema::dropIfExists('talles');
+        Schema::dropIfExists('articulos');
+
+        $alerts = $this->service->synchronize();
+
+        $this->assertCount(0, $alerts);
+    }
 }
