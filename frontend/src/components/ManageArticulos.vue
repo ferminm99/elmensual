@@ -1005,9 +1005,7 @@ export default {
                     : [];
 
                 this.articulos = articulosActualizados;
-                updateCache(ARTICULOS_KEY, {
-                    articulos: articulosActualizados,
-                });
+                updateCache(ARTICULOS_KEY, articulosActualizados);
 
                 notifyCacheChange(ARTICULOS_KEY);
                 this.loading = false;
@@ -1032,9 +1030,7 @@ export default {
                         : [];
 
                     this.articulos = articulosActualizados;
-                    updateCache(ARTICULOS_KEY, {
-                        articulos: articulosActualizados,
-                    });
+                    updateCache(ARTICULOS_KEY, articulosActualizados);
 
                     notifyCacheChange(ARTICULOS_KEY);
                     this.dialogoAumento = false;
