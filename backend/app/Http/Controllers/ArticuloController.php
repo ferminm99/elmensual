@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Traits\ActualizaMetaTrait;
 use App\Services\CriticalStockAlertService;
+use Carbon\Carbon;
 
 class ArticuloController extends Controller
 {
