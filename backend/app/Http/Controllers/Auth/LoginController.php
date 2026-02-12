@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
 
 
 class LoginController extends Controller
@@ -20,14 +19,45 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('token-name')->plainTextToken;
+        try {
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
+                $token = $user->createToken('token-name')->plainTextToken;
 
-            return response()->json([
-                'token' => $token,
-                'user' => $user,
+                return response()->json([
+                    'token' => $token,
+                    'user' => $user,
+                ]);
+            }
+        } catch (QueryException $e) {
+            Log::warning('⚠️ Error de DB en login, reintentando conexión', [
+                'code' => $e->getCode(),
+                'message' => $e->getMessage(),
             ]);
+
+            DB::purge();
+            DB::reconnect();
+
+            try {
+                if (Auth::attempt($credentials)) {
+                    $user = Auth::user();
+                    $token = $user->createToken('token-name')->plainTextToken;
+
+                    return response()->json([
+                        'token' => $token,
+                        'user' => $user,
+                    ]);
+                }
+            } catch (QueryException $retryException) {
+                Log::error('❌ Error de DB persistente en login', [
+                    'code' => $retryException->getCode(),
+                    'message' => $retryException->getMessage(),
+                ]);
+
+                return response()->json([
+                    'message' => 'Servicio temporalmente no disponible. Intentá de nuevo en unos segundos.',
+                ], 503);
+            }
         }
 
         return response()->json(['message' => 'Credenciales inválidas'], 401);
