@@ -186,8 +186,8 @@
                 tipoBusqueda === 'Producto'
                     ? buscarPorProducto
                     : tipoBusqueda === 'Otros datos'
-                    ? buscarPorOtrosDatos
-                    : buscarPorTodo
+                      ? buscarPorOtrosDatos
+                      : buscarPorTodo
             "
             :options.sync="options"
             :item-class="getItemClass"
@@ -273,7 +273,7 @@
                     $
                     {{
                         formatCurrency(
-                            item.total_financiado ?? item.precio ?? 0
+                            item.total_financiado ?? item.precio ?? 0,
                         )
                     }}
                 </span>
@@ -452,7 +452,7 @@
                                 de $
                                 {{
                                     formatCurrency(
-                                        totalFinanciadoActual.importe
+                                        totalFinanciadoActual.importe,
                                     )
                                 }}
                             </div>
@@ -505,13 +505,13 @@
                                             — Total: $
                                             {{
                                                 formatCurrency(
-                                                    producto.total_financiado
+                                                    producto.total_financiado,
                                                 )
                                             }}
                                             — Cuota: $
                                             {{
                                                 formatCurrency(
-                                                    producto.importe_cuota
+                                                    producto.importe_cuota,
                                                 )
                                             }}
                                         </template>
@@ -1157,7 +1157,7 @@ export default {
                     axios.get("/api/ventas/listar").then((r) => r.data),
                 onData: (data) => {
                     this.ventas = data.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
                     );
                     this.ventasFiltradas = this.ventas;
                 },
@@ -1206,7 +1206,7 @@ export default {
             if (!this.form.cuota_id) return null;
             return (
                 this.cuotasDisponiblesVenta.find(
-                    (cuota) => cuota.id === this.form.cuota_id
+                    (cuota) => cuota.id === this.form.cuota_id,
                 ) || null
             );
         },
@@ -1216,7 +1216,7 @@ export default {
 
             const base = Number(this.articuloActual.precio_transferencia || 0);
             const total = this.redondearPrecio(
-                base * Number(cuota.factor_total || 0)
+                base * Number(cuota.factor_total || 0),
             );
             const cantidad = Number(cuota.cantidad_cuotas || 0);
             const importe = cantidad ? total / cantidad : 0;
@@ -1234,7 +1234,7 @@ export default {
             }
             const filtradas = this.filtrarCuotasPorFormaPago(
                 cuotas,
-                this.selectedVenta?.forma_pago || null
+                this.selectedVenta?.forma_pago || null,
             );
             return filtradas.map((cuota) => ({
                 ...cuota,
@@ -1246,14 +1246,14 @@ export default {
                 return null;
             }
             const cuota = this.cuotasDisponiblesEdicion.find(
-                (item) => item.id === this.selectedVenta.cuota_id
+                (item) => item.id === this.selectedVenta.cuota_id,
             );
             if (!cuota) {
                 return null;
             }
             const base = Number(this.selectedVenta?.precio || 0);
             const total = this.redondearPrecio(
-                base * Number(cuota.factor_total || 0)
+                base * Number(cuota.factor_total || 0),
             );
             const cantidad = Number(cuota.cantidad_cuotas || 0);
             const importe = cantidad ? total / cantidad : 0;
@@ -1363,7 +1363,7 @@ export default {
             }
             const cantidad =
                 Number(
-                    cuota.cantidad_cuotas ?? cuota?.pivot?.cantidad_cuotas ?? 0
+                    cuota.cantidad_cuotas ?? cuota?.pivot?.cantidad_cuotas ?? 0,
                 ) || 1;
             const plural = cantidad === 1 ? "cuota" : "cuotas";
             const tipo = cuota.es_con_interes ? "con interés" : "sin interés";
@@ -1411,7 +1411,7 @@ export default {
 
             const filtradas = this.filtrarCuotasPorFormaPago(
                 this.articuloActual.cuotas,
-                this.form.forma_pago
+                this.form.forma_pago,
             );
             const mapeadas = this.mapearCuotasParaSelect(filtradas);
             this.cuotasDisponiblesVenta = mapeadas;
@@ -1431,12 +1431,12 @@ export default {
 
             const filtradas = this.filtrarCuotasPorFormaPago(
                 this.selectedVenta.articulo.cuotas,
-                this.selectedVenta.forma_pago
+                this.selectedVenta.forma_pago,
             );
 
             if (
                 !filtradas.some(
-                    (cuota) => cuota.id === this.selectedVenta.cuota_id
+                    (cuota) => cuota.id === this.selectedVenta.cuota_id,
                 )
             ) {
                 this.selectedVenta.cuota_id = null;
@@ -1485,7 +1485,7 @@ export default {
             const cuota = this.productos[index].cuota;
             if (cuota) {
                 const total = this.redondearPrecio(
-                    precioRedondeado * Number(cuota.factor_total || 0)
+                    precioRedondeado * Number(cuota.factor_total || 0),
                 );
                 const cantidad = Number(cuota.cantidad_cuotas || 0);
                 this.productos[index].total_financiado = total;
@@ -1506,15 +1506,15 @@ export default {
                     // Si no hay ventas cargadas todavía, espero que se sincronicen
                     if (!this.ventas.length) {
                         console.warn(
-                            "⏳ No hay ventas cargadas aún. Esperando..."
+                            "⏳ No hay ventas cargadas aún. Esperando...",
                         );
                         await new Promise((resolve) =>
-                            setTimeout(resolve, 300)
+                            setTimeout(resolve, 300),
                         ); // Esperar 300ms
                     }
 
                     const ventaCorrespondiente = this.ventas.find(
-                        (venta) => venta.id === ultima.venta_id
+                        (venta) => venta.id === ultima.venta_id,
                     );
 
                     if (ventaCorrespondiente) {
@@ -1524,12 +1524,12 @@ export default {
                         // Guardarlo opcionalmente
                         setSimpleCache(
                             "ultimaFacturacion",
-                            ventaCorrespondiente
+                            ventaCorrespondiente,
                         );
                         notifyCacheChange("ultimaFacturacion");
                     } else {
                         console.warn(
-                            "⚠️ No se encontró la venta correspondiente en las ventas locales."
+                            "⚠️ No se encontró la venta correspondiente en las ventas locales.",
                         );
                         this.ultimaFacturacion = null;
                     }
@@ -1593,14 +1593,14 @@ export default {
                             ventas.map((v) =>
                                 v.id === ventaActualizada.id
                                     ? ventaActualizada
-                                    : v
+                                    : v,
                             ),
-                        ventaActualizada.updated_at
+                        ventaActualizada.updated_at,
                     );
 
                     // 🔁 Asegurar que esté en ventas
                     const idx = this.ventas.findIndex(
-                        (v) => v.id === ventaActualizada.id
+                        (v) => v.id === ventaActualizada.id,
                     );
                     if (idx !== -1) {
                         this.ventas[idx] = ventaActualizada;
@@ -1609,7 +1609,7 @@ export default {
                     }
 
                     this.ventas.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
                     );
                     this.ventasFiltradas = [...this.ventas];
                     this.tablaKey += 1;
@@ -1620,7 +1620,7 @@ export default {
                     // Refrescar articulos desde memoria (stock ya ajustado)
                     this.articulos = getMemoryCache(
                         ARTICULOS_TALLES_KEY,
-                        86400
+                        86400,
                     );
 
                     this.dialogCambioBombacha = false;
@@ -1694,12 +1694,12 @@ export default {
 
             // Filtrar ventas para excluir las que son en efectivo
             const ventasFiltradas = ventasPorFecha.filter(
-                (venta) => venta.forma_pago !== "efectivo"
+                (venta) => venta.forma_pago !== "efectivo",
             );
 
             if (ventasFiltradas.length === 0) {
                 alert(
-                    "No se encontraron ventas con transferencia en el rango seleccionado."
+                    "No se encontraron ventas con transferencia en el rango seleccionado.",
                 );
                 return;
             }
@@ -1721,7 +1721,7 @@ export default {
                 // Si el cliente ya existe en ventasAgrupadas, sumamos sus ventas
                 if (ventasAgrupadas[clienteKey]) {
                     ventasAgrupadas[clienteKey].total += parseFloat(
-                        venta.precio
+                        venta.precio,
                     );
                     ventasAgrupadas[clienteKey].articulos.push({
                         nombre: venta.articulo.nombre,
@@ -1748,8 +1748,8 @@ export default {
                 const cuitOCbu = cliente.cuit
                     ? `CUIT: ${cliente.cuit}`
                     : cliente.cbu
-                    ? `CBU: ${cliente.cbu}`
-                    : "Sin CUIT/CBU";
+                      ? `CBU: ${cliente.cbu}`
+                      : "Sin CUIT/CBU";
 
                 // Detalles del cliente y total de ventas
                 textoFacturacion += `Cliente: ${cliente.nombre} ${cliente.apellido}\n`;
@@ -1892,7 +1892,7 @@ export default {
 
             // Ver si todas las palabras del texto de búsqueda están en el texto completo (sin importar el orden)
             const allWordsMatch = searchText.every((word) =>
-                textoCompleto.includes(word)
+                textoCompleto.includes(word),
             );
 
             return allWordsMatch;
@@ -1977,14 +1977,14 @@ export default {
         updateVenta() {
             this.loading = true;
             this.selectedVenta.precio = this.redondearPrecio(
-                this.selectedVenta.precio
+                this.selectedVenta.precio,
             );
             axios
                 .put(`/api/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
                     costo_original: this.selectedVenta.costo_original,
                     fecha: moment(this.selectedVenta.fecha).format(
-                        "YYYY-MM-DD"
+                        "YYYY-MM-DD",
                     ),
                     forma_pago: this.selectedVenta.forma_pago,
                     cuota_id: this.selectedVenta.cuota_id,
@@ -2003,15 +2003,15 @@ export default {
                             ventas.map((v) =>
                                 v.id === ventaActualizada.id
                                     ? ventaActualizada
-                                    : v
+                                    : v,
                             ),
-                        updatedAtMs
+                        updatedAtMs,
                     );
 
                     notifyCacheChange(VENTAS_KEY);
 
                     const idx = this.ventas.findIndex(
-                        (v) => v.id === ventaActualizada.id
+                        (v) => v.id === ventaActualizada.id,
                     );
                     if (idx !== -1) {
                         this.ventas[idx] = ventaActualizada;
@@ -2020,7 +2020,7 @@ export default {
                     }
 
                     this.ventas.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
                     );
                     this.ventasFiltradas = [...this.ventas];
                     this.tablaKey += 1;
@@ -2047,21 +2047,25 @@ export default {
             this.editSelectedDialog = true;
         },
         confirmEditSelected() {
+            const precioParsed = Number(this.editSelected.precio);
+            const shouldUpdatePrecio =
+                this.editSelected.precio !== null &&
+                this.editSelected.precio !== "" &&
+                Number.isFinite(precioParsed);
+
             const payload = {
                 ids: this.selectedVentas.map((v) => v.id),
             };
-            if (
-                this.editSelected.precio !== null &&
-                this.editSelected.precio !== ""
-            ) {
-                payload.precio = this.editSelected.precio;
+
+            if (shouldUpdatePrecio) {
+                payload.precio = precioParsed;
             }
             if (this.editSelected.forma_pago) {
                 payload.forma_pago = this.editSelected.forma_pago;
             }
             if (this.editSelected.fecha) {
                 payload.fecha = moment(this.editSelected.fecha).format(
-                    "YYYY-MM-DD"
+                    "YYYY-MM-DD",
                 );
             }
             if (Object.keys(payload).length === 1) {
@@ -2081,16 +2085,16 @@ export default {
                         (ventas) =>
                             ventas.map((v) => {
                                 const nv = ventasActualizadas.find(
-                                    (u) => u.id === v.id
+                                    (u) => u.id === v.id,
                                 );
                                 return nv ? nv : v;
                             }),
-                        updatedAtMs
+                        updatedAtMs,
                     );
                     notifyCacheChange(VENTAS_KEY);
                     ventasActualizadas.forEach((venta) => {
                         const idx = this.ventas.findIndex(
-                            (v) => v.id === venta.id
+                            (v) => v.id === venta.id,
                         );
                         if (idx !== -1) {
                             this.ventas[idx] = venta;
@@ -2099,7 +2103,7 @@ export default {
                         }
                     });
                     this.ventas.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
                     );
                     this.ventasFiltradas = [...this.ventas];
                     this.tablaKey += 1;
@@ -2140,7 +2144,7 @@ export default {
                     this.ventas = removeFromCache(
                         VENTAS_KEY,
                         (venta) => venta.id === this.selectedVenta.id,
-                        updatedAt
+                        updatedAt,
                     );
 
                     notifyCacheChange(VENTAS_KEY);
@@ -2168,7 +2172,7 @@ export default {
                                                                 this
                                                                     .selectedVenta
                                                                     .color
-                                                            ]
+                                                            ],
                                                         ) || 0) + 1,
                                                 };
                                             }
@@ -2178,7 +2182,7 @@ export default {
                                 }
                                 return art;
                             });
-                        }
+                        },
                     );
                     notifyCacheChange(ARTICULOS_TALLES_KEY);
 
@@ -2211,7 +2215,7 @@ export default {
             // Recorre cada producto que fue agregado y restaura el stock localmente
             this.productos.forEach((producto) => {
                 const talle = this.tallesDisponibles.find(
-                    (t) => t.talle === producto.talle
+                    (t) => t.talle === producto.talle,
                 );
 
                 if (talle && talle[producto.color] !== undefined) {
@@ -2220,12 +2224,11 @@ export default {
 
                     // Habilitar el color en coloresDisponibles si estaba deshabilitado
                     const colorIndex = this.coloresDisponibles.findIndex(
-                        (color) => color.value === producto.color
+                        (color) => color.value === producto.color,
                     );
                     if (colorIndex !== -1) {
-                        this.coloresDisponibles[
-                            colorIndex
-                        ].props.disabled = false;
+                        this.coloresDisponibles[colorIndex].props.disabled =
+                            false;
                     }
                 }
             });
@@ -2265,7 +2268,7 @@ export default {
                     axios
                         .get("/api/articulo/listar/talles")
                         .then((r) => r.data),
-                { ttl: 86400 }
+                { ttl: 86400 },
             );
             this.articulos = data;
         },
@@ -2275,10 +2278,10 @@ export default {
             const data = await cachedFetch(
                 VENTAS_KEY,
                 () => axios.get("/api/ventas/listar").then((r) => r.data),
-                { ttl: 1000 * 60 * 60 * 24 } // 1 dia
+                { ttl: 1000 * 60 * 60 * 24 }, // 1 dia
             );
             this.ventas = data.sort(
-                (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                (a, b) => new Date(b.fecha) - new Date(a.fecha),
             );
             this.ventasFiltradas = this.ventas;
         },
@@ -2296,18 +2299,18 @@ export default {
             if (this.form.articulo_id) {
                 // Buscar el artículo seleccionado para la venta
                 articuloSeleccionado = this.articulos.find(
-                    (item) => item.id === this.form.articulo_id
+                    (item) => item.id === this.form.articulo_id,
                 );
             } else if (this.cambioBombacha.articulo_id) {
                 // Buscar el artículo seleccionado para el cambio de bombacha
                 articuloSeleccionado = this.articulos.find(
-                    (item) => item.id === this.cambioBombacha.articulo_id
+                    (item) => item.id === this.cambioBombacha.articulo_id,
                 );
             }
 
             if (articuloSeleccionado) {
                 const talleSeleccionadoObj = this.tallesDisponibles.find(
-                    (talle) => talle.talle === talleSeleccionado
+                    (talle) => talle.talle === talleSeleccionado,
                 );
 
                 if (talleSeleccionadoObj) {
@@ -2324,7 +2327,7 @@ export default {
                                     "created_at",
                                     "updated_at",
                                 ].includes(key) &&
-                                typeof talleSeleccionadoObj[key] === "number"
+                                typeof talleSeleccionadoObj[key] === "number",
                         )
                         .map((color) => {
                             const stock = talleSeleccionadoObj[color];
@@ -2339,7 +2342,7 @@ export default {
 
                     // Cargar los colores activos desde coloresDisponibles
                     this.coloresDisponibles = JSON.parse(
-                        JSON.stringify(this.coloresDisponibles)
+                        JSON.stringify(this.coloresDisponibles),
                     );
                 }
             }
@@ -2370,12 +2373,12 @@ export default {
             if (this.form.articulo_id) {
                 // Encontrar el artículo seleccionado para el registro de venta
                 articuloSeleccionado = this.articulos.find(
-                    (item) => item.id === this.form.articulo_id
+                    (item) => item.id === this.form.articulo_id,
                 );
             } else if (this.cambioBombacha.articulo_id) {
                 // Encontrar el artículo seleccionado para el cambio de bombacha
                 articuloSeleccionado = this.articulos.find(
-                    (item) => item.id === this.cambioBombacha.articulo_id
+                    (item) => item.id === this.cambioBombacha.articulo_id,
                 );
             }
 
@@ -2384,7 +2387,7 @@ export default {
                 this.articuloActual = articuloSeleccionado;
                 console.log(this.articuloActual);
                 this.tallesDisponibles = [...this.articuloActual.talles].sort(
-                    (a, b) => a.talle - b.talle
+                    (a, b) => a.talle - b.talle,
                 );
                 this.actualizarCuotasPorFormaPago();
 
@@ -2399,7 +2402,7 @@ export default {
         // Obtener el precio del artículo seleccionado
         getArticuloPrecio() {
             const articulo = this.articulos.find(
-                (item) => parseInt(item.id) === parseInt(this.form.articulo_id)
+                (item) => parseInt(item.id) === parseInt(this.form.articulo_id),
             );
             this.form.precio = articulo ? articulo.precio : 0;
             return this.form.precio;
@@ -2419,7 +2422,7 @@ export default {
         },
         agregarProducto(mantener = false) {
             const articulo = this.articulos.find(
-                (item) => item.id === this.form.articulo_id
+                (item) => item.id === this.form.articulo_id,
             );
             if (!articulo || this.form.talle === null || !this.form.color) {
                 showToast("No se pudo agregar el artículo", "error");
@@ -2432,14 +2435,14 @@ export default {
                 const precioReferencia = esVentaEnCuotas
                     ? Number(articulo.precio_transferencia || 0)
                     : this.form.forma_pago === "efectivo"
-                    ? Number(articulo.precio_efectivo || 0)
-                    : Number(articulo.precio_transferencia || 0);
+                      ? Number(articulo.precio_efectivo || 0)
+                      : Number(articulo.precio_transferencia || 0);
                 const precioBase = this.redondearPrecio(precioReferencia);
 
                 const totalFinanciado = cuotaSeleccionada
                     ? this.redondearPrecio(
                           precioBase *
-                              Number(cuotaSeleccionada.factor_total || 0)
+                              Number(cuotaSeleccionada.factor_total || 0),
                       )
                     : null;
                 const cantidadCuotas = cuotaSeleccionada
@@ -2476,7 +2479,7 @@ export default {
                 }
                 // Actualizar el stock localmente restando 1
                 const talleSeleccionado = this.tallesDisponibles.find(
-                    (talle) => talle.talle === this.form.talle
+                    (talle) => talle.talle === this.form.talle,
                 );
 
                 if (
@@ -2489,7 +2492,7 @@ export default {
                     // Si el stock llega a 0, deshabilitar el color en coloresDisponibles
                     if (talleSeleccionado[this.form.color] === 0) {
                         const colorIndex = this.coloresDisponibles.findIndex(
-                            (color) => color.value === this.form.color
+                            (color) => color.value === this.form.color,
                         );
                         if (colorIndex !== -1) {
                             // Actualizar la lista de colores activos
@@ -2514,7 +2517,7 @@ export default {
 
                 // 👁️ Revisar si ya no hay colores habilitados para ese talle
                 const talleRestante = this.tallesDisponibles.find(
-                    (t) => t.talle === this.form.talle
+                    (t) => t.talle === this.form.talle,
                 );
 
                 const coloresConStock = talleRestante
@@ -2527,7 +2530,7 @@ export default {
                                       "talle",
                                       "created_at",
                                       "updated_at",
-                                  ].includes(key)
+                                  ].includes(key),
                           )
                           .some((color) => parseInt(talleRestante[color]) > 0)
                     : false;
@@ -2570,7 +2573,7 @@ export default {
             }
             // Devolver el stock del talle y color eliminados
             const talleSeleccionado = this.tallesDisponibles.find(
-                (talle) => talle.talle === producto.talle
+                (talle) => talle.talle === producto.talle,
             );
 
             if (talleSeleccionado) {
@@ -2580,7 +2583,7 @@ export default {
                 // Habilitar el color en coloresDisponibles si el stock es mayor a 0
                 if (talleSeleccionado[producto.color] > 0) {
                     const colorIndex = this.coloresDisponibles.findIndex(
-                        (color) => color.value === producto.color
+                        (color) => color.value === producto.color,
                     );
                     if (colorIndex !== -1) {
                         // Actualizar la lista de colores activos
@@ -2596,7 +2599,7 @@ export default {
                                     };
                                 }
                                 return color;
-                            }
+                            },
                         );
                     }
                 }
@@ -2610,10 +2613,10 @@ export default {
             this.loading = true;
             this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
             this.form.cliente_nombre = this.capitalizarPalabras(
-                this.form.cliente_nombre
+                this.form.cliente_nombre,
             );
             this.form.cliente_apellido = this.capitalizarPalabras(
-                this.form.cliente_apellido
+                this.form.cliente_apellido,
             );
 
             if (!this.productos.length) {
@@ -2664,7 +2667,7 @@ export default {
                     : [];
 
                 nuevasVentas.forEach((v) =>
-                    appendToCache(VENTAS_KEY, v, v.updated_at)
+                    appendToCache(VENTAS_KEY, v, v.updated_at),
                 );
 
                 notifyCacheChange(VENTAS_KEY);
@@ -2672,7 +2675,7 @@ export default {
                 // ✅ Mostrar de inmediato en esta pestaña
                 this.ventas.push(...nuevasVentas);
                 this.ventas.sort(
-                    (a, b) => new Date(b.fecha) - new Date(a.fecha)
+                    (a, b) => new Date(b.fecha) - new Date(a.fecha),
                 );
                 this.ventasFiltradas = [...this.ventas];
                 this.tablaKey += 1;
@@ -2727,7 +2730,7 @@ export default {
                 .split(" ")
                 .map(
                     (palabra) =>
-                        palabra.charAt(0).toUpperCase() + palabra.slice(1)
+                        palabra.charAt(0).toUpperCase() + palabra.slice(1),
                 )
                 .join(" ");
         },
@@ -2898,7 +2901,9 @@ export default {
 
 .venta-dialog-card {
     border: 2px solid transparent;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .venta-dialog-card--regular {
