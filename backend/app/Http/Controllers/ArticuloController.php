@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Traits\ActualizaMetaTrait;
 use App\Services\CriticalStockAlertService;
+use App\Models\ConfiguracionPrecio;
 use Carbon\Carbon;
 
 class ArticuloController extends Controller
@@ -25,9 +26,8 @@ class ArticuloController extends Controller
     
     // Método para crear un nuevo artículo
     public function store(Request $request) {
-
-        $precios = $this->calcularPrecios($request->input('costo_original'));
-
+              $porcentajes = $this->obtenerPorcentajesConfigurados();
+        $precios = $this->calcularPrecios($request->input('costo_original'), $porcentajes['efectivo'], $porcentajes['transferencia']);
         $request->validate([
             'numero' => 'required|integer|unique:articulos,numero',
             'nombre' => 'required|string|max:255',
@@ -62,8 +62,8 @@ class ArticuloController extends Controller
     public function update(Request $request, $id) {
         $articulo = Articulo::findOrFail($id);
 
-        $precios = $this->calcularPrecios($request->input('costo_original'));
-
+        $porcentajes = $this->obtenerPorcentajesConfigurados();
+        $precios = $this->calcularPrecios($request->input('costo_original'), $porcentajes['efectivo'], $porcentajes['transferencia']);
         $request->validate([
             'numero' => 'required|integer|unique:articulos,numero,' . $articulo->id,
             'nombre' => 'required|string|max:255',
@@ -303,10 +303,9 @@ class ArticuloController extends Controller
         // }
         return round($valor / 500) * 500;
     }
-
-    private function calcularPrecios($costo)
+ private function calcularPrecios($costo, $porcentajeEfectivo = 0, $porcentajeTransferencia = 0)
     {
-        // Calcular precio efectivo según regla
+        // Calcular precio base según regla
         if ($costo >= 25000) {
             $precio_efectivo = $costo * 1.74;
             $precio_transferencia = $costo * 1.89;
@@ -318,8 +317,9 @@ class ArticuloController extends Controller
             $precio_transferencia = $costo * 1.89;
         }
 
-        // Transferencia = efectivo * 1.1
-        // $precio_transferencia = $precio_efectivo * 1.1;
+        // Aplicar porcentajes extra configurados sobre el valor base
+        $precio_efectivo *= (1 + ((float) $porcentajeEfectivo / 100));
+        $precio_transferencia *= (1 + ((float) $porcentajeTransferencia / 100));
 
         // Redondear con regla especial
         $precio_efectivo = $this->redondearPrecio($precio_efectivo, $costo);
@@ -327,7 +327,17 @@ class ArticuloController extends Controller
 
         return [
             'precio_efectivo' => $precio_efectivo,
-            'precio_transferencia' => $precio_transferencia
+            'precio_transferencia' => $precio_transferencia,
+        ];
+    }
+
+    private function obtenerPorcentajesConfigurados(): array
+    {
+        $configuracion = ConfiguracionPrecio::actual();
+
+        return [
+            'efectivo' => (float) $configuracion->porcentaje_efectivo,
+            'transferencia' => (float) $configuracion->porcentaje_transferencia,
         ];
     }
 
@@ -335,9 +345,10 @@ class ArticuloController extends Controller
     public function recalcularPreciosMasivamente()
     {
         $articulos = Articulo::all();
+        $porcentajes = $this->obtenerPorcentajesConfigurados();
 
         foreach ($articulos as $articulo) {
-            $precios = $this->calcularPrecios($articulo->costo_original);
+            $precios = $this->calcularPrecios($articulo->costo_original, $porcentajes['efectivo'], $porcentajes['transferencia']);
 
             $articulo->update([
                 'precio_efectivo' => $precios['precio_efectivo'],
@@ -354,25 +365,77 @@ class ArticuloController extends Controller
 
     public function aumentarCostoOriginal(Request $request)
     {
-        $porcentaje = $request->input('porcentaje');
+        $request->validate([
+            'porcentaje_efectivo' => 'nullable|numeric|min:-100|max:9999',
+            'porcentaje_transferencia' => 'nullable|numeric|min:-100|max:9999',
+        ]);
 
-        if (!$porcentaje || !is_numeric($porcentaje)) {
-            return response()->json(['message' => 'Porcentaje inválido.'], 400);
-        }
+        $configuracion = ConfiguracionPrecio::actual();
+        $configuracion->update([
+            'porcentaje_efectivo' => (float) $request->input('porcentaje_efectivo', $configuracion->porcentaje_efectivo),
+            'porcentaje_transferencia' => (float) $request->input('porcentaje_transferencia', $configuracion->porcentaje_transferencia),
+        ]);
 
         $articulos = Articulo::all();
-
         foreach ($articulos as $articulo) {
-            // Calcular nuevo costo con porcentaje
-            $nuevoCosto = $articulo->costo_original * (1 + $porcentaje / 100);
-
-            // Redondear a múltiplo más cercano de 5 (entero, sin coma)
-            $nuevoCosto = round($nuevoCosto / 5) * 5;
-
-            // Calcular nuevos precios
-            $precios = $this->calcularPrecios($nuevoCosto);
+            $precios = $this->calcularPrecios(
+                $articulo->costo_original,
+                $configuracion->porcentaje_efectivo,
+                $configuracion->porcentaje_transferencia
+            );
 
             $articulo->update([
+                'precio_efectivo' => $precios['precio_efectivo'],
+                'precio_transferencia' => $precios['precio_transferencia'],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Configuración de aumentos aplicada correctamente.',
+            'configuracion' => [
+                'porcentaje_efectivo' => (float) $configuracion->porcentaje_efectivo,
+                'porcentaje_transferencia' => (float) $configuracion->porcentaje_transferencia,
+            ],
+            'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get(),
+        ]);
+    }
+
+    public function obtenerConfiguracionAumentos()
+    {
+        $configuracion = ConfiguracionPrecio::actual();
+
+        return response()->json([
+            'porcentaje_efectivo' => (float) $configuracion->porcentaje_efectivo,
+            'porcentaje_transferencia' => (float) $configuracion->porcentaje_transferencia,
+        ]);
+    }
+
+
+
+    public function ajustarCostoOriginal(Request $request)
+    {
+        $request->validate([
+            'porcentaje' => 'required|numeric|not_in:0|min:-99.999|max:9999',
+        ]);
+
+        $porcentaje = (float) $request->input('porcentaje');
+        $factor = 1 + ($porcentaje / 100);
+
+        $articulos = Articulo::all();
+        $porcentajes = $this->obtenerPorcentajesConfigurados();
+
+        foreach ($articulos as $articulo) {
+            $costoAnterior = (float) $articulo->costo_original;
+            $nuevoCosto = round($costoAnterior * $factor, 2);
+
+            $precios = $this->calcularPrecios(
+                $nuevoCosto,
+                $porcentajes['efectivo'],
+                $porcentajes['transferencia']
+            );
+
+            $articulo->update([
+                'costo_original_anterior' => $costoAnterior,
                 'costo_original' => $nuevoCosto,
                 'precio_efectivo' => $precios['precio_efectivo'],
                 'precio_transferencia' => $precios['precio_transferencia'],
@@ -380,13 +443,45 @@ class ArticuloController extends Controller
         }
 
         return response()->json([
-            'message' => "Costos y precios actualizados con un incremento del $porcentaje%.",
-            'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get()
+            'message' => "Costo original ajustado en {$porcentaje}%.",
+            'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get(),
         ]);
     }
 
+    public function revertirAjusteCostoOriginal()
+    {
+        $articulos = Articulo::whereNotNull('costo_original_anterior')->get();
 
+        if ($articulos->isEmpty()) {
+            return response()->json([
+                'message' => 'No hay un ajuste de costo original para revertir.',
+            ], 400);
+        }
 
+        $porcentajes = $this->obtenerPorcentajesConfigurados();
+
+        foreach ($articulos as $articulo) {
+            $costoAnterior = (float) $articulo->costo_original_anterior;
+            $precios = $this->calcularPrecios(
+                $costoAnterior,
+                $porcentajes['efectivo'],
+                $porcentajes['transferencia']
+            );
+
+            $articulo->update([
+                'costo_original' => $costoAnterior,
+                'costo_original_anterior' => null,
+                'precio_efectivo' => $precios['precio_efectivo'],
+                'precio_transferencia' => $precios['precio_transferencia'],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Se revirtió el último ajuste de costo original.',
+            'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get(),
+        ]);
+    }
+    
     public function articulosTallesActualizadosDesde(Request $request)
     {
         $timestamp = $request->query('timestamp');

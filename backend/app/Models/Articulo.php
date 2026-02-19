@@ -17,6 +17,7 @@ class Articulo extends Model
         'nombre',
         'precio',
         'costo_original',
+        'costo_original_anterior',
         'precio_efectivo',
         'precio_transferencia',
         'es_importante',

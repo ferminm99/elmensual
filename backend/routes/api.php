@@ -51,7 +51,9 @@ Route::middleware('token-auth')->group(function () {
     Route::get('/articulos/listar', [ArticuloController::class, 'listarArticulos']);
     Route::put('/articulos/recalcular-precios', [ArticuloController::class, 'recalcularPreciosMasivamente']);
     Route::put('/articulos/aumentar-costos', [ArticuloController::class, 'aumentarCostoOriginal']);
-    Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
+Route::put('/articulos/ajustar-costo-original', [ArticuloController::class, 'ajustarCostoOriginal']);
+Route::post('/articulos/revertir-ajuste-costo-original', [ArticuloController::class, 'revertirAjusteCostoOriginal']);
+Route::get('/articulos/configuracion-aumentos', [ArticuloController::class, 'obtenerConfiguracionAumentos']);    Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
     Route::get('/articulos/talles/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionTallesArticulos']);
     Route::get('/articulos/actualizados-desde', [ArticuloController::class, 'articulosActualizadosDesde']);
     Route::get('/articulos/talles/actualizados-desde', [ArticuloController::class, 'articulosTallesActualizadosDesde']);

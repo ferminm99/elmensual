@@ -45,7 +45,12 @@
             </v-col>
             <v-col cols="auto">
                 <v-btn color="green" @click="abrirDialogoAumento">
-                    <v-icon left>mdi-percent</v-icon> Aumentar Costos
+                    <v-icon left>mdi-percent</v-icon> Configurar Aumentos
+                </v-btn>
+            </v-col>
+            <v-col cols="auto">
+                <v-btn color="deep-orange" @click="abrirDialogoCostoOriginal">
+                    <v-icon left>mdi-cash-edit</v-icon> Ajustar Costo Original
                 </v-btn>
             </v-col>
             <v-col cols="auto">
@@ -189,23 +194,86 @@
 
         <!-- Dialogos existentes (agregar/editar/eliminar) -->
         <!-- ... (los dejás como ya están) ... -->
-
         <!-- Diálogo de aumento por porcentaje -->
-        <v-dialog v-model="dialogoAumento" max-width="400px">
+        <v-dialog v-model="dialogoAumento" max-width="480px">
             <v-card>
-                <v-card-title> Aumentar Costos Originales </v-card-title>
+                <v-card-title> Configurar aumentos por canal </v-card-title>
                 <v-card-text>
+                    <v-alert
+                        type="info"
+                        variant="tonal"
+                        density="comfortable"
+                        class="mb-4"
+                    >
+                        Los porcentajes se aplican sobre el valor base calculado
+                        por costo original. Si querés volver al precio original,
+                        seteá 0%.
+                    </v-alert>
                     <v-text-field
-                        v-model="porcentajeAumento"
-                        label="Porcentaje de aumento (%)"
+                        v-model.number="porcentajeAumentoEfectivo"
+                        label="Extra en efectivo (%)"
                         type="number"
-                        required
+                        @wheel.prevent
+                    ></v-text-field>
+                    <v-text-field
+                        v-model.number="porcentajeAumentoTransferencia"
+                        label="Extra en transferencia (%)"
+                        type="number"
+                        @wheel.prevent
                     ></v-text-field>
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="dialogoAumento = false">Cancelar</v-btn>
+                    <v-btn color="secondary" text @click="restablecerAumentos">
+                        Volver a valores originales
+                    </v-btn>
                     <v-btn color="green" text @click="aumentarCostos">
                         Aplicar
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogoCostoOriginal" max-width="480px">
+            <v-card>
+                <v-card-title>
+                    Ajustar costo original masivamente
+                </v-card-title>
+                <v-card-text>
+                    <v-alert
+                        type="warning"
+                        variant="tonal"
+                        density="comfortable"
+                        class="mb-4"
+                    >
+                        Este ajuste modifica el costo original de todos los
+                        artículos. Podés revertir el último ajuste con el botón
+                        correspondiente.
+                    </v-alert>
+                    <v-text-field
+                        v-model.number="porcentajeAjusteCostoOriginal"
+                        label="Ajuste sobre costo original (%)"
+                        type="number"
+                        @wheel.prevent
+                    ></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="dialogoCostoOriginal = false"
+                        >Cancelar</v-btn
+                    >
+                    <v-btn
+                        color="secondary"
+                        text
+                        @click="revertirAjusteCostoOriginal"
+                    >
+                        Revertir último ajuste
+                    </v-btn>
+                    <v-btn
+                        color="deep-orange"
+                        text
+                        @click="ajustarCostoOriginal"
+                    >
+                        Aplicar ajuste
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -244,7 +312,7 @@
                             <v-col cols="12" md="6">
                                 <v-text-field
                                     :model-value="`$${formatCurrency(
-                                        preciosCalculados.efectivo
+                                        preciosCalculados.efectivo,
                                     )}`"
                                     label="Precio en efectivo"
                                     readonly
@@ -253,7 +321,7 @@
                             <v-col cols="12" md="6">
                                 <v-text-field
                                     :model-value="`$${formatCurrency(
-                                        preciosCalculados.transferencia
+                                        preciosCalculados.transferencia,
                                     )}`"
                                     label="Precio transferencia"
                                     readonly
@@ -286,7 +354,7 @@
                                     (base transferencia $
                                     {{
                                         formatCurrency(
-                                            preciosCalculados.transferencia
+                                            preciosCalculados.transferencia,
                                         )
                                     }})
                                 </span>
@@ -338,7 +406,7 @@
                                             $
                                             {{
                                                 formatCurrency(
-                                                    plan.totalTransferencia
+                                                    plan.totalTransferencia,
                                                 )
                                             }}
                                         </td>
@@ -346,7 +414,7 @@
                                             $
                                             {{
                                                 formatCurrency(
-                                                    plan.cuotaTransferencia
+                                                    plan.cuotaTransferencia,
                                                 )
                                             }}
                                         </td>
@@ -354,7 +422,7 @@
                                             <v-chip
                                                 v-if="
                                                     form.cuotas.includes(
-                                                        plan.id
+                                                        plan.id,
                                                     )
                                                 "
                                                 color="green"
@@ -494,10 +562,13 @@ export default {
             loadingCuotas: false,
             dialog: false,
             dialogoAumento: false,
+            dialogoCostoOriginal: false,
             confirmDeleteDialog: false,
             isEdit: false,
             articuloAEliminar: null,
-            porcentajeAumento: 0,
+            porcentajeAumentoEfectivo: 0,
+            porcentajeAumentoTransferencia: 0,
+            porcentajeAjusteCostoOriginal: 0,
             searchNombre: "",
             searchNumero: "",
             form: {
@@ -556,7 +627,7 @@ export default {
         },
         simulacionCuotas() {
             const baseTransfer = Number(
-                this.preciosCalculados.transferencia || 0
+                this.preciosCalculados.transferencia || 0,
             );
             const baseEfectivo = Number(this.preciosCalculados.efectivo || 0);
 
@@ -571,11 +642,11 @@ export default {
                 ...cuota,
                 totalTransferencia: this.calcularTotalCuota(
                     baseTransfer,
-                    cuota
+                    cuota,
                 ),
                 cuotaTransferencia: this.calcularImporteCuota(
                     baseTransfer,
-                    cuota
+                    cuota,
                 ),
             }));
         },
@@ -598,10 +669,10 @@ export default {
                 const normalized = Array.isArray(data)
                     ? data
                     : Array.isArray(data?.data)
-                    ? data.data
-                    : Array.isArray(data?.articulos)
-                    ? data.articulos
-                    : [];
+                      ? data.data
+                      : Array.isArray(data?.articulos)
+                        ? data.articulos
+                        : [];
 
                 this.articulos = normalized;
             },
@@ -609,6 +680,7 @@ export default {
         });
 
         this.fetchCuotas();
+        this.fetchConfiguracionAumentos();
     },
 
     beforeUnmount() {
@@ -622,7 +694,7 @@ export default {
                 const cuotas = await cachedFetch(
                     CUOTAS_KEY,
                     () => axios.get("/api/cuotas").then((res) => res.data),
-                    { ttl: 86400, forceRefresh: force }
+                    { ttl: 86400, forceRefresh: force },
                 );
 
                 this.cuotasDisponibles = Array.isArray(cuotas)
@@ -687,6 +759,11 @@ export default {
                 precioEfectivo = base * 1.74;
                 precioTransferencia = base * 1.89;
             }
+
+            precioEfectivo *=
+                1 + Number(this.porcentajeAumentoEfectivo || 0) / 100;
+            precioTransferencia *=
+                1 + Number(this.porcentajeAumentoTransferencia || 0) / 100;
 
             precioEfectivo = this.redondearPrecio(precioEfectivo);
             precioTransferencia = this.redondearPrecio(precioTransferencia);
@@ -766,7 +843,7 @@ export default {
                 if (this.isEditCuota && this.cuotaForm.id) {
                     await axios.put(
                         `/api/cuotas/${this.cuotaForm.id}`,
-                        payload
+                        payload,
                     );
                     showToast("Plan de cuotas actualizado", "success");
                 } else {
@@ -788,7 +865,7 @@ export default {
             if (!cuota) return;
 
             const confirmado = confirm(
-                "¿Seguro que querés eliminar este plan de cuotas?"
+                "¿Seguro que querés eliminar este plan de cuotas?",
             );
 
             if (!confirmado) {
@@ -823,14 +900,14 @@ export default {
             try {
                 // Verificar si el backend tiene una versión más nueva
                 const { data } = await axios.get(
-                    "/api/articulos/ultima-actualizacion"
+                    "/api/articulos/ultima-actualizacion",
                 );
                 const backendLastUpdate = Number(data.last_update || 0);
                 const localLastUpdate = getCacheLastUpdate(ARTICULOS_KEY);
 
                 if (backendLastUpdate > localLastUpdate) {
                     console.warn(
-                        "♻️ Backend tiene data más nueva. Reseteando caché."
+                        "♻️ Backend tiene data más nueva. Reseteando caché.",
                     );
                     localStorage.removeItem(ARTICULOS_KEY);
                     localStorage.removeItem(`${ARTICULOS_KEY}_time`);
@@ -840,16 +917,16 @@ export default {
                 const dataCache = await cachedFetch(
                     ARTICULOS_KEY,
                     () => axios.get("/api/articulos").then((res) => res.data),
-                    { ttl: 86400 }
+                    { ttl: 86400 },
                 );
 
                 this.articulos = Array.isArray(dataCache)
                     ? dataCache
                     : Array.isArray(dataCache?.articulos)
-                    ? dataCache.articulos
-                    : Array.isArray(dataCache?.data)
-                    ? dataCache.data
-                    : [];
+                      ? dataCache.articulos
+                      : Array.isArray(dataCache?.data)
+                        ? dataCache.data
+                        : [];
             } catch (err) {
                 console.error("❌ Error al inicializar artículos:", err);
                 this.articulos = [];
@@ -863,16 +940,16 @@ export default {
                 const data = await cachedFetch(
                     ARTICULOS_KEY,
                     () => axios.get("/api/articulos").then((res) => res.data),
-                    { ttl: 86400, forceRefresh: force }
+                    { ttl: 86400, forceRefresh: force },
                 );
 
                 this.articulos = Array.isArray(data)
                     ? data
                     : Array.isArray(data?.articulos)
-                    ? data.articulos
-                    : Array.isArray(data?.data)
-                    ? data.data
-                    : [];
+                      ? data.articulos
+                      : Array.isArray(data?.data)
+                        ? data.data
+                        : [];
             } catch (error) {
                 console.error("Error al cargar los artículos:", error);
                 this.articulos = [];
@@ -921,7 +998,7 @@ export default {
             this.loading = true;
 
             this.form.precio = Number(
-                this.preciosCalculados.transferencia || 0
+                this.preciosCalculados.transferencia || 0,
             );
 
             const payload = {
@@ -944,8 +1021,8 @@ export default {
                     const updated = this.isEdit
                         ? modifyInCache(ARTICULOS_KEY, (articulos) =>
                               articulos.map((a) =>
-                                  a.id === nuevo.id ? { ...nuevo } : a
-                              )
+                                  a.id === nuevo.id ? { ...nuevo } : a,
+                              ),
                           )
                         : appendToCache(ARTICULOS_KEY, nuevo);
 
@@ -959,7 +1036,7 @@ export default {
                         this.isEdit
                             ? "Artículo actualizado"
                             : "Artículo agregado",
-                        "success"
+                        "success",
                     );
                 })
                 .catch((err) => {
@@ -967,13 +1044,13 @@ export default {
                     if (err.response?.status === 422) {
                         showToast(
                             "Ya existe un artículo con ese número",
-                            "error"
+                            "error",
                         );
                     } else {
                         console.error("❌ Error inesperado:", err);
                         showToast(
                             "Ocurrió un error al guardar el artículo",
-                            "error"
+                            "error",
                         );
                     }
                 });
@@ -989,7 +1066,7 @@ export default {
                 .then(() => {
                     this.articulos = removeFromCache(
                         ARTICULOS_KEY,
-                        (a) => a.id === this.articuloAEliminar.id
+                        (a) => a.id === this.articuloAEliminar.id,
                     );
                     notifyCacheChange(ARTICULOS_KEY);
                     this.confirmDeleteDialog = false;
@@ -1012,30 +1089,141 @@ export default {
                 showToast("Precios recalculados correctamente", "success");
             });
         },
+        fetchConfiguracionAumentos() {
+            axios
+                .get("/api/articulos/configuracion-aumentos")
+                .then((res) => {
+                    this.porcentajeAumentoEfectivo = Number(
+                        res.data?.porcentaje_efectivo || 0,
+                    );
+                    this.porcentajeAumentoTransferencia = Number(
+                        res.data?.porcentaje_transferencia || 0,
+                    );
+                    this.actualizarPreciosCalculados(this.form.costo_original);
+                })
+                .catch(() => {
+                    this.porcentajeAumentoEfectivo = 0;
+                    this.porcentajeAumentoTransferencia = 0;
+                    this.actualizarPreciosCalculados(this.form.costo_original);
+                });
+        },
         abrirDialogoAumento() {
-            this.porcentajeAumento = 0;
+            this.fetchConfiguracionAumentos();
             this.dialogoAumento = true;
         },
-        aumentarCostos() {
+        abrirDialogoCostoOriginal() {
+            this.porcentajeAjusteCostoOriginal = 0;
+            this.dialogoCostoOriginal = true;
+        },
+        ajustarCostoOriginal() {
+            if (!this.porcentajeAjusteCostoOriginal) {
+                showToast("Ingresá un porcentaje distinto de 0", "error");
+                return;
+            }
+
             this.loading = true;
             axios
-                .put("/api/articulos/aumentar-costos", {
-                    porcentaje: this.porcentajeAumento,
+                .put("/api/articulos/ajustar-costo-original", {
+                    porcentaje: Number(this.porcentajeAjusteCostoOriginal),
                 })
                 .then((res) => {
                     const articulosActualizados = Array.isArray(
-                        res.data.articulos
+                        res.data.articulos,
                     )
                         ? res.data.articulos
                         : [];
 
                     this.articulos = articulosActualizados;
                     updateCache(ARTICULOS_KEY, articulosActualizados);
+                    notifyCacheChange(ARTICULOS_KEY);
+                    this.dialogoCostoOriginal = false;
+                    this.loading = false;
+                    showToast(
+                        "Costo original ajustado correctamente",
+                        "success",
+                    );
+                })
+                .catch((error) => {
+                    this.loading = false;
+                    const message =
+                        error?.response?.data?.message ||
+                        "No se pudo ajustar el costo original";
+                    showToast(message, "error");
+                });
+        },
+        revertirAjusteCostoOriginal() {
+            this.loading = true;
+            axios
+                .post("/api/articulos/revertir-ajuste-costo-original")
+                .then((res) => {
+                    const articulosActualizados = Array.isArray(
+                        res.data.articulos,
+                    )
+                        ? res.data.articulos
+                        : [];
+
+                    this.articulos = articulosActualizados;
+                    updateCache(ARTICULOS_KEY, articulosActualizados);
+                    notifyCacheChange(ARTICULOS_KEY);
+                    this.dialogoCostoOriginal = false;
+                    this.loading = false;
+                    showToast(
+                        "Se revirtió el último ajuste de costo original",
+                        "success",
+                    );
+                })
+                .catch((error) => {
+                    this.loading = false;
+                    const message =
+                        error?.response?.data?.message ||
+                        "No se pudo revertir el ajuste";
+                    showToast(message, "error");
+                });
+        },
+        restablecerAumentos() {
+            this.porcentajeAumentoEfectivo = 0;
+            this.porcentajeAumentoTransferencia = 0;
+            this.aumentarCostos();
+        },
+        aumentarCostos() {
+            this.loading = true;
+            axios
+                .put("/api/articulos/aumentar-costos", {
+                    porcentaje_efectivo: Number(
+                        this.porcentajeAumentoEfectivo || 0,
+                    ),
+                    porcentaje_transferencia: Number(
+                        this.porcentajeAumentoTransferencia || 0,
+                    ),
+                })
+                .then((res) => {
+                    const articulosActualizados = Array.isArray(
+                        res.data.articulos,
+                    )
+                        ? res.data.articulos
+                        : [];
+
+                    this.articulos = articulosActualizados;
+                    updateCache(ARTICULOS_KEY, articulosActualizados);
+                    this.porcentajeAumentoEfectivo = Number(
+                        res.data?.configuracion?.porcentaje_efectivo || 0,
+                    );
+                    this.porcentajeAumentoTransferencia = Number(
+                        res.data?.configuracion?.porcentaje_transferencia || 0,
+                    );
+                    this.actualizarPreciosCalculados(this.form.costo_original);
 
                     notifyCacheChange(ARTICULOS_KEY);
                     this.dialogoAumento = false;
                     this.loading = false;
-                    showToast("Precios recalculados correctamente", "success");
+                    showToast("Aumentos configurados correctamente", "success");
+                })
+                .catch(() => {
+                    this.loading = false;
+                    showToast(
+                        "No se pudieron configurar los aumentos",
+                        "error",
+                    );
                 });
         },
         async exportarExcel() {
