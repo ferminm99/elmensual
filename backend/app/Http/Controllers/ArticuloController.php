@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Traits\ActualizaMetaTrait;
 use App\Services\CriticalStockAlertService;
 use App\Models\ConfiguracionPrecio;
+use App\Models\ConfiguracionPrecioTramo;
 use Carbon\Carbon;
 
 class ArticuloController extends Controller
@@ -305,17 +306,10 @@ class ArticuloController extends Controller
     }
  private function calcularPrecios($costo, $porcentajeEfectivo = 0, $porcentajeTransferencia = 0)
     {
-        // Calcular precio base según regla
-        if ($costo >= 25000) {
-            $precio_efectivo = $costo * 1.74;
-            $precio_transferencia = $costo * 1.89;
-        } elseif ($costo < 15750) {
-            $precio_efectivo = $costo * 1.8;
-            $precio_transferencia = $costo * 1.95;
-        } else {
-            $precio_efectivo = $costo * 1.74;
-            $precio_transferencia = $costo * 1.89;
-        }
+         $tramo = $this->obtenerTramoParaCosto((float) $costo);
+
+        $precio_efectivo = (float) $costo * (float) ($tramo['factor_efectivo'] ?? 1.74);
+        $precio_transferencia = (float) $costo * (float) ($tramo['factor_transferencia'] ?? 1.89);
 
         // Aplicar porcentajes extra configurados sobre el valor base
         $precio_efectivo *= (1 + ((float) $porcentajeEfectivo / 100));
@@ -331,6 +325,66 @@ class ArticuloController extends Controller
         ];
     }
 
+     private function obtenerTramoParaCosto(float $costo): array
+    {
+        $tramos = $this->obtenerTramosConfigurados();
+
+        foreach ($tramos as $tramo) {
+            $min = is_null($tramo['min_costo']) ? null : (float) $tramo['min_costo'];
+            $max = is_null($tramo['max_costo']) ? null : (float) $tramo['max_costo'];
+
+            if ((is_null($min) || $costo >= $min) && (is_null($max) || $costo <= $max)) {
+                return $tramo;
+            }
+        }
+
+        return [
+            'factor_efectivo' => 1.74,
+            'factor_transferencia' => 1.89,
+        ];
+    }
+
+    private function obtenerTramosConfigurados(): array
+    {
+        $tramos = ConfiguracionPrecioTramo::query()
+            ->where('activo', true)
+            ->orderBy('orden')
+            ->orderBy('id')
+            ->get(['min_costo', 'max_costo', 'factor_efectivo', 'factor_transferencia'])
+            ->map(fn ($tramo) => [
+                'min_costo' => is_null($tramo->min_costo) ? null : (float) $tramo->min_costo,
+                'max_costo' => is_null($tramo->max_costo) ? null : (float) $tramo->max_costo,
+                'factor_efectivo' => (float) $tramo->factor_efectivo,
+                'factor_transferencia' => (float) $tramo->factor_transferencia,
+            ])
+            ->toArray();
+
+        if (!count($tramos)) {
+            return [
+                [
+                    'min_costo' => null,
+                    'max_costo' => 15749.99,
+                    'factor_efectivo' => 1.8,
+                    'factor_transferencia' => 1.95,
+                ],
+                [
+                    'min_costo' => 15750,
+                    'max_costo' => 24999.99,
+                    'factor_efectivo' => 1.74,
+                    'factor_transferencia' => 1.89,
+                ],
+                [
+                    'min_costo' => 25000,
+                    'max_costo' => null,
+                    'factor_efectivo' => 1.74,
+                    'factor_transferencia' => 1.89,
+                ],
+            ];
+        }
+
+        return $tramos;
+    }
+    
     private function obtenerPorcentajesConfigurados(): array
     {
         $configuracion = ConfiguracionPrecio::actual();
@@ -395,6 +449,7 @@ class ArticuloController extends Controller
             'configuracion' => [
                 'porcentaje_efectivo' => (float) $configuracion->porcentaje_efectivo,
                 'porcentaje_transferencia' => (float) $configuracion->porcentaje_transferencia,
+                'tramos' => $this->obtenerTramosConfigurados(),
             ],
             'articulos' => Articulo::with('cuotas')->orderBy('nombre')->get(),
         ]);
@@ -407,6 +462,7 @@ class ArticuloController extends Controller
         return response()->json([
             'porcentaje_efectivo' => (float) $configuracion->porcentaje_efectivo,
             'porcentaje_transferencia' => (float) $configuracion->porcentaje_transferencia,
+            'tramos' => $this->obtenerTramosConfigurados(),
         ]);
     }
 

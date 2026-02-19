@@ -54,6 +54,11 @@
                 </v-btn>
             </v-col>
             <v-col cols="auto">
+                <v-btn color="indigo" @click="abrirDialogoTramos">
+                    <v-icon left>mdi-tune-variant</v-icon> Configurar Límites
+                </v-btn>
+            </v-col>
+            <v-col cols="auto">
                 <v-btn color="orange" class="ml-2" @click="exportarExcel">
                     <v-icon left>mdi-download</v-icon> Exportar Excel
                 </v-btn>
@@ -230,6 +235,126 @@
                     <v-btn color="green" text @click="aumentarCostos">
                         Aplicar
                     </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogoTramos" max-width="900px">
+            <v-card>
+                <v-card-title
+                    >Configurar límites y factores por costo</v-card-title
+                >
+                <v-card-text>
+                    <v-alert
+                        type="info"
+                        variant="tonal"
+                        density="comfortable"
+                        class="mb-4"
+                    >
+                        Acá podés definir reglas tipo: desde 30.000 usar x0.75
+                        (o el factor que quieras).
+                    </v-alert>
+
+                    <v-row>
+                        <v-col cols="12" md="3">
+                            <v-text-field
+                                v-model.number="tramoForm.min_costo"
+                                label="Desde (opcional)"
+                                type="number"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="3">
+                            <v-text-field
+                                v-model.number="tramoForm.max_costo"
+                                label="Hasta (opcional)"
+                                type="number"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="tramoForm.factor_efectivo"
+                                label="Factor efectivo"
+                                type="number"
+                                step="0.01"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="tramoForm.factor_transferencia"
+                                label="Factor transferencia"
+                                type="number"
+                                step="0.01"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2" class="d-flex align-center">
+                            <v-btn color="indigo" block @click="guardarTramo">
+                                {{ isEditTramo ? "Guardar" : "Agregar" }}
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+
+                    <v-table density="compact">
+                        <thead>
+                            <tr>
+                                <th>Rango</th>
+                                <th class="text-right">Efectivo</th>
+                                <th class="text-right">Transferencia</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="tramo in tramosConfigurados"
+                                :key="tramo.id"
+                            >
+                                <td>{{ formatearRangoTramo(tramo) }}</td>
+                                <td class="text-right">
+                                    x{{
+                                        Number(
+                                            tramo.factor_efectivo || 0,
+                                        ).toFixed(2)
+                                    }}
+                                </td>
+                                <td class="text-right">
+                                    x{{
+                                        Number(
+                                            tramo.factor_transferencia || 0,
+                                        ).toFixed(2)
+                                    }}
+                                </td>
+                                <td class="text-center">
+                                    <v-btn
+                                        icon
+                                        variant="text"
+                                        @click="editarTramo(tramo)"
+                                    >
+                                        <v-icon color="black"
+                                            >mdi-pencil-outline</v-icon
+                                        >
+                                    </v-btn>
+                                    <v-btn
+                                        icon
+                                        variant="text"
+                                        @click="eliminarTramo(tramo)"
+                                    >
+                                        <v-icon color="red">mdi-delete</v-icon>
+                                    </v-btn>
+                                </td>
+                            </tr>
+                            <tr v-if="!tramosConfigurados.length">
+                                <td colspan="4" class="text-center text-grey">
+                                    No hay tramos configurados.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </v-table>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="cerrarDialogoTramos">Cerrar</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -563,12 +688,22 @@ export default {
             dialog: false,
             dialogoAumento: false,
             dialogoCostoOriginal: false,
+            dialogoTramos: false,
             confirmDeleteDialog: false,
             isEdit: false,
             articuloAEliminar: null,
             porcentajeAumentoEfectivo: 0,
             porcentajeAumentoTransferencia: 0,
             porcentajeAjusteCostoOriginal: 0,
+            tramosConfigurados: [],
+            isEditTramo: false,
+            tramoForm: {
+                id: null,
+                min_costo: null,
+                max_costo: null,
+                factor_efectivo: 1,
+                factor_transferencia: 1,
+            },
             searchNombre: "",
             searchNumero: "",
             form: {
@@ -736,6 +871,34 @@ export default {
             if (!numero) return 0;
             return Math.round(numero / 500) * 500;
         },
+        obtenerTramoParaCosto(costo) {
+            const tramos = Array.isArray(this.tramosConfigurados)
+                ? this.tramosConfigurados
+                : [];
+
+            for (const tramo of tramos) {
+                const min =
+                    tramo.min_costo === null || tramo.min_costo === undefined
+                        ? null
+                        : Number(tramo.min_costo);
+                const max =
+                    tramo.max_costo === null || tramo.max_costo === undefined
+                        ? null
+                        : Number(tramo.max_costo);
+
+                if (
+                    (min === null || costo >= min) &&
+                    (max === null || costo <= max)
+                ) {
+                    return tramo;
+                }
+            }
+
+            return {
+                factor_efectivo: costo < 15750 ? 1.8 : 1.74,
+                factor_transferencia: costo < 15750 ? 1.95 : 1.89,
+            };
+        },
         calcularPreciosDesdeCosto(costo) {
             const base = Number(costo || 0);
 
@@ -746,19 +909,10 @@ export default {
                 };
             }
 
-            let precioEfectivo = 0;
-            let precioTransferencia = 0;
-
-            if (base >= 25000) {
-                precioEfectivo = base * 1.74;
-                precioTransferencia = base * 1.89;
-            } else if (base < 15750) {
-                precioEfectivo = base * 1.8;
-                precioTransferencia = base * 1.95;
-            } else {
-                precioEfectivo = base * 1.74;
-                precioTransferencia = base * 1.89;
-            }
+            const tramo = this.obtenerTramoParaCosto(base);
+            let precioEfectivo = base * Number(tramo.factor_efectivo || 1.74);
+            let precioTransferencia =
+                base * Number(tramo.factor_transferencia || 1.89);
 
             precioEfectivo *=
                 1 + Number(this.porcentajeAumentoEfectivo || 0) / 100;
@@ -1099,17 +1253,138 @@ export default {
                     this.porcentajeAumentoTransferencia = Number(
                         res.data?.porcentaje_transferencia || 0,
                     );
+                    this.tramosConfigurados = Array.isArray(res.data?.tramos)
+                        ? res.data.tramos
+                        : [];
                     this.actualizarPreciosCalculados(this.form.costo_original);
                 })
                 .catch(() => {
                     this.porcentajeAumentoEfectivo = 0;
                     this.porcentajeAumentoTransferencia = 0;
+                    this.tramosConfigurados = [];
                     this.actualizarPreciosCalculados(this.form.costo_original);
                 });
         },
         abrirDialogoAumento() {
             this.fetchConfiguracionAumentos();
             this.dialogoAumento = true;
+        },
+        async fetchTramosConfigurados() {
+            try {
+                const res = await axios.get(
+                    "/api/articulos/configuracion-tramos",
+                );
+                this.tramosConfigurados = Array.isArray(res.data?.tramos)
+                    ? res.data.tramos
+                    : [];
+                this.actualizarPreciosCalculados(this.form.costo_original);
+            } catch (error) {
+                this.tramosConfigurados = [];
+            }
+        },
+        abrirDialogoTramos() {
+            this.fetchTramosConfigurados();
+            this.dialogoTramos = true;
+        },
+        cerrarDialogoTramos() {
+            this.dialogoTramos = false;
+            this.resetTramoForm();
+        },
+        resetTramoForm() {
+            this.isEditTramo = false;
+            this.tramoForm = {
+                id: null,
+                min_costo: null,
+                max_costo: null,
+                factor_efectivo: 1,
+                factor_transferencia: 1,
+            };
+        },
+        editarTramo(tramo) {
+            this.isEditTramo = true;
+            this.tramoForm = {
+                id: tramo.id,
+                min_costo: tramo.min_costo,
+                max_costo: tramo.max_costo,
+                factor_efectivo: Number(tramo.factor_efectivo || 1),
+                factor_transferencia: Number(tramo.factor_transferencia || 1),
+            };
+        },
+        formatearRangoTramo(tramo) {
+            const min = tramo.min_costo;
+            const max = tramo.max_costo;
+            if (min !== null && max !== null) {
+                return `$${this.formatCurrency(min)} a $${this.formatCurrency(max)}`;
+            }
+            if (min !== null) {
+                return `Desde $${this.formatCurrency(min)}`;
+            }
+            if (max !== null) {
+                return `Hasta $${this.formatCurrency(max)}`;
+            }
+            return "Todos los costos";
+        },
+        async guardarTramo() {
+            const payload = {
+                min_costo:
+                    this.tramoForm.min_costo === "" ||
+                    this.tramoForm.min_costo === null
+                        ? null
+                        : Number(this.tramoForm.min_costo),
+                max_costo:
+                    this.tramoForm.max_costo === "" ||
+                    this.tramoForm.max_costo === null
+                        ? null
+                        : Number(this.tramoForm.max_costo),
+                factor_efectivo: Number(this.tramoForm.factor_efectivo),
+                factor_transferencia: Number(
+                    this.tramoForm.factor_transferencia,
+                ),
+                orden: 0,
+                activo: true,
+            };
+
+            if (!payload.factor_efectivo || !payload.factor_transferencia) {
+                showToast("Completá los factores del tramo", "error");
+                return;
+            }
+
+            try {
+                if (this.isEditTramo && this.tramoForm.id) {
+                    await axios.put(
+                        `/api/articulos/configuracion-tramos/${this.tramoForm.id}`,
+                        payload,
+                    );
+                    showToast("Tramo actualizado", "success");
+                } else {
+                    await axios.post(
+                        "/api/articulos/configuracion-tramos",
+                        payload,
+                    );
+                    showToast("Tramo agregado", "success");
+                }
+
+                this.resetTramoForm();
+                await this.fetchTramosConfigurados();
+                this.recalcularPrecios();
+            } catch (error) {
+                const message =
+                    error?.response?.data?.message ||
+                    "No se pudo guardar el tramo";
+                showToast(message, "error");
+            }
+        },
+        async eliminarTramo(tramo) {
+            try {
+                await axios.delete(
+                    `/api/articulos/configuracion-tramos/${tramo.id}`,
+                );
+                showToast("Tramo eliminado", "success");
+                await this.fetchTramosConfigurados();
+                this.recalcularPrecios();
+            } catch (error) {
+                showToast("No se pudo eliminar el tramo", "error");
+            }
         },
         abrirDialogoCostoOriginal() {
             this.porcentajeAjusteCostoOriginal = 0;

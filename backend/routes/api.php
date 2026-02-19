@@ -9,6 +9,7 @@ use App\Http\Controllers\LocalidadController;
 use App\Http\Controllers\CuotaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CriticalStockAlertController;
+use App\Http\Controllers\ConfiguracionPrecioTramoController;
 use App\Http\Middleware\TokenAuthMiddleware;
 use Illuminate\Http\Request;
 
@@ -51,16 +52,22 @@ Route::middleware('token-auth')->group(function () {
     Route::get('/articulos/listar', [ArticuloController::class, 'listarArticulos']);
     Route::put('/articulos/recalcular-precios', [ArticuloController::class, 'recalcularPreciosMasivamente']);
     Route::put('/articulos/aumentar-costos', [ArticuloController::class, 'aumentarCostoOriginal']);
-Route::put('/articulos/ajustar-costo-original', [ArticuloController::class, 'ajustarCostoOriginal']);
-Route::post('/articulos/revertir-ajuste-costo-original', [ArticuloController::class, 'revertirAjusteCostoOriginal']);
-Route::get('/articulos/configuracion-aumentos', [ArticuloController::class, 'obtenerConfiguracionAumentos']);    Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
+    Route::put('/articulos/ajustar-costo-original', [ArticuloController::class, 'ajustarCostoOriginal']);
+    Route::post('/articulos/revertir-ajuste-costo-original', [ArticuloController::class, 'revertirAjusteCostoOriginal']);
+    Route::get('/articulos/configuracion-aumentos', [ArticuloController::class, 'obtenerConfiguracionAumentos']);
+    Route::get('/articulos/configuracion-tramos', [ConfiguracionPrecioTramoController::class, 'index']);
+    Route::post('/articulos/configuracion-tramos', [ConfiguracionPrecioTramoController::class, 'store']);
+    Route::put('/articulos/configuracion-tramos/{tramo}', [ConfiguracionPrecioTramoController::class, 'update']);
+    Route::delete('/articulos/configuracion-tramos/{tramo}', [ConfiguracionPrecioTramoController::class, 'destroy']);
+    Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
     Route::get('/articulos/talles/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionTallesArticulos']);
     Route::get('/articulos/actualizados-desde', [ArticuloController::class, 'articulosActualizadosDesde']);
     Route::get('/articulos/talles/actualizados-desde', [ArticuloController::class, 'articulosTallesActualizadosDesde']);
+
     Route::get('/alertas/criticas', [CriticalStockAlertController::class, 'index']);
     Route::post('/alertas/{alert}/vincular-pedido', [CriticalStockAlertController::class, 'vincularPedido']);
     Route::post('/alertas/{alert}/marcar-resuelto', [CriticalStockAlertController::class, 'marcarResuelto']);
-
+    
     // Cuotas
     Route::get('/cuotas', [CuotaController::class, 'index']);
     Route::post('/cuotas', [CuotaController::class, 'store']);
