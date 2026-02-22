@@ -432,24 +432,23 @@
                             required
                             @wheel.prevent
                         ></v-text-field>
-
                         <v-row dense>
                             <v-col cols="12" md="6">
                                 <v-text-field
-                                    :model-value="`$${formatCurrency(
-                                        preciosCalculados.efectivo,
-                                    )}`"
+                                    v-model.number="preciosCalculados.efectivo"
                                     label="Precio en efectivo"
-                                    readonly
+                                    type="number"
+                                    @wheel.prevent
                                 ></v-text-field>
                             </v-col>
                             <v-col cols="12" md="6">
                                 <v-text-field
-                                    :model-value="`$${formatCurrency(
-                                        preciosCalculados.transferencia,
-                                    )}`"
+                                    v-model.number="
+                                        preciosCalculados.transferencia
+                                    "
                                     label="Precio transferencia"
-                                    readonly
+                                    type="number"
+                                    @wheel.prevent
                                 ></v-text-field>
                             </v-col>
                         </v-row>
@@ -1125,7 +1124,6 @@ export default {
                 efectivo: 0,
                 transferencia: 0,
             };
-            this.actualizarPreciosCalculados(this.form.costo_original);
             this.dialog = true;
         },
         openEditDialog(item) {
@@ -1160,6 +1158,10 @@ export default {
                 nombre: this.form.nombre,
                 precio: Number(this.form.precio),
                 costo_original: Number(this.form.costo_original),
+                precio_efectivo: Number(this.preciosCalculados.efectivo || 0),
+                precio_transferencia: Number(
+                    this.preciosCalculados.transferencia || 0,
+                ),
                 cuotas: this.form.cuotas,
             };
 
