@@ -10,6 +10,7 @@ use App\Http\Controllers\CuotaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CriticalStockAlertController;
 use App\Http\Controllers\ConfiguracionPrecioTramoController;
+use App\Http\Controllers\ConfiguracionOfertaCantidadTramoController;
 use App\Http\Middleware\TokenAuthMiddleware;
 use Illuminate\Http\Request;
 
@@ -59,6 +60,11 @@ Route::middleware('token-auth')->group(function () {
     Route::post('/articulos/configuracion-tramos', [ConfiguracionPrecioTramoController::class, 'store']);
     Route::put('/articulos/configuracion-tramos/{tramo}', [ConfiguracionPrecioTramoController::class, 'update']);
     Route::delete('/articulos/configuracion-tramos/{tramo}', [ConfiguracionPrecioTramoController::class, 'destroy']);
+    Route::get('/articulos/configuracion-ofertas-cantidad', [ConfiguracionOfertaCantidadTramoController::class, 'index']);
+    Route::post('/articulos/configuracion-ofertas-cantidad', [ConfiguracionOfertaCantidadTramoController::class, 'store']);
+    Route::put('/articulos/configuracion-ofertas-cantidad/{tramo}', [ConfiguracionOfertaCantidadTramoController::class, 'update']);
+    Route::delete('/articulos/configuracion-ofertas-cantidad/{tramo}', [ConfiguracionOfertaCantidadTramoController::class, 'destroy']);
+    Route::post('/articulos/configuracion-ofertas-cantidad/seed-inicial', [ConfiguracionOfertaCantidadTramoController::class, 'seedInicial']);
     Route::get('/articulos/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionArticulos']);
     Route::get('/articulos/talles/ultima-actualizacion', [ArticuloController::class, 'ultimaActualizacionTallesArticulos']);
     Route::get('/articulos/actualizados-desde', [ArticuloController::class, 'articulosActualizadosDesde']);

@@ -59,6 +59,12 @@
                 </v-btn>
             </v-col>
             <v-col cols="auto">
+                <v-btn color="purple" @click="abrirDialogoOfertasCantidad">
+                    <v-icon left>mdi-tag-multiple</v-icon> Configurar Ofertas
+                    +10
+                </v-btn>
+            </v-col>
+            <v-col cols="auto">
                 <v-btn color="orange" class="ml-2" @click="exportarExcel">
                     <v-icon left>mdi-download</v-icon> Exportar Excel
                 </v-btn>
@@ -355,6 +361,169 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="cerrarDialogoTramos">Cerrar</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="dialogoOfertasCantidad" max-width="1100px">
+            <v-card>
+                <v-card-title>Configurar ofertas +10 (prendas)</v-card-title>
+                <v-card-text>
+                    <v-alert
+                        type="info"
+                        variant="tonal"
+                        density="comfortable"
+                        class="mb-4"
+                    >
+                        Definí factores por cantidad de prendas y rango de costo
+                        original. Si el carrito tiene 10+ prendas, estas reglas
+                        reemplazan el factor base.
+                    </v-alert>
+
+                    <v-row>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="ofertaCantidadForm.min_prendas"
+                                label="Desde prendas"
+                                type="number"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="ofertaCantidadForm.max_prendas"
+                                label="Hasta prendas (opcional)"
+                                type="number"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="ofertaCantidadForm.min_costo"
+                                label="Desde costo"
+                                type="number"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="ofertaCantidadForm.max_costo"
+                                label="Hasta costo"
+                                type="number"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="
+                                    ofertaCantidadForm.factor_efectivo
+                                "
+                                label="Factor efectivo"
+                                type="number"
+                                step="0.01"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                        <v-col cols="12" md="2">
+                            <v-text-field
+                                v-model.number="
+                                    ofertaCantidadForm.factor_transferencia
+                                "
+                                label="Factor transferencia"
+                                type="number"
+                                step="0.01"
+                                @wheel.prevent
+                            />
+                        </v-col>
+                    </v-row>
+                    <v-row class="mb-3">
+                        <v-col cols="12" md="4">
+                            <v-btn
+                                color="purple"
+                                block
+                                @click="guardarOfertaCantidad"
+                            >
+                                {{
+                                    isEditOfertaCantidad
+                                        ? "Guardar regla"
+                                        : "Agregar regla"
+                                }}
+                            </v-btn>
+                        </v-col>
+                        <v-col cols="12" md="4">
+                            <v-btn
+                                color="deep-purple"
+                                variant="outlined"
+                                block
+                                @click="cargarSetInicialOfertasCantidad"
+                            >
+                                Cargar set inicial sugerido
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+
+                    <v-table density="compact">
+                        <thead>
+                            <tr>
+                                <th>Rango prendas</th>
+                                <th>Rango costo</th>
+                                <th class="text-right">Efectivo</th>
+                                <th class="text-right">Transferencia</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="tramo in ofertasCantidadConfiguradas"
+                                :key="tramo.id"
+                            >
+                                <td>{{ formatearRangoPrendas(tramo) }}</td>
+                                <td>{{ formatearRangoTramo(tramo) }}</td>
+                                <td class="text-right">
+                                    x{{
+                                        Number(
+                                            tramo.factor_efectivo || 0,
+                                        ).toFixed(2)
+                                    }}
+                                </td>
+                                <td class="text-right">
+                                    x{{
+                                        Number(
+                                            tramo.factor_transferencia || 0,
+                                        ).toFixed(2)
+                                    }}
+                                </td>
+                                <td class="text-center">
+                                    <v-btn
+                                        icon
+                                        variant="text"
+                                        @click="editarOfertaCantidad(tramo)"
+                                    >
+                                        <v-icon color="black"
+                                            >mdi-pencil-outline</v-icon
+                                        >
+                                    </v-btn>
+                                    <v-btn
+                                        icon
+                                        variant="text"
+                                        @click="eliminarOfertaCantidad(tramo)"
+                                    >
+                                        <v-icon color="red">mdi-delete</v-icon>
+                                    </v-btn>
+                                </td>
+                            </tr>
+                            <tr v-if="!ofertasCantidadConfiguradas.length">
+                                <td colspan="5" class="text-center text-grey">
+                                    No hay reglas de oferta configuradas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </v-table>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="cerrarDialogoOfertasCantidad"
+                        >Cerrar</v-btn
+                    >
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -688,6 +857,7 @@ export default {
             dialogoAumento: false,
             dialogoCostoOriginal: false,
             dialogoTramos: false,
+            dialogoOfertasCantidad: false,
             confirmDeleteDialog: false,
             isEdit: false,
             articuloAEliminar: null,
@@ -695,9 +865,20 @@ export default {
             porcentajeAumentoTransferencia: 0,
             porcentajeAjusteCostoOriginal: 0,
             tramosConfigurados: [],
+            ofertasCantidadConfiguradas: [],
             isEditTramo: false,
+            isEditOfertaCantidad: false,
             tramoForm: {
                 id: null,
+                min_costo: null,
+                max_costo: null,
+                factor_efectivo: 1,
+                factor_transferencia: 1,
+            },
+            ofertaCantidadForm: {
+                id: null,
+                min_prendas: 10,
+                max_prendas: null,
                 min_costo: null,
                 max_costo: null,
                 factor_efectivo: 1,
@@ -1386,6 +1567,151 @@ export default {
                 this.recalcularPrecios();
             } catch (error) {
                 showToast("No se pudo eliminar el tramo", "error");
+            }
+        },
+        async fetchOfertasCantidadConfiguradas() {
+            try {
+                const res = await axios.get(
+                    "/api/articulos/configuracion-ofertas-cantidad",
+                );
+                this.ofertasCantidadConfiguradas = Array.isArray(
+                    res.data?.tramos,
+                )
+                    ? res.data.tramos
+                    : [];
+            } catch (error) {
+                this.ofertasCantidadConfiguradas = [];
+            }
+        },
+        abrirDialogoOfertasCantidad() {
+            this.fetchOfertasCantidadConfiguradas();
+            this.dialogoOfertasCantidad = true;
+        },
+        cerrarDialogoOfertasCantidad() {
+            this.dialogoOfertasCantidad = false;
+            this.resetOfertaCantidadForm();
+        },
+        resetOfertaCantidadForm() {
+            this.isEditOfertaCantidad = false;
+            this.ofertaCantidadForm = {
+                id: null,
+                min_prendas: 10,
+                max_prendas: null,
+                min_costo: null,
+                max_costo: null,
+                factor_efectivo: 1,
+                factor_transferencia: 1,
+            };
+        },
+        editarOfertaCantidad(tramo) {
+            this.isEditOfertaCantidad = true;
+            this.ofertaCantidadForm = {
+                id: tramo.id,
+                min_prendas: Number(tramo.min_prendas || 10),
+                max_prendas:
+                    tramo.max_prendas === null ||
+                    tramo.max_prendas === undefined
+                        ? null
+                        : Number(tramo.max_prendas),
+                min_costo: tramo.min_costo,
+                max_costo: tramo.max_costo,
+                factor_efectivo: Number(tramo.factor_efectivo || 1),
+                factor_transferencia: Number(tramo.factor_transferencia || 1),
+            };
+        },
+        formatearRangoPrendas(tramo) {
+            const min = tramo.min_prendas;
+            const max = tramo.max_prendas;
+            if (min !== null && max !== null) {
+                return `${min} a ${max}`;
+            }
+            if (min !== null) {
+                return `${min}+`;
+            }
+            return "Todos";
+        },
+        async guardarOfertaCantidad() {
+            const payload = {
+                min_prendas: Number(this.ofertaCantidadForm.min_prendas),
+                max_prendas:
+                    this.ofertaCantidadForm.max_prendas === "" ||
+                    this.ofertaCantidadForm.max_prendas === null
+                        ? null
+                        : Number(this.ofertaCantidadForm.max_prendas),
+                min_costo:
+                    this.ofertaCantidadForm.min_costo === "" ||
+                    this.ofertaCantidadForm.min_costo === null
+                        ? null
+                        : Number(this.ofertaCantidadForm.min_costo),
+                max_costo:
+                    this.ofertaCantidadForm.max_costo === "" ||
+                    this.ofertaCantidadForm.max_costo === null
+                        ? null
+                        : Number(this.ofertaCantidadForm.max_costo),
+                factor_efectivo: Number(
+                    this.ofertaCantidadForm.factor_efectivo,
+                ),
+                factor_transferencia: Number(
+                    this.ofertaCantidadForm.factor_transferencia,
+                ),
+                orden: 0,
+                activo: true,
+            };
+
+            if (
+                !payload.min_prendas ||
+                !payload.factor_efectivo ||
+                !payload.factor_transferencia
+            ) {
+                showToast("Completá prendas mínimas y factores", "error");
+                return;
+            }
+
+            try {
+                if (this.isEditOfertaCantidad && this.ofertaCantidadForm.id) {
+                    await axios.put(
+                        `/api/articulos/configuracion-ofertas-cantidad/${this.ofertaCantidadForm.id}`,
+                        payload,
+                    );
+                    showToast("Regla de oferta actualizada", "success");
+                } else {
+                    await axios.post(
+                        "/api/articulos/configuracion-ofertas-cantidad",
+                        payload,
+                    );
+                    showToast("Regla de oferta agregada", "success");
+                }
+
+                this.resetOfertaCantidadForm();
+                await this.fetchOfertasCantidadConfiguradas();
+            } catch (error) {
+                const message =
+                    error?.response?.data?.message ||
+                    "No se pudo guardar la regla de oferta";
+                showToast(message, "error");
+            }
+        },
+        async eliminarOfertaCantidad(tramo) {
+            try {
+                await axios.delete(
+                    `/api/articulos/configuracion-ofertas-cantidad/${tramo.id}`,
+                );
+                showToast("Regla de oferta eliminada", "success");
+                await this.fetchOfertasCantidadConfiguradas();
+            } catch (error) {
+                showToast("No se pudo eliminar la regla de oferta", "error");
+            }
+        },
+        async cargarSetInicialOfertasCantidad() {
+            try {
+                await axios.post(
+                    "/api/articulos/configuracion-ofertas-cantidad/seed-inicial",
+                );
+                showToast("Set inicial cargado", "success");
+                this.resetOfertaCantidadForm();
+                await this.fetchOfertasCantidadConfiguradas();
+            } catch (error) {
+                showToast("No se pudo cargar el set inicial", "error");
             }
         },
         abrirDialogoCostoOriginal() {
