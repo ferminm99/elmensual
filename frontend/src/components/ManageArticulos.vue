@@ -29,6 +29,28 @@
                     clearable
                 ></v-text-field>
             </v-col>
+            <v-col cols="12" sm="6" md="4" class="d-flex align-center">
+                <v-switch
+                    v-model="previewOfertaCantidad"
+                    color="purple"
+                    hide-details
+                    inset
+                    label="Preview oferta +10"
+                ></v-switch>
+            </v-col>
+
+            <v-col v-if="previewOfertaCantidad" cols="12" sm="6" md="4">
+                <v-select
+                    v-model="previewOfertaCantidadRango"
+                    :items="rangosPreviewOfertaCantidad"
+                    item-title="label"
+                    item-value="value"
+                    label="Rango de prendas"
+                    dense
+                    solo
+                    hide-details
+                ></v-select>
+            </v-col>
         </v-row>
 
         <!-- Botones más juntos en una sola fila -->
@@ -76,10 +98,10 @@
                 ${{ formatCurrency(item.costo_original) }}
             </template>
             <template #item.precio_efectivo="{ item }">
-                ${{ formatCurrency(item.precio_efectivo) }}
+                ${{ formatCurrency(getPrecioVisual(item, "efectivo")) }}
             </template>
             <template #item.precio_transferencia="{ item }">
-                ${{ formatCurrency(item.precio_transferencia) }}
+                ${{ formatCurrency(getPrecioVisual(item, "transferencia")) }}
             </template>
             <template #item.cuotas="{ item }">
                 <div class="cuotas-chips">
@@ -866,6 +888,14 @@ export default {
             porcentajeAjusteCostoOriginal: 0,
             tramosConfigurados: [],
             ofertasCantidadConfiguradas: [],
+            previewOfertaCantidad: false,
+            previewOfertaCantidadRango: "10-14",
+            rangosPreviewOfertaCantidad: [
+                { label: "10-14", value: "10-14", min: 10, max: 14 },
+                { label: "15-19", value: "15-19", min: 15, max: 19 },
+                { label: "20-29", value: "20-29", min: 20, max: 29 },
+                { label: "30+", value: "30+", min: 30, max: null },
+            ],
             isEditTramo: false,
             isEditOfertaCantidad: false,
             tramoForm: {
@@ -908,7 +938,7 @@ export default {
                 factor_total: 1,
                 es_con_interes: false,
             },
-            headers: [
+            headersBase: [
                 { title: "Número", key: "numero" },
                 { title: "Nombre", key: "nombre" },
                 { title: "Costo Original", key: "costo_original" },
@@ -925,6 +955,21 @@ export default {
         };
     },
     computed: {
+        headers() {
+            if (!this.previewOfertaCantidad) {
+                return this.headersBase;
+            }
+
+            return this.headersBase.map((header) => {
+                if (header.key === "precio_efectivo") {
+                    return { ...header, title: "Oferta +10 Efectivo" };
+                }
+                if (header.key === "precio_transferencia") {
+                    return { ...header, title: "Oferta +10 Transferencia" };
+                }
+                return header;
+            });
+        },
         articulosFiltrados() {
             const list = Array.isArray(this.articulos) ? this.articulos : [];
             const normalizar = (str) =>
@@ -971,6 +1016,11 @@ export default {
             handler(valor) {
                 this.actualizarPreciosCalculados(valor);
             },
+        },
+        previewOfertaCantidad(valor) {
+            if (valor && !this.ofertasCantidadConfiguradas.length) {
+                this.fetchOfertasCantidadConfiguradas();
+            }
         },
     },
     mounted() {
@@ -1032,6 +1082,72 @@ export default {
             const factor = Number(cuota.factor_total || 0).toFixed(2);
             const plural = cantidad === 1 ? "" : "s";
             return `${cantidad} cuota${plural} ${tipo} (x${factor})`;
+        },
+        getPrecioVisual(item, canal) {
+            const base = Number(
+                canal === "efectivo"
+                    ? item.precio_efectivo || 0
+                    : item.precio_transferencia || 0,
+            );
+
+            if (!this.previewOfertaCantidad) {
+                return base;
+            }
+
+            const regla = this.getReglaOfertaCantidad(item);
+            if (!regla) {
+                return base;
+            }
+
+            const factor = Number(
+                canal === "efectivo"
+                    ? regla.factor_efectivo || 1
+                    : regla.factor_transferencia || 1,
+            );
+
+            return base * factor;
+        },
+        getReglaOfertaCantidad(item) {
+            const rango = this.rangosPreviewOfertaCantidad.find(
+                (opcion) => opcion.value === this.previewOfertaCantidadRango,
+            );
+            if (!rango) {
+                return null;
+            }
+
+            const costoOriginal = Number(item.costo_original || 0);
+
+            return this.ofertasCantidadConfiguradas.find((tramo) => {
+                const minPrendas =
+                    tramo.min_prendas === null ||
+                    tramo.min_prendas === undefined
+                        ? null
+                        : Number(tramo.min_prendas);
+                const maxPrendas =
+                    tramo.max_prendas === null ||
+                    tramo.max_prendas === undefined
+                        ? null
+                        : Number(tramo.max_prendas);
+                const minCosto =
+                    tramo.min_costo === null || tramo.min_costo === undefined
+                        ? null
+                        : Number(tramo.min_costo);
+                const maxCosto =
+                    tramo.max_costo === null || tramo.max_costo === undefined
+                        ? null
+                        : Number(tramo.max_costo);
+
+                const matchPrendas =
+                    (minPrendas === null || rango.min >= minPrendas) &&
+                    (maxPrendas === null ||
+                        (rango.max !== null && rango.max <= maxPrendas));
+
+                const matchCosto =
+                    (minCosto === null || costoOriginal >= minCosto) &&
+                    (maxCosto === null || costoOriginal <= maxCosto);
+
+                return Boolean(matchPrendas && matchCosto);
+            });
         },
         formatCuotasList(cuotas) {
             if (!Array.isArray(cuotas) || !cuotas.length) {
