@@ -1084,19 +1084,24 @@ export default {
             return `${cantidad} cuota${plural} ${tipo} (x${factor})`;
         },
         getPrecioVisual(item, canal) {
-            const base = Number(
+            const precioPublicado = Number(
                 canal === "efectivo"
                     ? item.precio_efectivo || 0
                     : item.precio_transferencia || 0,
             );
 
             if (!this.previewOfertaCantidad) {
-                return base;
+                return precioPublicado;
             }
 
             const regla = this.getReglaOfertaCantidad(item);
             if (!regla) {
-                return base;
+                return precioPublicado;
+            }
+
+            const costoBase = Number(item.costo_original || 0);
+            if (!costoBase) {
+                return precioPublicado;
             }
 
             const factor = Number(
@@ -1105,7 +1110,7 @@ export default {
                     : regla.factor_transferencia || 1,
             );
 
-            return base * factor;
+            return costoBase * factor;
         },
         getReglaOfertaCantidad(item) {
             const rango = this.rangosPreviewOfertaCantidad.find(
