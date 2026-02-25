@@ -893,7 +893,8 @@ export default {
             rangosPreviewOfertaCantidad: [
                 { label: "10-14", value: "10-14", min: 10, max: 14 },
                 { label: "15-19", value: "15-19", min: 15, max: 19 },
-                { label: "20-29", value: "20-29", min: 20, max: 29 },
+                { label: "20-24", value: "20-24", min: 20, max: 24 },
+                { label: "25-29", value: "25-29", min: 25, max: 29 },
                 { label: "30+", value: "30+", min: 30, max: null },
             ],
             isEditTramo: false,
