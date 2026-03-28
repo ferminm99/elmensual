@@ -1038,10 +1038,10 @@ export default {
             dialogoFechas: false, // Control del diálogo de fechas
             filtroAplicado: false, // Para mostrar el total solo si se aplicó el filtro
             dialogFacturacion: false,
-            fechaDesdeFacturar: moment().startOf("month").toDate(), // Fecha desde seleccionada
-            fechaHastaFacturar: moment().toDate(), // Fecha desde seleccionada
-            fechaHasta: moment().toDate(), // Fecha hasta seleccionada
-            fechaDesde: moment().startOf("month").toDate(), // Variable para la fecha seleccionada de facturacion
+            fechaDesdeFacturar: moment().startOf("month").format("YYYY-MM-DD"), // Fecha desde seleccionada
+            fechaHastaFacturar: moment().format("YYYY-MM-DD"), // Fecha hasta seleccionada
+            fechaHasta: moment().format("YYYY-MM-DD"), // Fecha hasta seleccionada
+            fechaDesde: moment().startOf("month").format("YYYY-MM-DD"), // Variable para la fecha seleccionada de facturacion
             dialogFechas: false,
             ventasFiltradas: [],
             overlay: false,
@@ -1102,7 +1102,7 @@ export default {
                 cliente_cbu: "",
                 precio: 0,
                 costo_original: 0,
-                fecha: moment().toDate(),
+                fecha: moment().format("YYYY-MM-DD"),
                 forma_pago: "efectivo",
                 cuota_id: null,
             },
@@ -1163,8 +1163,8 @@ export default {
                 fetchFn: () =>
                     axios.get("/api/ventas/listar").then((r) => r.data),
                 onData: (data) => {
-                    this.ventas = data.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
+                    this.ventas = data.sort((a, b) =>
+                        this.compareFechaDesc(a.fecha, b.fecha),
                     );
                     this.ventasFiltradas = this.ventas;
                 },
@@ -1605,8 +1605,8 @@ export default {
                         this.ventas.push(ventaActualizada);
                     }
 
-                    this.ventas.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
+                    this.ventas.sort((a, b) =>
+                        this.compareFechaDesc(a.fecha, b.fecha),
                     );
                     this.ventasFiltradas = [...this.ventas];
                     this.tablaKey += 1;
@@ -1637,8 +1637,8 @@ export default {
         cancelarFiltro() {
             this.ventasFiltradas = this.ventas; // Restablecer la lista original
             this.filtroAplicado = false; // Desactivar el indicador del filtro
-            this.fechaDesde = moment().startOf("month").toDate(); // Reiniciar la fecha desde
-            this.fechaHasta = moment().toDate(); // Reiniciar la fecha hasta
+            this.fechaDesde = moment().startOf("month").format("YYYY-MM-DD"); // Reiniciar la fecha desde
+            this.fechaHasta = moment().format("YYYY-MM-DD"); // Reiniciar la fecha hasta
         },
         aplicarFiltro() {
             if (!this.fechaDesde || !this.fechaHasta) {
@@ -1646,14 +1646,12 @@ export default {
                 return;
             }
 
-            const desde = moment(this.fechaDesde).startOf("day"); // Asegurarnos de comparar desde el inicio del día
-            const hasta = moment(this.fechaHasta).endOf("day"); // Comparar hasta el final del día
+            const desde = this.normalizeFecha(this.fechaDesde);
+            const hasta = this.normalizeFecha(this.fechaHasta);
 
-            // Filtrar las ventas dentro del rango de fechas
             this.ventasFiltradas = this.ventas.filter((venta) => {
-                const fechaVenta = moment(venta.fecha);
-                // Comparar si la fecha de la venta está entre las fechas seleccionadas
-                return fechaVenta.isBetween(desde, hasta, null, "[]");
+                const fechaVenta = this.normalizeFecha(venta.fecha);
+                return fechaVenta >= desde && fechaVenta <= hasta;
             });
 
             this.filtroAplicado = true; // Activar indicador para mostrar total
@@ -1814,11 +1812,11 @@ export default {
 
         filtrarVentasPorFecha() {
             // Convertimos la fecha desde seleccionada a formato YYYY-MM-DD
-            const desde = moment(this.fechaDesdeFacturar).format("YYYY-MM-DD");
-            const hoy = moment(this.fechaHastaFacturar).format("YYYY-MM-DD");
+            const desde = this.normalizeFecha(this.fechaDesdeFacturar);
+            const hoy = this.normalizeFecha(this.fechaHastaFacturar);
 
             return this.ventas.filter((venta) => {
-                const fechaVenta = moment(venta.fecha).format("YYYY-MM-DD");
+                const fechaVenta = this.normalizeFecha(venta.fecha);
                 return fechaVenta >= desde && fechaVenta <= hoy;
             });
         },
@@ -1965,9 +1963,25 @@ export default {
                 matchesCantidadCuotas
             );
         },
+        normalizeFecha(fecha) {
+            const parsed = moment(fecha, "YYYY-MM-DD", true);
+            if (parsed.isValid()) {
+                return parsed.format("YYYY-MM-DD");
+            }
+
+            const fallback = moment(fecha);
+            return fallback.isValid()
+                ? fallback.format("YYYY-MM-DD")
+                : moment().format("YYYY-MM-DD");
+        },
+        compareFechaDesc(fechaA, fechaB) {
+            const a = this.normalizeFecha(fechaA);
+            const b = this.normalizeFecha(fechaB);
+            return b.localeCompare(a);
+        },
         formatFecha(fecha) {
             if (!fecha) return "-";
-            const fechaMoment = moment(fecha);
+            const fechaMoment = moment(fecha, "YYYY-MM-DD", true);
             if (!fechaMoment.isValid()) {
                 return fecha;
             }
@@ -1975,7 +1989,7 @@ export default {
         },
         formatFechaMoment(fecha) {
             if (!fecha) return "-";
-            const fechaMoment = moment(fecha);
+            const fechaMoment = moment(fecha, "YYYY-MM-DD", true);
             if (!fechaMoment.isValid()) {
                 return fecha;
             }
@@ -1984,6 +1998,7 @@ export default {
         // Abrir el diálogo de edición con la venta seleccionada
         openEditDialog(item) {
             this.selectedVenta = { ...item };
+            this.selectedVenta.fecha = this.normalizeFecha(item.fecha);
             this.selectedVenta.cliente_nombre = item.cliente.nombre;
             this.selectedVenta.cliente_apellido = item.cliente.apellido;
             this.selectedVenta.cuota_id =
@@ -2001,9 +2016,7 @@ export default {
                 .put(`/api/ventas/${this.selectedVenta.id}`, {
                     precio: this.selectedVenta.precio,
                     costo_original: this.selectedVenta.costo_original,
-                    fecha: moment(this.selectedVenta.fecha).format(
-                        "YYYY-MM-DD",
-                    ),
+                    fecha: this.normalizeFecha(this.selectedVenta.fecha),
                     forma_pago: this.selectedVenta.forma_pago,
                     cuota_id: this.selectedVenta.cuota_id,
                 })
@@ -2037,8 +2050,8 @@ export default {
                         this.ventas.push(ventaActualizada);
                     }
 
-                    this.ventas.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
+                    this.ventas.sort((a, b) =>
+                        this.compareFechaDesc(a.fecha, b.fecha),
                     );
                     this.ventasFiltradas = [...this.ventas];
                     this.tablaKey += 1;
@@ -2082,9 +2095,7 @@ export default {
                 payload.forma_pago = this.editSelected.forma_pago;
             }
             if (this.editSelected.fecha) {
-                payload.fecha = moment(this.editSelected.fecha).format(
-                    "YYYY-MM-DD",
-                );
+                payload.fecha = this.normalizeFecha(this.editSelected.fecha);
             }
             if (Object.keys(payload).length === 1) {
                 this.editSelectedDialog = false;
@@ -2120,8 +2131,8 @@ export default {
                             this.ventas.push(venta);
                         }
                     });
-                    this.ventas.sort(
-                        (a, b) => new Date(b.fecha) - new Date(a.fecha),
+                    this.ventas.sort((a, b) =>
+                        this.compareFechaDesc(a.fecha, b.fecha),
                     );
                     this.ventasFiltradas = [...this.ventas];
                     this.tablaKey += 1;
@@ -2298,8 +2309,8 @@ export default {
                 () => axios.get("/api/ventas/listar").then((r) => r.data),
                 { ttl: 1000 * 60 * 60 * 24 }, // 1 dia
             );
-            this.ventas = data.sort(
-                (a, b) => new Date(b.fecha) - new Date(a.fecha),
+            this.ventas = data.sort((a, b) =>
+                this.compareFechaDesc(a.fecha, b.fecha),
             );
             this.ventasFiltradas = this.ventas;
         },
@@ -2629,7 +2640,7 @@ export default {
         // Registrar venta
         async registrarVenta() {
             this.loading = true;
-            this.form.fecha = moment(this.form.fecha).format("YYYY-MM-DD");
+            this.form.fecha = this.normalizeFecha(this.form.fecha);
             this.form.cliente_nombre = this.capitalizarPalabras(
                 this.form.cliente_nombre,
             );
@@ -2692,8 +2703,8 @@ export default {
 
                 // ✅ Mostrar de inmediato en esta pestaña
                 this.ventas.push(...nuevasVentas);
-                this.ventas.sort(
-                    (a, b) => new Date(b.fecha) - new Date(a.fecha),
+                this.ventas.sort((a, b) =>
+                    this.compareFechaDesc(a.fecha, b.fecha),
                 );
                 this.ventasFiltradas = [...this.ventas];
                 this.tablaKey += 1;

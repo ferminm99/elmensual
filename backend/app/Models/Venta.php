@@ -27,7 +27,7 @@ class Venta extends Model
     protected $casts = [
         'precio' => 'float',
         'costo_original' => 'float',
-        'fecha' => 'date',
+        'fecha' => 'date:Y-m-d',
         'total_financiado' => 'float',
         'importe_cuota' => 'float',
         'cantidad_cuotas' => 'integer',

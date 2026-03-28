@@ -42,36 +42,34 @@ export default {
     data() {
         return {
             openDatePicker: false,
-            selectedDate: this.modelValue
-                ? moment(this.modelValue).toDate() // Convertimos la fecha a local
-                : moment().toDate(), // Si no hay fecha, tomamos la fecha actual
+            selectedDate: this.normalizeDate(this.modelValue), // Siempre string YYYY-MM-DD
         };
     },
     computed: {
         formattedDate() {
-            return this.selectedDate
-                ? moment(this.selectedDate).format("DD-MM-YYYY")
-                : "";
+            const fecha = moment(this.selectedDate, "YYYY-MM-DD", true);
+            return fecha.isValid() ? fecha.format("DD-MM-YYYY") : "";
         },
     },
     watch: {
         modelValue(newValue) {
-            if (newValue) {
-                this.selectedDate = moment(newValue).toDate(); // Convertimos la fecha al formato local
-            }
+            this.selectedDate = this.normalizeDate(newValue);
         },
     },
     methods: {
+        normalizeDate(value) {
+            if (!value) {
+                return null;
+            }
+            const parsed = moment(value, "YYYY-MM-DD", true);
+            return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
+        },
         handleDateChange(date) {
             this.openDatePicker = false;
-            // Emitimos la fecha en formato "YYYY-MM-DD" para que el backend la entienda correctamente
-            this.$emit("update:modelValue", moment(date).format("YYYY-MM-DD"));
+            const normalized = this.normalizeDate(date);
+            this.selectedDate = normalized;
+            this.$emit("update:modelValue", normalized);
         },
-    },
-    mounted() {
-        if (this.modelValue) {
-            this.selectedDate = moment(this.modelValue).toDate(); // Convertimos la fecha al formato correcto
-        }
     },
 };
 </script>
