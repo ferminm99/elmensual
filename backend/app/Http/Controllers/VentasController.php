@@ -211,24 +211,52 @@ class VentasController extends Controller
 
     public function guardarFacturaciones(Request $request)
     {
-        $ventas = $request->ventas;
-        $ultimaVentaId = null;
+        $ventas = $request->input('ventas', []);
+        $fechaDesde = $request->input('fecha_desde');
+        $fechaHasta = $request->input('fecha_hasta');
+
+        $ventaDestacadaId = collect($ventas)
+            ->filter(function ($venta) use ($fechaDesde, $fechaHasta) {
+                if (!isset($venta['fecha'])) {
+                    return false;
+                }
+
+                $fechaVenta = substr((string) $venta['fecha'], 0, 10);
+
+                if ($fechaDesde && $fechaVenta < $fechaDesde) {
+                    return false;
+                }
+
+                if ($fechaHasta && $fechaVenta > $fechaHasta) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->sortByDesc(fn ($venta) => (string) ($venta['fecha'] ?? ''))
+            ->pluck('id')
+            ->first();
+
+        $ventaDestacada = collect($ventas)->firstWhere('id', $ventaDestacadaId);
+        $clienteDestacado = is_array($ventaDestacada)
+            ? ($ventaDestacada['cliente'] ?? null)
+            : null;
 
         foreach ($ventas as $venta) {
             // Crear una nueva entrada en la tabla facturaciones
-            $facturacion = Facturacion::create([
+            Facturacion::create([
                 'venta_id' => $venta['id'],
                 'fecha_facturacion' => now(),
             ]);
-
-            $ultimaVentaId = $facturacion->venta_id;
         }
 
         $lastUpdate = Venta::latest('updated_at')->first()?->updated_at->timestamp * 1000;
 
         return response()->json([
             'message' => 'Facturaciones guardadas con éxito',
-            'ultima_venta_id' => $ultimaVentaId,
+            'fecha_corte_facturacion' => $fechaHasta,
+            'venta_destacada_id' => $ventaDestacadaId,
+            'cliente_destacado' => $clienteDestacado,
             'last_update' => $lastUpdate,
         ]);
 

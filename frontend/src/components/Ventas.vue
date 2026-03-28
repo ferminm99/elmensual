@@ -58,8 +58,15 @@
                 <div class="facturacion-text mt-2">
                     Última Facturación:
                     <strong v-if="ultimaFacturacion">
-                        {{ formatFechaMoment(ultimaFacturacion.fecha) }} de
-                        {{ ultimaFacturacion.cliente.nombre }}
+                        {{
+                            formatFechaMoment(
+                                ultimaFacturacion.fecha_corte_facturacion,
+                            )
+                        }}
+                        <template v-if="ultimaFacturacion.cliente">
+                            de {{ ultimaFacturacion.cliente.nombre }}
+                            {{ ultimaFacturacion.cliente.apellido }}
+                        </template>
                     </strong>
                     <span v-else class="gray--text"
                         >Sin facturación registrada</span
@@ -1502,43 +1509,33 @@ export default {
                 const response = await axios.get("/api/facturaciones/ultima");
                 const ultima = response.data;
 
-                if (ultima && ultima.venta_id) {
-                    // Si no hay ventas cargadas todavía, espero que se sincronicen
-                    if (!this.ventas.length) {
-                        console.warn(
-                            "⏳ No hay ventas cargadas aún. Esperando...",
-                        );
-                        await new Promise((resolve) =>
-                            setTimeout(resolve, 300),
-                        ); // Esperar 300ms
-                    }
+                const fechaCorte =
+                    ultima?.fecha_corte_facturacion ||
+                    ultima?.fecha_facturacion;
 
-                    const ventaCorrespondiente = this.ventas.find(
-                        (venta) => venta.id === ultima.venta_id,
+                if (ultima && fechaCorte) {
+                    const ventaRelacionadaId =
+                        ultima?.venta_destacada_id || ultima?.venta_id;
+                    const ventaRelacionada = this.ventas.find(
+                        (venta) => venta.id === ventaRelacionadaId,
                     );
+                    this.ultimaFacturacion = {
+                        fecha_corte_facturacion: fechaCorte,
+                        cliente: ventaRelacionada?.cliente || null,
+                    };
+                    this.ventaUltimaFacturada =
+                        ultima.venta_destacada_id || null;
 
-                    if (ventaCorrespondiente) {
-                        this.ultimaFacturacion = ventaCorrespondiente;
-                        this.ventaUltimaFacturada = ventaCorrespondiente.id;
-
-                        // Guardarlo opcionalmente
-                        setSimpleCache(
-                            "ultimaFacturacion",
-                            ventaCorrespondiente,
-                        );
-                        notifyCacheChange("ultimaFacturacion");
-                    } else {
-                        console.warn(
-                            "⚠️ No se encontró la venta correspondiente en las ventas locales.",
-                        );
-                        this.ultimaFacturacion = null;
-                    }
+                    setSimpleCache("ultimaFacturacion", this.ultimaFacturacion);
+                    notifyCacheChange("ultimaFacturacion");
                 } else {
                     this.ultimaFacturacion = null;
+                    this.ventaUltimaFacturada = null;
                 }
             } catch (error) {
                 console.error("❌ Error fetching última facturación", error);
                 this.ultimaFacturacion = null;
+                this.ventaUltimaFacturada = null;
             } finally {
                 this.loading = false;
             }
@@ -1771,15 +1768,36 @@ export default {
             const nombreArchivo = `facturacion_desde_${this.fechaDesdeFacturar}_hasta_hoy.txt`;
             this.descargarArchivo(textoFacturacion, nombreArchivo);
 
+            const fechaDesde = moment(this.fechaDesdeFacturar).format(
+                "YYYY-MM-DD",
+            );
+            const fechaHasta = moment(this.fechaHastaFacturar).format(
+                "YYYY-MM-DD",
+            );
+
             // Ahora hacemos la llamada para guardar las facturaciones en la base de datos
             axios
                 .post("/api/facturaciones/guardar", {
                     ventas: ventasFiltradas,
                     fecha: new Date(), // Fecha actual
+                    fecha_desde: fechaDesde,
+                    fecha_hasta: fechaHasta,
                 })
                 .then((response) => {
-                    // Actualizamos el id de la última facturación
-                    this.ventaUltimaFacturada = response.data.ultima_venta_id;
+                    const ventaDestacada = ventasFiltradas.find(
+                        (venta) =>
+                            venta.id === response.data.venta_destacada_id,
+                    );
+                    this.ventaUltimaFacturada =
+                        response.data.venta_destacada_id;
+                    this.ultimaFacturacion = {
+                        fecha_corte_facturacion:
+                            response.data.fecha_corte_facturacion,
+                        cliente:
+                            response.data.cliente_destacado ||
+                            ventaDestacada?.cliente ||
+                            null,
+                    };
                     this.snackbarText =
                         "Facturación generada y guardada con éxito.";
                     this.snackbar = true;
