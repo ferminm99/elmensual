@@ -3,7 +3,8 @@
         <v-text-field
             v-model="formattedDate"
             prepend-icon="mdi-calendar"
-            label="Seleccione una fecha"
+            :label="label"
+            :placeholder="placeholder"
             readonly
             @click="openDatePicker = true"
         ></v-text-field>
@@ -35,8 +36,16 @@ import moment from "moment";
 export default {
     props: {
         modelValue: {
-            type: String,
+            type: [String, Date],
             default: null, // Es importante que el formato de fecha esté correcto
+        },
+        label: {
+            type: String,
+            default: "Seleccione una fecha",
+        },
+        placeholder: {
+            type: String,
+            default: "",
         },
     },
     data() {
@@ -61,8 +70,37 @@ export default {
             if (!value) {
                 return null;
             }
-            const parsed = moment(value, "YYYY-MM-DD", true);
-            return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
+            if (value instanceof Date) {
+                const parsedDate = moment(value);
+                return parsedDate.isValid()
+                    ? parsedDate.format("YYYY-MM-DD")
+                    : null;
+            }
+
+            if (typeof value === "string") {
+                const parsed = moment(
+                    value,
+                    [
+                        "YYYY-MM-DD",
+                        "YYYY-MM-DDTHH:mm:ss.SSSZ",
+                        "YYYY-MM-DDTHH:mm:ssZ",
+                        "YYYY-MM-DDTHH:mm:ss",
+                        "DD-MM-YYYY",
+                    ],
+                    true,
+                );
+
+                if (parsed.isValid()) {
+                    return parsed.format("YYYY-MM-DD");
+                }
+
+                const fallback = moment(value);
+                return fallback.isValid()
+                    ? fallback.format("YYYY-MM-DD")
+                    : null;
+            }
+
+            return null;
         },
         handleDateChange(date) {
             this.openDatePicker = false;
