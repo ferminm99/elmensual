@@ -1,35 +1,18 @@
 <template>
     <v-col cols="12">
         <v-text-field
-            v-model="formattedDate"
+            v-model="inputDate"
             prepend-icon="mdi-calendar"
             :label="label"
             :placeholder="placeholder"
-            readonly
-            @click="openDatePicker = true"
+            type="date"
+            :max="max"
+            :min="min"
+            @update:modelValue="handleInput"
         ></v-text-field>
-
-        <!-- Diálogo que contiene el v-date-picker -->
-        <v-dialog
-            v-model="openDatePicker"
-            max-width="400px"
-            persistent
-            scrollable
-        >
-            <v-card>
-                <v-card-text>
-                    <v-date-picker
-                        v-model="selectedDate"
-                        @update:modelValue="handleDateChange"
-                    ></v-date-picker>
-                </v-card-text>
-                <v-btn icon @click="openDatePicker = false" class="close-btn">
-                    <v-icon color="grey">mdi-close</v-icon>
-                </v-btn>
-            </v-card>
-        </v-dialog>
     </v-col>
 </template>
+
 <script>
 import moment from "moment";
 
@@ -37,7 +20,7 @@ export default {
     props: {
         modelValue: {
             type: [String, Date],
-            default: null, // Es importante que el formato de fecha esté correcto
+            default: null,
         },
         label: {
             type: String,
@@ -47,34 +30,32 @@ export default {
             type: String,
             default: "",
         },
+        min: {
+            type: String,
+            default: null,
+        },
+        max: {
+            type: String,
+            default: null,
+        },
     },
     data() {
         return {
-            openDatePicker: false,
-            selectedDate: this.normalizeDate(this.modelValue), // Siempre string YYYY-MM-DD
+            inputDate: this.normalizeDate(this.modelValue),
         };
-    },
-    computed: {
-        formattedDate() {
-            const fecha = moment(this.selectedDate, "YYYY-MM-DD", true);
-            return fecha.isValid() ? fecha.format("DD-MM-YYYY") : "";
-        },
     },
     watch: {
         modelValue(newValue) {
-            this.selectedDate = this.normalizeDate(newValue);
+            this.inputDate = this.normalizeDate(newValue);
         },
     },
     methods: {
         normalizeDate(value) {
-            if (!value) {
-                return null;
-            }
+            if (!value) return null;
+
             if (value instanceof Date) {
-                const parsedDate = moment(value);
-                return parsedDate.isValid()
-                    ? parsedDate.format("YYYY-MM-DD")
-                    : null;
+                const parsed = moment(value);
+                return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
             }
 
             if (typeof value === "string") {
@@ -90,9 +71,7 @@ export default {
                     true,
                 );
 
-                if (parsed.isValid()) {
-                    return parsed.format("YYYY-MM-DD");
-                }
+                if (parsed.isValid()) return parsed.format("YYYY-MM-DD");
 
                 const fallback = moment(value);
                 return fallback.isValid()
@@ -102,27 +81,11 @@ export default {
 
             return null;
         },
-        handleDateChange(date) {
-            this.openDatePicker = false;
-            const normalized = this.normalizeDate(date);
-            this.selectedDate = normalized;
+        handleInput(value) {
+            const normalized = this.normalizeDate(value);
+            this.inputDate = normalized;
             this.$emit("update:modelValue", normalized);
         },
     },
 };
 </script>
-
-<style scoped>
-.v-card {
-    max-height: 100%;
-    overflow-y: hidden;
-}
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-:deep(.v-date-picker__title) {
-    display: none !important;
-}
-</style>
